@@ -198,8 +198,8 @@ par(mfrow=c(1,1))
 plot(x, x, type='n',
      main="Ej. 6 - Unif[0,1] (azul) y Exp(1) (rojo)",
      xlab="x",
-     ylab="Fn(x)")
-lines(x,x, col = "red")
-lines(x, 1-exp(-x), col = "blue")
+     ylab="f(x)")
+lines(x, rep(1, length(x)), col = "red")
+lines(x, exp(-x), col = "blue")
 
 dev.off()

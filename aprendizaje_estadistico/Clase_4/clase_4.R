@@ -129,3 +129,21 @@ dens <- density(data_ninos$x, kernel = "gaussian", bw = 0.5)
 lines(dens$x, dens$y, ylim = c(0, 0.3), col = "red")
 dens <- density(data_ninos$x, kernel = "gaussian", bw = 10)
 lines(dens$x, dens$y, ylim = c(0, 0.3), col = "green")
+
+## 18 ####
+# hrot <- 1.06 * min(s, IQR/1.34) * n^(1/5)
+hrot <- 1.06 * min(sd(data_ninos$x), IQR(data_ninos$x)/1.34) * (length(data_ninos$x))^(-1/5)
+hrot
+
+hsilv <- bw.ucv(data_ninos$x)
+hsilv
+
+par(mfrow=c(1,1))
+hist(data_ninos$x, freq = F,
+     main="h = hrot = 3.92 (azul), h = hsilv = 0.673 (rojo)",
+     xlab="Peso de los ninios (Kg)",
+     ylab="Density", ylim = c(0, 0.32))
+dens <- density(data_ninos$x, kernel = "gaussian", bw = hrot)
+lines(dens$x, dens$y, ylim = c(0, 0.3), col = "blue")
+dens <- density(data_ninos$x, kernel = "gaussian", bw = hsilv)
+lines(dens$x, dens$y, ylim = c(0, 0.3), col = "red")
