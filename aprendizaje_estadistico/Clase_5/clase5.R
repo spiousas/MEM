@@ -1,5 +1,5 @@
 # Variedades de hongos ####
-data_hongos <- read.delim("hongos_clasificados.txt", sep = " ") %>%
+data_hongos <- read.delim(here("aprendizaje_estadistico/Clase_5/data/hongos_clasificados.txt"), sep = " ") %>%
   mutate(Variety = factor(Variety))
 head(data_hongos)
 
