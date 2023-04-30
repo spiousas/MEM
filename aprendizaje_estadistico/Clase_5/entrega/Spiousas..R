@@ -18,3 +18,4 @@ class_gen <- function(x, y, x_nuevo, h0, h1) {
   
   as.numeric(P_x_1 * prop_x_1 > P_x_0 * prop_x_0)
 }
+

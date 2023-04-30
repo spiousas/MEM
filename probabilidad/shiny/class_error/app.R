@@ -7,18 +7,18 @@
 #    http://shiny.rstudio.com/
 #
 
-pacman::p_load(shiny, gt, dplyr, tibble, ggplot2, tidyr, readr)
+pacman::p_load(shiny, gt, dplyr, tibble, ggplot2, tidyr, readr, shinythemes)
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(
-
+ui <- fluidPage(theme = shinytheme("flatly"),
+              
   # Application title
   titlePanel("Error de clasificación"),
   # Sidebar ####
   sidebarLayout(
     sidebarPanel(
            sliderInput("N",
-                       "Valores posibles de X:",
+                       "Valores posibles de X (n):",
                        min = 1,
                        max = 15,
                        value = 9)
@@ -31,8 +31,16 @@ ui <- fluidPage(
         "Un g(x)",
   fluidRow(
     h2("La conjunta:"),
-    gt_output(outputId = "tablepxy")
+    p("Sea un vector aleatorio discreto (X,Y) con la función de probabilidad puntual conjunta dada por:"),
+    gt_output(outputId = "tablepxy"),
+    p("Y n posibles valores de X mientras que sólo 2 posibles valores de Y (0 y 1)."),
+    p("Esta pxy está generada aleatoriamente, si desea generar otra cambie el valor de n."),
+    p("Dada una función de clasificación g(x) (con n 0s y 1s), podemos definir el error de clasifiacción como:
+      P(g(X) != Y)")
   ),
+  fluidRow(
+    p("A continuación puede ingresar manualmente un g(x) y se calculará su error (tenga en cuenta que el 
+      número de elementos del vector tiene que coincidir con n.")),
   fluidRow(column(width = 8,
                   textInput("g", "Ingrese manualmente un g(x) delimitado por comas",
                             ,"0,1,1,0,1,1,0,1", width = "100%")),
@@ -51,11 +59,18 @@ ui <- fluidPage(
   tabPanel(
     # Todos los g(s) ####
     "Todos los g(x)",
-  fluidRow(column(width = 12,
-                  verbatimTextOutput("textgs"))
-  ),
-  fluidRow(gt_output(outputId = "tablegs")),
   fluidRow(
+    p("A continuación exploraremos todas las posibles n*n funciones de clasifiación g(x) distintas."),
+                  p("El error más chico de clasificación es de: "),
+                  verbatimTextOutput("textgs")
+  ),
+  fluidRow(p("Para el g(x):"),
+             gt_output(outputId = "tablegs")),
+  fluidRow(
+    p("En la siguiente figura se muestra el error de clasificación para las n*n posibles g(x).
+      Los errores están ordenados de mayor a menor en de fondo se ve, de forma vertical y de abajo hacia arribam
+      la estructura del g(x) en color verde cuando hay un 1 y rojo cuando hay un 0. De esta forma podemos ver 
+      cuales son las clasificaciones que más minimizan el error."),
       plotOutput("gsPlot"),
   )
 )))))
@@ -109,7 +124,7 @@ server <- function(input, output) {
       data_color(
         direction = "row",
         method = "numeric",
-        palette = c("red", "green")
+        palette = c("#DE3C4B", "#57CC99")
       )
   })
   
@@ -154,8 +169,7 @@ server <- function(input, output) {
     mutate(X = (parse_number(X)-1)/(input$N-1)*(max(error)-min(error)) + min(error))
   })
 
-  output$textgs <- renderText({ paste0("El error más chico de clasificación es de: ", round(min(errors()), digits =3 ),
-                                       "\nPara el g(x):")})
+  output$textgs <- renderText({ round(min(errors()), digits =3 )})
   
   gs_table <- reactive({
     error_tbl() %>% 
@@ -169,7 +183,7 @@ server <- function(input, output) {
       data_color(
         direction = "row",
         method = "numeric",
-        palette = c("red", "green")
+        palette = c("#DE3C4B", "#80ED99")
       )
   })
   
@@ -181,8 +195,9 @@ server <- function(input, output) {
                 alpha = .4) +
       geom_line(data = error_tbl(),
                 aes(x=order, y = error),
-                linewidth = 2) +
-      scale_fill_manual(values = c("red", "green")) +
+                linewidth = 2,
+                color = "gray20") +
+      scale_fill_manual(values = c("#DE3C4B", "#57CC99")) +
       labs(x = "Orden de mayor a menor error",
            y = "Error de clasificación",
            fill = "Estructura de la g(x)") +

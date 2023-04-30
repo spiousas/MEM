@@ -42,3 +42,8 @@ exp(-lambda*(y_0-x_0))
 ## c ####
 1/lambda + x_0
 
+## d ####
+1/lambda^2
+
+## e ####
+1/sqrt(2)
