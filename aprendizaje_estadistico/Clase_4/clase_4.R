@@ -1,5 +1,5 @@
 library(here)
-# Clase 4 ####
+
 # Ejercicio 1 ####
 ## 1 ####
 data_astro <- read.table(here("aprendizaje_estadistico/Clase_4/data/astro.txt"), header=T, skip=1)
@@ -9,12 +9,17 @@ head(data_astro)
 P <- sum(data_astro$f<=40)/nrow(data_astro)
 P
 
+# Uso a la frecuencia relativa como estimador de la probabilidad
+
 ## 3 ####
 fluxEmp <- ecdf(data_astro$f)
+par(mfrow=c(1,1)) 
 plot(fluxEmp)
 
 ## 4 ####
 hist(data_astro$f, freq = F, breaks = 10)
+
+# Pareciera ser una explonencial
 
 ## 5 ####
 # 1/lambda es la esperanza, entonces aprovecho eso y calculo al promedio, como estimador de la esperanza
@@ -40,11 +45,15 @@ hist(data_buffalo, freq = F)
 hist(data_buffalo, freq = F, xlim = c(20, 140), breaks = seq(20, 140, 10))
 hist(data_buffalo, freq = F, xlim = c(20, 140), breaks = seq(20, 140, 5))
 
+# Tiene un efecto, se vuelve menos suave
+
 ## 7 ####
 par(mfrow=c(3,1))
 hist(data_buffalo, freq = F, xlim = c(20, 140), breaks = seq(20, 140, 10))
 hist(data_buffalo, freq = F, xlim = c(20, 140), breaks = seq(22, 142, 10))
 hist(data_buffalo, freq = F, xlim = c(20, 140), breaks = seq(24, 144, 10))
+
+# Tiene un efecto, no especificamente un suavizado
 
 ## 8 ####
 proba_est <- function(x, x_0, h) {
@@ -63,7 +72,7 @@ proba_est(data_buffalo, 40, 20)
 
 ## 10 ####
 densidad_est_parzen <- function(x, x_0, h) {
-  parzen <- 0*x_0
+  parzen <- 0*x_0 # Inicializo un vecto de ceros
   for (i in 1:length(x_0)) {
     parzen[i] <- sum(data_buffalo<= x_0[i]+h & data_buffalo>= x_0[i]-h) / (length(data_buffalo)*2*h)
   }  
@@ -140,7 +149,7 @@ hsilv
 
 par(mfrow=c(1,1))
 hist(data_ninos$x, freq = F,
-     main="h = hrot = 3.92 (azul), h = hsilv = 0.673 (rojo)",
+     main="h = hrot = 0.622 (azul), h = hsilv = 0.673 (rojo)",
      xlab="Peso de los ninios (Kg)",
      ylab="Density", ylim = c(0, 0.32))
 dens <- density(data_ninos$x, kernel = "gaussian", bw = hrot)

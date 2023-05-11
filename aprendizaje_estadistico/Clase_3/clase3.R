@@ -1,11 +1,9 @@
 library(tibble)
 library(dplyr)
-library(purrr)
 library(tidyr)
 library(ggplot2)
 
-# Practica 3 ####
-# Ej 1 ####
+# Ejercicio 1 ####
 ## 1 ####
 a <- c(1.17, 1.75, 0.28, 2.56, 2.36, 0.36, 1.82, 0.24, 1.17, 1.86)
 b <- c(0.66, 0.07, 0.62, 0.65, 1.33, 0.40, 1.17, 1.11, 2.01, 2.98)
@@ -79,6 +77,17 @@ hist(est2_vec_50, xlim=c(0, 6), prob = TRUE)
 hist(est1_vec_100, xlim=c(0, 6), prob = TRUE)
 hist(est2_vec_100, xlim=c(0, 6), prob = TRUE)
 
+# Ejercicio 2 ####
+## 7, 8 y 9 ####
+B_est1 <- mean(est1_vec_100) - 3
+B_est1
+
+B_est2 <- mean(est2_vec_100) - 3
+B_est2
+
+# El estimador 1 tiene menos sesgo
+
+# A continuacion comparo todos los sesgos
 m_vec <- c(rep(5, 2*m), rep(30, 2*m), rep(50, 2*m), rep(100, 2*m))
 est_vec <- c(rep(1, m), rep(2, m), rep(1, m), rep(2, m), rep(1, m), rep(2, m), rep(1, m), rep(2, m))
 data <- tibble(m = m_vec,
@@ -95,11 +104,13 @@ data %>% ggplot(aes(x = factor(m), y = value, color = factor(est), fill = factor
   theme_bw() +
   theme(legend.position = "top")
 
-# Ej 3 ####
-## 1 ####
+# Ejercicio 3 ####
+## 13, 14 y 15 ####
 data_summ <- data %>% group_by(m, est) %>%
   summarise(bias = mean(value)-3,
             var = mean((value-mean(value))^2),
             EMSE = mean((value-3)^2))
 data_summ
+
+# El EMSE que es un estimador del MSE, es la suma del sesgo empirico al cuadrado mas la varianza empirica
             

@@ -25,3 +25,4 @@ par ( mfrow = c (1 , 2) )
 hist( airquality$Ozone , main = " Hist . de frecuencias ")
 hist( airquality$Ozone , main = " Histograma de densidad " , prob = TRUE )
 par ( mfrow = c (1 , 1) )
+
