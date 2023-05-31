@@ -222,6 +222,7 @@ density(data_buffalo, kernel = "rectangular", from = 80, to = 80, n = 1, bw = 10
 densidad_est_parzen(data_buffalo, 80, 10)
 
 ## 2 ####
+par(mfrow=c(1,2))
 plot(density(data_buffalo, kernel = "rectangular", bw = 10/sqrt(3)))
 
 ## 3 ####
@@ -243,6 +244,8 @@ lines(dens$x, dens$y, ylim = c(0, 0.02), col = "green")
 
 ## 5 ####
 bw.nrd(data_buffalo)
+hrot <- 1.06 * min(sd(data_buffalo), IQR(data_buffalo)/1.34) * (length(data_buffalo))^(-1/5)
+hrot # Da lo mismo que a mano
 
 x <- c()
 y <- c()

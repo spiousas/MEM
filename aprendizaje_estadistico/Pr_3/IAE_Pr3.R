@@ -1,6 +1,7 @@
 # Ejercicio 2 ####
 # Genero los datos
 library(tidyverse)
+library(latex2exp)
 est1 <- function(x) {
   2*mean(x)
 }
@@ -120,7 +121,7 @@ data_summ %>% ggplot(aes(x = n,
                          y = EMSE,
                          color = est)) +
   geom_point(size = 2) + 
-  geom_line(size = 1) +
+  geom_line(linewidth = 1) +
   labs(x = "n", y = "EMSE", color = NULL) +
   scale_x_continuous(breaks = c(5, 30, 50, 100)) +
   scale_color_manual(breaks = c("mean", "max"),

@@ -274,8 +274,8 @@ CV_kopt
 
 MSE_kopt <- lidar %>%
   rowwise() %>%
-  mutate(logratio_pred = knn.reg(train = lidar["range"], 
-                                 y = lidar["logratio"],
+  mutate(logratio_pred = knn.reg(train = lidar$range, 
+                                 y = lidar$logratio,
                                  test = data.frame(range = range),
                                  k = CV_k$k[which.min(CV_k$CV)])$pred,
          SqErr = (logratio - logratio_pred)^2) %>%
@@ -288,8 +288,8 @@ MSE_kopt$MSE
 lidar_pred_knn_optim <- lidar %>%
   dplyr::select(range) %>%
   rowwise() %>%
-  mutate(logratio_pred = knn.reg(train = lidar["range"], 
-                                 y = lidar["logratio"],
+  mutate(logratio_pred = knn.reg(train = lidar$range, 
+                                 y = lidar$logratio,
                                  test = data.frame(range = range),
                                  k = CV_k$k[which.min(CV_k$CV)])$pred)
 

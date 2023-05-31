@@ -1,0 +1,134 @@
+---
+title: "Entrega 1 - Parte 4"
+author: "Ignacio Spiousas"
+date: "29 de mayo de 2023"
+output: pdf_document
+---
+
+# Ejercicio 7 de la práctica 1 
+
+## Definición de los estimadores
+
+A pesar de que no es parte del ejercicio 7, lo primero que tenemos que hacer es definir las 
+funciones correspondientes a cada estimador. Primero definimos a $\hat\theta = 2 \bar{X}_n$ y lo
+llamamos `est_1_unif` (estimador 1 de la uniforme):
+
+```{r est_1}
+est1_unif <- function(x) {
+  2*mean(x)
+}
+```
+
+Y luego a $\tilde{\theta} = max\{X_1...X_n\}$ y lo llamamos `est_2_unif` (estimador 2 de la uniforme):
+
+```{r est_2}
+est2_unif <- function(x) {
+  max(x)
+}
+```
+
+## Definición de las funciones
+
+Ahora sí podemos definir las funciones que pide el problema.
+
+### (a)
+
+```{r histograma_est1_unif}
+histograma_est1_unif <- function(theta, n, Nrep, seed) {
+  set.seed(seed)
+  est_1 <- c()
+  for (i in 1:Nrep) {
+    est_1[i] <- est1_unif(runif(n = n, min = 0, max = theta))
+  }
+  hist(est_1)
+}
+```
+
+### (b)
+
+```{r histograma_est2_unif}
+histograma_est2_unif <- function(theta, n, Nrep, seed) {
+  set.seed(seed)
+  est_2 <- c()
+  for (i in 1:Nrep) {
+    est_2[i] <- est2_unif(runif(n = n, min = 0, max = theta))
+  }
+  hist(est_2)
+}
+```
+
+## Calculo del ECME
+
+El ECME se define como: $\frac{1}{Nrep} \sum_{i=1}^{Nrep}(\hat{\theta}_{n,i} - \theta)^2$. 
+Primero vamos a implementar una función que lo calcule para cada uno de los estimadores.
+
+```{r ECME_est1_unif}
+ECME_est1_unif <- function(theta, n, Nrep, seed) {
+  set.seed(seed)
+  est_1 <- c()
+  for (i in 1:Nrep) {
+    est_1[i] <- est1_unif(runif(n = n, min = 0, max = theta))
+  }
+  1/Nrep * sum((est_1-theta)^2)
+}
+```
+
+
+```{r ECME_est2_unif}
+ECME_est2_unif <- function(theta, n, Nrep, seed) {
+  set.seed(seed)
+  est_2 <- c()
+  for (i in 1:Nrep) {
+    est_2[i] <- est2_unif(runif(n = n, min = 0, max = theta))
+  }
+  1/Nrep * sum((est_2-theta)^2)
+}
+```
+
+### (e)
+
+Y ahora construimos una tabla con los resultados de las estimaciones que pide el ejercicio. 
+Las mismas son para muestras de tamaño $n = 5$, $n = 30$, $n = 50$, $n = 100$ y $n = 1000$. Para cada valor de n,
+se debe utilizar como semilla los últimos 5 digitos del DNI, y $Nrep = 1000$ y $\theta = 3$.
+
+| ECME      | $n = 5$ | $n = 30$ | $n = 50$ | $n = 100$ | $n = 1000$ |
+|-----------|---------|----------|----------|-----------|------------|
+| $\hat{\theta}$   |`r ECME_est1_unif(3, 5, 1000, 0787)`|`r ECME_est1_unif(3, 30, 1000, 0787)`|`r ECME_est1_unif(3, 50, 1000, 0787)`|`r ECME_est1_unif(3, 100, 1000, 0787)`|`r ECME_est1_unif(3, 1000, 1000, 0787)`|
+| $\tilde{\theta}$ |`r ECME_est2_unif(3, 5, 1000, 0787)`|`r ECME_est2_unif(3, 30, 1000, 0787)`|`r ECME_est2_unif(3, 50, 1000, 0787)`|`r ECME_est2_unif(3, 100, 1000, 0787)`|`r ECME_est2_unif(3, 1000, 1000, 0787)`|
+
+Basado en el ECME elegiría el estimador $\tilde{\theta} = max\{X_1...X_n\}$ ya que disminuye mucho más rápidamente al aumentar $n$.
+
+## Calculo del ECM
+
+El ECM teórico para el estimador $\hat{\theta}$ se calcula como:
+
+$ECM_{\theta}(\hat{\theta}) = \frac{\theta^2}{3n}$
+
+Lo escribo como una función para que sea más fácil armar la tabla:
+
+```{r ECM_est1_unif}
+ECM_est1_unif <- function(theta, n) {
+  theta^2/(3*n)
+}
+```
+
+Ahora lo calculamos para el estimador $\tilde{\theta}$:
+
+$ECM_{\theta}(\tilde{\theta}) = \frac{2\theta^2}{(n+1)(n+2)}$
+
+Este también lo escribo como función:
+
+```{r ECM_est2_unif}
+ECM_est2_unif <- function(theta, n) {
+  2*theta^2/((n+1)*(n+2))
+}
+```
+
+### (f)
+
+Calculamos el ECM para los mismos valores de $n$ que el inciso anterior: $n = 5$, $n = 30$, $n = 50$, $n = 100$ y $n = 1000$
+
+| ECM       | $n = 5$ | $n = 30$ | $n = 50$ | $n = 100$ | $n = 1000$ |
+|-----------|---------|----------|----------|-----------|------------|
+| $\hat{\theta}$   |`r ECM_est1_unif(3, 5)`|`r ECM_est1_unif(3, 30)`|`r ECM_est1_unif(3, 50)`|`r ECM_est1_unif(3, 100)`|`r ECM_est1_unif(3, 1000)`|
+| $\tilde{\theta}$ |`r ECM_est2_unif(3, 5)`|`r ECM_est2_unif(3, 30)`|`r ECM_est2_unif(3, 50)`|`r ECM_est2_unif(3, 100)`|`r ECM_est2_unif(3, 1000)`|

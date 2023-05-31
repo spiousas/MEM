@@ -1,0 +1,71 @@
+---
+title: "Ejercicio introductorio"
+author: ""
+date: ""
+output: pdf_document
+---
+
+**Recordemos el ejercicio 1 de la práctica 1**
+
+*Se arroja dos veces un dado equilibrado, registrándose los resultados obtenidos.*
+
+*A: la suma de los dos números obtenidos es por lo menos 5*
+
+*B: el valor obtenido en el primer tiro es superior al obtenido en el segundo*
+
+*C: el valor obtenido en el primer tiro es un 4*
+
+*Simular 1000 veces en R el experimento de tirar dos veces un dado equilibrado y
+estimar las probabilidades de $A$, $B$ y $C$.*
+
+
+
+El archivo "pa.txt" contiene las estimaciones de $P(A)$ hechas por ustedes el 21 de abril (excluyendo los resultados incorrectos).
+
+
+Cada una de esas estimaciones es una realización de la variable aleatoria
+
+$$\hat p_n = \frac{1}{n}\sum_{i=1}^n X_i, \;\;  \text{  donde  }  \;\;   X_i=\left\{\begin{array}{l} 1 \text{ si en la tirada } i \text{ la suma de los resultados es por lo menos } 5 \\
+0 \text{ si no }\end{array}\right.$$
+para $n=1000$.
+
+1)  ¿Cuánto vale $E(\hat p_n)$? ¿y $V(\hat p_n)$?
+
+
+$E(\hat p_n)=5/6$ 
+
+$V(\hat p_n)= \frac{1}{n^2}V(\sum_{i=1}^n X_i)=\frac{1}{n^2}\sum_{i=1}^n V(X_i) = \frac{1}{n^2}n V(X_1) = \frac{5/6 1/6}{1000}$
+
+2)  ¿Si no pudiera calcular  $E(\hat p_n)$ y $V(\hat p_n)$ exactamente, cómo las estimaría utilizando las realizaciones en "pa.txt"? Compare con los resultados obtenidos en 1)
+
+
+```{r}
+#setwd("Dropbox/probac")
+pa <- scan("pa.txt")
+media_estimada <- mean(pa)
+varianza_estimada <- mean(pa^2)-mean(pa)^2
+media_estimada
+varianza_estimada
+5/6
+5/6*1/6/1000
+```
+
+
+
+3)  Hacer un histograma de las realizaciones de $\hat p_n$ que se encuentran en "pa.txt". ¿Qué observa?
+
+```{r}
+hist(pa, freq=FALSE)
+```
+
+
+
+4) Los archivos "pb.txt" y "pc.txt" contienen las estimaciones de $P(A)$ y $P(B)$ respectivamente, hechas por ustedes el 21 de abril. Repetir los items 1), 2) y 3) para $P(B)$ y $P(C)$.
+
+5) Superponer a cada uno de los histogramas realizados, el gráfico de la densidad normal que, según el TCL, aproxima a la densidad de $\hat p_n$. ¿Qué observa?
+
+
+```{r}
+
+```
+

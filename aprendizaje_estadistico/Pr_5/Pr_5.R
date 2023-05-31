@@ -150,7 +150,7 @@ data_xNuevo %>%
   geom_line() +
   labs(x = "xNuevo", 
        y = "Clasificación con método generativo (0=F y 1=M)",
-       title = "El punto de corte está entre 164.45 y 144.46 cm") +
+       title = "El punto de corte está entre 144.45 y 144.46 cm") +
   scale_y_continuous(breaks = c(0,1)) +
   theme_bw()
 
