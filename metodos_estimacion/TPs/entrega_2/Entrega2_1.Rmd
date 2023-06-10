@@ -175,6 +175,7 @@ for (i in 1:Nrep) {
 tibble(est) %>%
   ggplot(aes(x = est, y = after_stat(density))) +
   geom_histogram(bins = 15, fill = "gray60") +
+  geom_vline(xintercept = theta, color = "red") +
   labs(x = "Estimador", y = "Density") + 
   theme_bw()
     
@@ -285,6 +286,7 @@ Es decir, el $lim_{n\rightarrow\infty}(MSE(\hat\theta))=0$ y el estimador es con
 Ahora simulemos la evolución del estimador (cualquiera de ellos) con el n. Vamos a variar `n` entre $5$ y $5000$ agregando realizaciones de variables exponenciales de parámetro $5$ (`theta`). Después vamos a graficar el estimador en función de $n$ y a marcar en rojo el valor real del parámetro $\theta$.
 
 ```{r}
+set.seed(3)
 x <- rexp(n = 5, rate = 2)  
 theta <- 5
 n_max <- 5e3
@@ -304,7 +306,7 @@ tibble(n = 5:n_max, est) %>%
 
 ```
 
-Vemos que el estimador tiende al parámetro real $\theta$ al aumentar $n$.
+Vemos que el estimador tiende al parámetro real $\theta$ al aumentar $n$.s
 
 ## Distribución asintótica
 
@@ -380,7 +382,7 @@ tibble(est) %>%
   ggplot(aes(x =est, y = after_stat(density))) +
   geom_histogram(bins = 30, fill = "gray60") +
   geom_line(data = norm_asyn, aes(x = x, y = y), color = "red") +
-  labs(x = "sqrt(n) * (Estimador - theta)", y = "Density") + 
+  labs(x = "Estimador", y = "Density") + 
   theme_bw()
     
 ```
