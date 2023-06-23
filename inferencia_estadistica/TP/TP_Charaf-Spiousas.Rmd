@@ -80,7 +80,7 @@ Justamente por ser independientes, la densidad condicional se puede escribir com
 
 $$
 \begin{aligned}
-f(\underset{\bar{}}{x}) = \prod_{i=1}^{n} \lambda e^{-\lambda x} \mathcal{I}_{x \geq0}
+f(\underset{\bar{}}{x}) = \prod_{i=1}^{n} \lambda e^{-\lambda x_i} \mathcal{I}_{x_i \geq0}
 \end{aligned}
 $$
 
@@ -88,7 +88,7 @@ Y por ser identicamente distribuidas podemos operar y llegar a:
 
 $$
 \begin{aligned}
-f(\underset{\bar{}}{x}) = \lambda^{n} e^{-\lambda \sum_{i=1}^n x_i} \prod_{i=1}^{n} \mathcal{I}_{x \geq0}
+f(\underset{\bar{}}{x}) = \lambda^{n} e^{-\lambda \sum_{i=1}^n x_i} \prod_{i=1}^{n} \mathcal{I}_{x_i \geq0}
 \end{aligned}
 $$
 
@@ -99,25 +99,26 @@ $$
 A(\lambda) &= \lambda^n \\
 C(\lambda) &= -\lambda \\
 r(\underset{\bar{}}{x}) &= \sum_{i=1}^n x_i \\
-h(\underset{\bar{}}{x}) &= \prod_{i=1}^n \mathcal{I}_{x \geq0}
+h(\underset{\bar{}}{x}) &= \prod_{i=1}^n \mathcal{I}_{x_i \geq0}
 \end{aligned}
 $$
 
-Entonces el estadístico ($T_1$ desde ahora) es igual $r(\underset{\bar{}}{x})$, de manera que el mismo queda definido como:
+Entonces el estadístico ($T_1$ desde ahora) es igual $r(\underset{\bar{}}{X})$, de manera que el mismo queda definido como:
 
 $$
 \begin{aligned}
-T_1 &= r(\underset{\bar{}}{x}) \\
-T_1 &= \sum_{i=1}^n x_i 
+T_1 &= r(\underset{\bar{}}{X}) \\
+T_1 &= \sum_{i=1}^n X_i 
 \end{aligned}
 $$
-Recuperando el resultado propuesto en el enunciado del problema y teniendo en cuenta que $C(\lambda)$ es una función decreciente con $\lambda$, estamos en condiciones de escribir el test uniformemente más potente (UMP) de la siguiente forma:
+
+Recuperando el estadístico propuesto en el enunciado del problema y teniendo en cuenta que $C(\lambda)$ es una función decreciente con $\lambda$, estamos en condiciones de escribir el test uniformemente más potente (UMP) de la siguiente forma:
 
 $$
 \begin{aligned}
-    \delta(\underset{\bar{}}{x}) =
+    \delta(\underset{\bar{}}{X}) =
     \begin{cases}
-      1 \quad si \quad -\sum_{i=1}^n x_i > K_{\alpha} \\
+      1 \quad si \quad -\sum_{i=1}^n X_i > K_{\alpha} \\
       0 \quad si \quad no
     \end{cases}\,.
 \end{aligned}
@@ -127,7 +128,7 @@ con $K_{\alpha}$ tal que:
 
 $$
 \begin{aligned}
-  P_{\lambda=0.5}[\delta(\underset{\bar{}}{x})=1] = \alpha
+  P_{\lambda=0.5}[\delta(\underset{\bar{}}{X})=1] = \alpha
 \end{aligned}
 $$
 
@@ -135,19 +136,19 @@ Entonces, lo siguiente que tenemos que hacer es calcular $K_{\alpha}$, y para es
 
 $$
 \begin{aligned}
-  \sum_{i=1}^n x_i &\sim  \Gamma(n,\frac{1}{2}) \\
+  \sum_{i=1}^n X_i &\sim  \Gamma(n,\frac{1}{2}) \\
   &\sim  \chi^2_{2n}
 \end{aligned}
 $$
 
-Es decir, la suma de variables aleatorias $X_i \overset{i.i.d}\sim \mathcal E(\frac{1}{2})$ tiene distribución $\chi^2_{2n}$. Entonces ahora vayamos a despejar $K_{\alpha}$ de la condición $P_{\lambda=0.5}[\delta(\underset{\bar{}}{x})=1] = \alpha$
+Es decir, la suma de variables aleatorias $X_i \overset{i.i.d}\sim \mathcal E(\frac{1}{2})$ tiene distribución $\chi^2_{2n}$. Entonces ahora vayamos a despejar $K_{\alpha}$ de la condición $P_{\lambda=0.5}[\delta(\underset{\bar{}}{X})=1] = \alpha$
 
 $$
 \begin{aligned}
-  \alpha &= P_{\lambda=0.5}[\delta(\underset{\bar{}}{x})=1] \\
+  \alpha &= P_{\lambda=0.5}[\delta(\underset{\bar{}}{X})=1] \\
   &= P_{\lambda=0.5}(-\sum_{i=1}^n X_i > K_{\alpha}) \\
-  &= P_{\lambda=0.5}(\sum_{i=1}^n X_i > -K_{\alpha}) \\
-  &= P_{\lambda=0.5}(\sum_{i=1}^n X_i > \chi^2_{2n,\alpha}) 
+  &= P_{\lambda=0.5}(\sum_{i=1}^n X_i < -K_{\alpha}) \\
+  &= P_{\lambda=0.5}(\sum_{i=1}^n X_i < \chi^2_{2n,\alpha}) 
 \end{aligned}
 $$
 
@@ -236,7 +237,7 @@ Que corresponde con el estadístico $T_2$ planteado en el enunciado. Luego, hall
 
 $$
 \begin{aligned}
-  P_{\lambda=0.5}\left(\sqrt{n} \frac{\bar{X}-2}{2}\right) &\overset{n \to \infty}\rightarrow \alpha
+  P_{\lambda=0.5}\left(\sqrt{n} \frac{\bar{X}-2}{2}\right < K'_{\alpha}$) &\overset{n \to \infty}\rightarrow \alpha
 \end{aligned}
 $$
 
