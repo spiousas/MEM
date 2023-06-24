@@ -164,7 +164,7 @@ alpha <- .05
 dist <- tibble(x = seq(0, 50, .01),
                y = dchisq(x = x, df = df))
 
-cuantil <- qchisq(p = 1-alpha, df = df)
+cuantil <- qchisq(p = alpha, df = df)
 
 dist %>%
   ggplot(aes(x = x, y = y)) +
@@ -173,17 +173,17 @@ dist %>%
              color = "red") +
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
-  geom_area(data = dist %>% filter(x>cuantil),
+  geom_area(data = dist %>% filter(x<cuantil),
             aes(x = x, y = y, linetype = "dashed"),
             alpha = .4) +
   geom_line(color = "red") +
   annotate("text", x = cuantil, 
            y = dchisq(x = cuantil, df = df), 
            label = TeX("$\\chi^2_{2n,\\alpha}$"), 
-           hjust = -.1,
+           hjust = 1.1,
            vjust = -.1) +
   annotate("text", 
-           x = 33, 
+           x = 9, 
            y =0.005, 
            label = TeX("$\\alpha$")) +
   labs(x = "x", 
@@ -237,7 +237,7 @@ Que corresponde con el estadístico $T_2$ planteado en el enunciado. Luego, hall
 
 $$
 \begin{aligned}
-  P_{\lambda=0.5}\left(\sqrt{n} \frac{\bar{X}-2}{2}\right < K'_{\alpha}$) &\overset{n \to \infty}\rightarrow \alpha
+  P_{\lambda=0.5}\left(\sqrt{n} \frac{\bar{X}-2}{2}\right < K'_{\alpha}) &\overset{n \to \infty}\rightarrow \alpha
 \end{aligned}
 $$
 
@@ -335,5 +335,29 @@ tabla %>%
 ```
 
 ## d. Para cada uno de los valores propuestos de $n$ y eligiendo una grilla de valores para $\lambda$, aproximar y graficar la función potencia.
+
+```{r}
+# La función simulación simula el experimento y se fija el resultado del test
+set.seed(123)
+ns <- c(10,30,100,1000)
+lambdas <- seq(0.1,1,.01)
+
+potencias <- expand_grid(n = ns, Lambda = lambdas) %>%
+  rowwise() %>%
+  mutate(UMP = simulacion_UMP(Nrep = 10000, n = n, lambda = Lambda),
+         Asintotico = simulacion_asin(Nrep = 1000, n = n, lambda = Lambda)) %>%
+  pivot_longer(cols = !c(n, Lambda), names_to = "Test", values_to = "Potencia")
+
+potencias %>% ggplot(aes(x = Lambda,
+                         y = Potencia,
+                         color = Test)) +
+  geom_vline(xintercept = 0.5, color = "gray70", linetype = "dashed") +
+  geom_hline(yintercept = 0.05, color = "gray70", linetype = "dashed") +
+  geom_line(linewidth = 1, alpha = .6) +
+  facet_wrap(.~n, labeller = label_both) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
 
 ## e. Concluir en base a los resultados observados.
