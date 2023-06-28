@@ -348,16 +348,26 @@ Y, como la derivada de $g(.)$ es $\frac{-1}{(.)^2}$, al evaluarla en $\frac{1}{\
 $$
 \begin{aligned}
 \sqrt{n} (\bar{X_n}^{-1}-\theta) &\xrightarrow{d} \mathcal{N}(0, \frac{1}{\theta^2} (\theta^2)^2) \\
-\sqrt{n} (\bar{X_n}^{-1}-\theta) &\xrightarrow{d} \mathcal{N}(0, \theta^2) \\
-(\bar{X_n}^{-1}-\theta) &\xrightarrow{d} \mathcal{N}(0, \frac{\theta^2}{n}) \\
-\bar{X_n}^{-1} &\xrightarrow{d} \mathcal{N}(\theta, \frac{\theta^2}{n}) \\
-\hat\theta &\xrightarrow{d} \mathcal{N}(\theta, \frac{\theta^2}{n}) 
+\sqrt{n} (\bar{X_n}^{-1}-\theta) &\xrightarrow{d} \mathcal{N}(0, \theta^2)
 \end{aligned}
 $$
 
-Es decir, la distribución asintótica del estimador es una normal con media $\theta$ y varianza $\frac{\theta^2}{n}$.
+O sea que la varianza asintótica sería $\theta^2$. 
 
 **Extra computacional**
+
+Podemos trabajar un poco con la distribución aproximada para un $n$ grande (pero no infinito).
+
+$$
+\begin{aligned}
+\sqrt{n} (\bar{X_n}^{-1}-\theta) &\approx \mathcal{N}(0, \theta^2) \\
+(\bar{X_n}^{-1}-\theta) &\approx \mathcal{N}(0, \frac{\theta^2}{n}) \\
+\bar{X_n}^{-1} &\approx \mathcal{N}(\theta, \frac{\theta^2}{n}) \\
+\hat\theta &\approx \mathcal{N}(\theta, \frac{\theta^2}{n}) 
+\end{aligned}
+$$
+
+Es decir, si el $n$ es "grande", la distribución del estimador es una normal con media $\theta$ y varianza $\frac{\theta^2}{n}$.
 
 Vamos a simular unas estimaciones de variables aleatorias i.i.d. con distribución exponencial y ver la distribución de los estimadores. Vamos a correr $1000$ repeticiones (`Nrep`) del experimento en el que medimos $50$ realizaciones (`n`) de variables exponenciales de parámetro $5$ (`theta`). Al histograma de las observaciones le vamos a superponer en rojo la distribución asintótica.
 

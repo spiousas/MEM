@@ -156,7 +156,7 @@ Es decir, $-K_{\alpha}$ es igual al cuantil $\alpha$ de la distribución Chi cua
 
 Por ejemplo, en la figura a continuación podemos ver, para $n=10$ y $\alpha=0.05$, el cuantil de la distribución (línea roja vertical, $\chi^2_{2n,\alpha}$) junto con el área gris que representa a la probabilidad acumulada de $\alpha = 0.05$.
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, fig.height = 4, fig.width = 4, fig.align = "center"}
 n <- 10
 df <- 2*n
 alpha <- .05
@@ -255,7 +255,7 @@ $$
 
 En este caso el cuantil que tenemos que buscar es el de una distribución $\mathcal{N}(0,1)$. Por ejemplo, para $\alpha=.05$:
 
-```{r, echo=FALSE, warning=FALSE}
+```{r, echo=FALSE, warning=FALSE, fig.height = 4, fig.width = 4, fig.align = "center"}
 n <- 10
 df <- 2*n
 alpha <- .05
@@ -293,13 +293,14 @@ dist %>%
 
 ## c. Realizar la simulación pedida para los diferentes valores de $n$, calcular el nivel empírico y expresarlo en una tabla.
 
-Ahora lo que vamos a hacer es simular el "experimento" y medir la cantidad de veces que se rechazó $H_0$ para ver como se relaciona eso con el $n$ para cada uno de los tests propuestos (el UMP y el asintótico).
+Ahora lo que vamos a hacer es simular el "experimento" y medir la cantidad de veces que se rechazó $H_0$ para ver como se relaciona eso con el $n$ para cada uno de los tests propuestos (el UMP y el asintótico). Vamos a realizar `Nrep=10000` simulaciones de cada test con valores de `n = c(10,30,100,1000)`.
 
 ```{r}
 # La función simulación simula el experimento y se fija el resultado del test
 simulacion_UMP <- function(Nrep, n, lambda){
   rechazos <- rep(NA,Nrep)
   for (i in 1:Nrep) {
+    set.seed(2*i) # Para tener la misma muestra para cada simulación
     muestra <- rexp(n, lambda)
     estadistico <- sum(muestra) # El estadístico del test UMP
     rechazos[i] <- pchisq(estadistico, 2*n)<0.05 # El test compara con Chisq
@@ -312,6 +313,7 @@ simulacion_UMP <- function(Nrep, n, lambda){
 simulacion_asin <- function(Nrep, n, lambda){
   rechazos <- rep(NA,Nrep)
   for (i in 1:Nrep) {
+    set.seed(2*i) # Para tener la misma muestra para cada simulación
     muestra <- rexp(n, lambda)
     estadistico <- sqrt(n)*(mean(muestra)-2)/2 # El estadístico del test asintótico
     rechazos[i] <- pnorm(estadistico, 0, 1)<0.05 # El test compara con Norm
@@ -336,18 +338,22 @@ tabla %>%
 
 ## d. Para cada uno de los valores propuestos de $n$ y eligiendo una grilla de valores para $\lambda$, aproximar y graficar la función potencia.
 
-```{r}
+Para estas simulaciones vamos a utilizar el mismo `Nrep` y los mismos valores de `n` del inciso anterior pero nos vamos a mover del $\lambda = 0.5$ y vamos a barrer valores de lambda desde $0.1$ a $1$, con un paso de $0.01$.
+
+```{r, fig.height = 8, fig.width = 8, fig.align = "center"}
 # La función simulación simula el experimento y se fija el resultado del test
 set.seed(123)
-ns <- c(10,30,100,1000)
-lambdas <- seq(0.1,1,.01)
+ns <- c(10,30,100,1000) # Posibles ns
+lambdas <- seq(0.1,1,.01) # Rango de lambdas
 
 potencias <- expand_grid(n = ns, Lambda = lambdas) %>%
   rowwise() %>%
   mutate(UMP = simulacion_UMP(Nrep = 10000, n = n, lambda = Lambda),
          Asintotico = simulacion_asin(Nrep = 1000, n = n, lambda = Lambda)) %>%
   pivot_longer(cols = !c(n, Lambda), names_to = "Test", values_to = "Potencia")
+```
 
+```{r, echo = FALSE, fig.height = 8, fig.width = 8, fig.align = "center"}
 potencias %>% ggplot(aes(x = Lambda,
                          y = Potencia,
                          color = Test)) +
@@ -359,5 +365,54 @@ potencias %>% ggplot(aes(x = Lambda,
   theme(legend.position = "top")
 ```
 
+En la figura podemos ver la función potencia $adsf$ para el test UMP (celeste) y asintótico (rosa) en función del $\lambda$ y separado para distintos valores de n. Se observa que para n pequeño (<100) hay una diferencia en la potencia empírica a favor del test UMP, que en esta figura puede verse principalmente para la zona de $\lambda>0.5$. Si quisiéramos ver más en detalle que pasa en la región de $\Theta_1$, podemos hacer un zoom.
+
+```{r, echo = FALSE, fig.height = 8, fig.width = 8, fig.align = "center"}
+potencias %>% 
+    filter(Lambda<=0.5) %>%
+  ggplot(aes(x = Lambda,
+             y = Potencia,
+             color = Test)) +
+  geom_vline(xintercept = 0.5, color = "gray70", linetype = "dashed") +
+  geom_hline(yintercept = 0.05, color = "gray70", linetype = "dashed") +
+  geom_line(linewidth = 1, alpha = .6) +
+  geom_point(data = potencias %>% filter(Lambda==0.5), size = 3, pch = 18) +
+  facet_wrap(.~n, labeller = label_both) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+Acá podemos er claramente que para $n<100$ también resulta conveniente (desde el punto de vista de la potencia) utilizar el test UMP. También se ve claramente como la potencia para $\lambda=0.5$ está muy cercana al $0.05$ para el test UMP (con alguna variabilidad porque son simulaciones) pero da bastante inferior para el test asintótico.
+
+Otra cosa que podemos ver es como varía la potencia para cada test con el $n$. 
+
+```{r, echo = FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
+potencias %>% ggplot(aes(x = Lambda,
+                         y = Potencia,
+                         color = factor(n))) +
+  geom_vline(xintercept = 0.5, color = "gray70", linetype = "dashed") +
+  geom_hline(yintercept = 0.05, color = "gray70", linetype = "dashed") +
+  geom_line(linewidth = 1, alpha = .6) +
+  facet_wrap(.~Test, labeller = label_both) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+En este caso la conclusión principal, y algo trivial, es que al aumentar el $n$ la potencia "mejora" (la pendiente es más empinada). Y lo mismo lo podemos ver para los $\lambda<0.5$
+
+```{r, echo = FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
+potencias %>% 
+  filter(Lambda<=0.5) %>%
+  ggplot(aes(x = Lambda,
+             y = Potencia,
+             color = factor(n))) +
+  geom_vline(xintercept = 0.5, color = "gray70", linetype = "dashed") +
+  geom_hline(yintercept = 0.05, color = "gray70", linetype = "dashed") +
+  geom_line(linewidth = 1, alpha = .6) +
+  geom_point(data = potencias %>% filter(Lambda==0.5), size = 5, pch = 18) +
+  facet_wrap(.~Test, labeller = label_both) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
 
 ## e. Concluir en base a los resultados observados.

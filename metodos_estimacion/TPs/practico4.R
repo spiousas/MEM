@@ -165,7 +165,7 @@ cubrimientos <- expand_grid(n = c(5, 10, 30, 50),
                                             seed = 1)$longitud) 
 cubrimientos
 
-# Si bien el cubrimiento depende s'olo de n, la longitud es proporcional a sigma.
+# Si bien el cubrimiento depende , la longitud es proporcional a sigma.
 
 # Ejercicio 8 ####
 Nrep <- 1000

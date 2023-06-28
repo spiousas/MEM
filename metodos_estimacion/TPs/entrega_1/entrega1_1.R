@@ -1,7 +1,7 @@
 library(here)
 library(tidyverse)
 
-data <- read_csv(here("metodos_estimacion/TPs/entregas/entrega1_1-data.csv")) %>%
+data <- read_csv(here("metodos_estimacion/TPs/entrega_1/entrega1_1-data.csv")) %>%
   pivot_longer(cols = !NOMBRE, names_to = "n", values_to = "p") %>%
   mutate(n = as.numeric(n))
 data

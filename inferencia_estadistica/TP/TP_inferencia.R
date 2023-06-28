@@ -29,3 +29,4 @@ rownames(tabla)<-c("Test 1","Test 2")
 for (j in 1:4) {
   tabla[,j]<-simulacion(10000,enes[j],0.5)
 }
+tabla
