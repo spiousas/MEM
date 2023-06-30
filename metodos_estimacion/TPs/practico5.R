@@ -3,6 +3,7 @@ library(knitr)
 library(kableExtra)
 
 # Ejercicio 1 ####
+# Dos muestras con sigma conocido
 mean_x <- 15.22
 mean_y <- 15.30
 n1 <- 12
@@ -11,17 +12,22 @@ sigma <- 0.1
 level <- 0.95
 alpha <- 1 - level
 
+# Saco el sigma afuera porque son iguales, 
+# por eso sqrt(sigma1/n1 + sigma2/n2) -> sigma * sqrt(1/n1 + 1/n2)
 mean_x - mean_y - qnorm(1-alpha/2) * sigma * sqrt(1/n1 + 1/n2)
 mean_x - mean_y + qnorm(1-alpha/2) * sigma * sqrt(1/n1 + 1/n2)
 
 # Ejercicio 2 ####
+# Muestras apareadas sigma desconocido
 x <- c(1.43, 1.27, 1.48, 1.53, 1.71, 1.72)
 y <- c(1.42, 1.24, 1.39, 1.41, 1.6, 1.61)
+# Creo una nueva muestra que es de la variable aleatoria Z = X-Y
 z <- x-y
 n <- length(z)
 level <- 0.95
 alpha <- 1 - level
 
+# sqrt(var(z)) es S_z, la estimación insesgada de la varianza de Z
 mean(z) - qt(df = n-1, p = 1-alpha/2) * sqrt(var(z)/n)
 mean(z) + qt(df = n-1, p = 1-alpha/2) * sqrt(var(z)/n)
 
@@ -37,6 +43,7 @@ n2 <- length(y)
 m2 <- mean(y)
 s22 <- var(y)
 
+# Esta es la s pooleada al cuadrado
 sp2 <- (s12 * (n1-1) + s22 * (n2-1)) / (n1+n2-2)
 
 level <- 0.95
@@ -44,8 +51,11 @@ alpha <- 1 - level
 
 m1 - m2 - qt(df = n1+n2-2, p = 1-alpha/2) * sqrt(sp2 * (1/n1 + 1/n2))
 m1 - m2 + qt(df = n1+n2-2, p = 1-alpha/2) * sqrt(sp2 * (1/n1 + 1/n2))
+# sqrt(sp2 * (1/n1 + 1/n2)) podría ser también sp * sqrt(1/n1 + 1/n2)
 
 t.test(x, y, level = level, var.equal = TRUE)
+# Asumimos varianzas desconocidas e iguales y que la población es normal.
+# Podemos afirmar, con una confianza de 95%, que la gaseosa B tiene más azucar.
 
 # Ejercicio 4 ####
 n <- 100
@@ -62,6 +72,8 @@ phat + qnorm(1-alfa/2) * sqrt(phat*(1-phat)/n)
 ## b-ii ####
 lmax <- 0.1
 
+# Sale de que L = qnorm(1-alfa/2) * sqrt(phat*(1-phat)/n) y al calcular la esperanza 
+# acotar p = 1/2 (máxima varianza) -> qnorm(1-alfa/2) * sqrt(1/n) = L
 ceiling((qnorm(1-alfa/2) / lmax)^2)
 
 # Ejercicio 5 ####
@@ -72,6 +84,8 @@ nivel <- 0.9
 alfa <- 1 - nivel
 
 # A partir de EMV
+# Esto sale de reemplazar la varianza por su estiamdor (mean(X)) o de plantear:
+# sqrt(n*I1(lambda)) * (mean(X)-lambda) -D-> N(0,1)
 CIpoisEMV <- function(x, nivel) {
   n <- length(x)  
   alfa <- 1 - nivel
@@ -97,7 +111,8 @@ comparaCI(2, nivel)
 
 data <- expand_grid(method = c("EMV", "full"), n = 5:150) %>%
   rowwise() %>%
-  mutate(center = if_else(method == "EMV", comparaCI(n, nivel)[1], comparaCI(n, nivel)[4]),
+  mutate(nivel = .95,
+         center = if_else(method == "EMV", comparaCI(n, nivel)[1], comparaCI(n, nivel)[4]),
          min = if_else(method == "EMV", comparaCI(n, nivel)[2], comparaCI(n, nivel)[5]),
          max = if_else(method == "EMV", comparaCI(n, nivel)[3], comparaCI(n, nivel)[6]))
 
@@ -111,6 +126,8 @@ data %>% ggplot(aes(x = n,
   theme_bw()
 
 # Ejercicio 7 ####
+# Esta función lo caclula para el método 1 (reemplazando p por phat en la varianza)
+# y para el método 2, que es despejar la cuadrática
 estimar_p_intervalo <- function(nivel, x, metodo = 1) {
   alfa <- 1 - nivel
   Z <- qnorm(1-alfa/2)
@@ -127,9 +144,11 @@ estimar_p_intervalo <- function(nivel, x, metodo = 1) {
   }
   int
 }
-x <- rbinom(prob = .5, n = 100000, size = 1)
+x <- rbinom(prob = .5, n = 100, size = 1)
+estimar_p_intervalo(.95, x, metodo = 1)
 estimar_p_intervalo(.95, x, metodo = 2)
 
+# Esta función lo caclula para el método 1 (reemplazando p por phat en la varianza)
 hallar_n_p <- function(nivel, lmax) {
   alfa <- 1 - nivel
   ceiling((qnorm(1-alfa/2) / lmax)^2) 
@@ -137,6 +156,8 @@ hallar_n_p <- function(nivel, lmax) {
 hallar_n_p(.95, 0.1)
 
 # Ejercicio 8 ####
+# Acá calculamos el cubrimiento empírico para ambos intervalos.
+
 calcular_cubrimiento_empirico <- function(p, nivel, n, Nrep, semilla, metodo = 1) {
   cubrimiento <- rep(NA, Nrep)
   long <- rep(NA, Nrep)
@@ -157,6 +178,7 @@ data_1 <- expand_grid(n = c(5, 10, 30, 50, 100, 1000),
   rowwise() %>%
   mutate(result = calcular_cubrimiento_empirico(p = p, nivel = .95, n = n, Nrep = 1000, semilla = 2, metodo = 1)) %>%
   pivot_wider(names_from = n, values_from = result) 
+data_1
 
 data_1 %>%
   kbl(caption = "Metodo 1", # Adding caption  
@@ -168,9 +190,11 @@ data_2 <- expand_grid(n = c(5, 10, 30, 50, 100, 1000),
   rowwise() %>%
   mutate(result = calcular_cubrimiento_empirico(p = p, nivel = .95, n = n, Nrep = 1000, semilla = 2, metodo = 2)) %>%
   pivot_wider(names_from = n, values_from = result) 
+data_2
 
 data_2 %>%
   kbl(caption = "Metodo 2", # Adding caption  
       format = "latex") %>% # Output format = latex 
   kable_classic(html_font = "Cambria") # Font = Cambria 
 
+# Una cosa que se ve es que cuando p = 0.5 ambos intervalos son mas parecidos que cuando es 0.1

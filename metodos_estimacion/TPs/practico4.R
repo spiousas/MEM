@@ -2,25 +2,30 @@
 pacman::p_load(tidyverse)
 
 # Ejercicio 1 ####
+# Una muestra con sigma conocido
 x <- c(5.1, 5.2, 5.6, 5.1, 5.5, 5.8, 5.9, 4.9, 5.2, 5.6)
 
 ## a ####
 beta <- 0.05
 var <- 1/4
-mean(x)+qnorm(beta/2)*sqrt(var/length(x))
+# Tambi'en puede ser mean(x)+qnorm(beta/2)*sqrt(var/length(x))
+mean(x)-qnorm(1-beta/2)*sqrt(var/length(x))
 mean(x)+qnorm(1-beta/2)*sqrt(var/length(x))
 
 ## b ####
-(2*19.6)^2*var
+# Es de los pocos casos en los que la puedo calcular y es n >= (2*qnorm(1-beta/2)/l)^2 * sigma^2
+lmax <- 0.1
+ceiling( (2*qnorm(1-beta/2)/lmax)^2 * var )
 
 # Ejercicio 2 ####
 intervalo_mu_exacto <- function(nivel, desvio, x) {
-  ci_low <- mean(x)+qnorm(nivel/2)*desvio*sqrt(1/length(x))
-  ci_up <- mean(x)+qnorm(1-nivel/2)*desvio*sqrt(1/length(x))
+  alfa <- 1-nivel
+  ci_low <- mean(x)-qnorm(1-alfa/2)*desvio*sqrt(1/length(x))
+  ci_up <- mean(x)+qnorm(1-alfa/2)*desvio*sqrt(1/length(x))
   c(ci_low, ci_up)
 }
 
-intervalo_mu_exacto(nivel = beta, 
+intervalo_mu_exacto(nivel = 1-beta, 
                     desvio = sqrt(var), 
                     x = x)
 
@@ -41,7 +46,7 @@ cubrimiento_empirico_mu <- function(mu, sigma, nivel, n, Nrep, seed) {
 
 cubrimiento_empirico_mu(mu = 5, 
                         sigma = 0.2, 
-                        nivel = 0.05, 
+                        nivel = 0.95, 
                         n = 100, 
                         Nrep = 100000, 
                         seed = 1)
@@ -50,7 +55,7 @@ cubrimiento_empirico_mu(mu = 5,
 cubrimientos <- expand_grid(n = c(5, 10, 30, 50),
                             sigma = c(0.1, 1, 10),
                             Nrep = 1000, 
-                            nivel = 0.05,
+                            nivel = 0.95,
                             mu = 0) %>%
   rowwise() %>%
   mutate(score = cubrimiento_empirico_mu(mu = mu, 
@@ -59,18 +64,20 @@ cubrimientos <- expand_grid(n = c(5, 10, 30, 50),
                                          n = n, 
                                          Nrep = Nrep, 
                                          seed = 1)) %>%
-  select(all_of(c("sigma", "n", "score"))) %>%
+  dplyr::select(all_of(c("sigma", "n", "score"))) %>%
   pivot_wider(names_from = n, values_from = score)
 cubrimientos
 
 # El cubrimiento depende de n y no de sigma.
 
 # Ejercicio 4 ####
+# Es lo mismo que en el 1 b pero hecho función
 hallar_n_mu <- function(sigma, nivel, L) {
-  ceiling((2*qnorm(1-nivel/2)/L)^2 * sigma^2)
+  alfa <- 1-nivel
+  ceiling((2*qnorm(1-alfa/2)/L)^2 * sigma^2)
 }
 
-hallar_n_mu(sigma = 1/2, nivel = 0.05, L = 0.1)
+hallar_n_mu(sigma = 1/2, nivel = 0.95, L = 0.1)
 
 # Ejercicio 5 ####
 Nrep <- 1000
@@ -99,32 +106,41 @@ densities %>%
   theme_bw()
 
 # Ejercicio 6 ####
-intervalo_mu_exacto <- function(nivel, desvio, x) {
+intervalo_mu_exacto <- function(nivel, desvio, x, verbose = F) {
   n <- length(x)
+  alfa <- 1-nivel
+  if (verbose) {
+    cat(paste0("El alfa es: ", alfa, " - Y el nivel es: ", nivel, "\n")) 
+  }
   if (is.null(desvio)) {
-    ci_low <- mean(x)+qt(df = n-1, p = nivel/2)*sd(x)*sqrt(1/n)
-    ci_up <- mean(x)+qt(df = n-1, p = 1-nivel/2)*sd(x)*sqrt(1/n)
+    ci_low <- mean(x)+qt(df = n-1, p = alfa/2)*sd(x)*sqrt(1/n)
+    ci_up <- mean(x)+qt(df = n-1, p = 1-alfa/2)*sd(x)*sqrt(1/n)
   } else {
-    ci_low <- mean(x)+qnorm(p = nivel/2)*desvio*sqrt(1/n)
-    ci_up <- mean(x)+qnorm(p = 1-nivel/2)*desvio*sqrt(1/n)
+    ci_low <- mean(x)+qnorm(p = alfa/2)*desvio*sqrt(1/n)
+    ci_up <- mean(x)+qnorm(p = 1-alfa/2)*desvio*sqrt(1/n)
   }
   c(ci_low, ci_up)
 }
 
-intervalo_mu_exacto(nivel = beta, 
+intervalo_mu_exacto(nivel = 1-beta, 
                     desvio = sqrt(var), 
-                    x = x)
+                    x = x,
+                    verbose = T)
 
-intervalo_mu_exacto(nivel = beta, 
+intervalo_mu_exacto(nivel = 1-beta, 
                     desvio = NULL, 
-                    x = x)
+                    x = x,
+                    verbose = T)
 
 # Ejercicio 7 ####
 ## a #### 
-cubrimiento_empirico_mu <- function(mu, sigma, nivel, n, Nrep, seed) {
+cubrimiento_empirico_mu <- function(mu, sigma, nivel, n, Nrep, seed, verbose = F) {
   set.seed(seed)
   cubrimiento <- rep(NA, Nrep)
   longitud <- rep(NA, Nrep)
+  if (verbose) {
+    cat(paste0("El alfa es: ", 1-nivel, " - Y el nivel es: ", nivel, "\n"))   
+  }
   for (i in 1:Nrep) {
     x <- rnorm(n = n, mean = mu, sd = sigma)
     ci <- intervalo_mu_exacto(nivel = nivel, 
@@ -139,16 +155,17 @@ cubrimiento_empirico_mu <- function(mu, sigma, nivel, n, Nrep, seed) {
 
 cubrimiento_empirico_mu(mu = 5, 
                         sigma = 0.2, 
-                        nivel = 0.05, 
+                        nivel = 0.95, 
                         n = 100, 
                         Nrep = 10000, 
-                        seed = 5)
+                        seed = 5,
+                        verbose = T)
 
 ## b ####
 cubrimientos <- expand_grid(n = c(5, 10, 30, 50),
                             sigma = c(0.1, 1, 10),
                             Nrep = 1000, 
-                            nivel = 0.05,
+                            nivel = 0.95,
                             mu = 0) %>%
   rowwise() %>%
   mutate(score = cubrimiento_empirico_mu(mu = mu, 
@@ -198,23 +215,33 @@ x <- c(1.52, 1.65, 1.72, 1.65, 1.72, 1.83, 1.62, 1.75, 1.72, 1.68, 1.51, 1.65, 1
        1.65, 1.61, 1.70, 1.60, 1.73, 1.61, 1.52, 1.81, 1.72, 1.50, 1.82, 1.65)
 
 ## a ####
-intervalo_mu_exacto(nivel = 0.05, 
+intervalo_mu_exacto(nivel = 0.95, 
                     desvio = NULL, 
-                    x = x)
+                    x = x, 
+                    verbose = T)
 
 ## b ####
-intervalo_sd2_exacto <- function(nivel, x) {
+intervalo_sd2_exacto <- function(nivel, x, verbose = F) {
+  alfa <- 1-nivel
   n <- length(x)
-  ci_low <- (n-1)*sd(x)^2/(qchisq(p = 1-nivel/2, df = n-1))
-  ci_up <- (n-1)*sd(x)^2/(qchisq(p = nivel/2, df = n-1))
+  if (verbose) {
+    cat(paste0("El alfa es: ", 1-nivel, " - Y el nivel es: ", nivel, "\n"))   
+  }
+  ci_low <- (n-1)*sd(x)^2/(qchisq(p = 1-alfa/2, df = n-1))
+  ci_up <- (n-1)*sd(x)^2/(qchisq(p = alfa/2, df = n-1))
   c(ci_low, ci_up)
 }
 
-intervalo_sd2_exacto(nivel = 0.1, x = x)
+intervalo_sd2_exacto(nivel = 0.9, 
+                     x = x,
+                     verbose = T)
 
-cubrimiento_empirico_sd2 <- function(sigma, nivel, n, Nrep, seed) {
+cubrimiento_empirico_sd2 <- function(sigma, nivel, n, Nrep, seed, verbose = F) {
   set.seed(seed)
   cubrimiento <- rep(NA, Nrep)
+  if (verbose) {
+    cat(paste0("El alfa es: ", 1-nivel, " - Y el nivel es: ", nivel, "\n"))   
+  }
   for (i in 1:Nrep) {
     x <- rnorm(n = n, mean = 0, sd = sigma)
     ci <- intervalo_sd2_exacto(nivel = nivel, 
@@ -225,10 +252,11 @@ cubrimiento_empirico_sd2 <- function(sigma, nivel, n, Nrep, seed) {
 }
 
 cubrimiento_empirico_sd2(sigma = 0.2, 
-                         nivel = 0.05, 
+                         nivel = 0.9, 
                          n = 100, 
                          Nrep = 10000, 
-                         seed = 1)
+                         seed = 1,
+                         verbose = T)
 
 # Ejercicio 10 ####
 intervalo_lambda_exacto <- function(alpha, x) {

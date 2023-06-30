@@ -57,7 +57,7 @@ data_2 <- expand_grid(n = c(5, 10, 30, 50, 100, 1000),
   mutate(result = calcular_cubrimiento_empirico(p = p, nivel = .95, n = n, Nrep = 1000, semilla = 2, metodo = 2)) %>%
   pivot_wider(names_from = n, values_from = result) 
 
-data_2 %>%
+data_2 %>%O sea,
   kbl(caption = "Metodo 2", # Adding caption  
       format = "latex") %>% # Output format = latex 
   kable_classic(html_font = "Cambria") # Font = Cambria 
