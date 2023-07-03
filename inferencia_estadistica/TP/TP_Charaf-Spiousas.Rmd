@@ -22,7 +22,7 @@ Se proponen dos alternativas, con respecto a la construcción del test de hipót
 
 2. Armar un test de nivel asintótico $\alpha$ a partir del estadístico $T_2 = \sqrt{n} \frac{\bar{X}-2}{2}$
 
-El objetivo es comparar ambos métodos mediante una simulación en **R**, para luego elegir uno de ellos y realizar el experimento. Para cada valor de $n \in {10, 30, 100, 1000}$ se quiere estudiar el nivel empírico, y compararlo para las dos alternativas propuestas. También se desea aproximar y graficar la función potencia, y comparar.
+El objetivo es comparar ambos métodos mediante una simulación en **R**, para luego elegir uno de ellos y realizar el experimento. Para cada valor de $n \in \{10, 30, 100, 1000\}$ se quiere estudiar el nivel empírico, y compararlo para las dos alternativas propuestas. También se desea aproximar y graficar la función potencia, y comparar.
 
 Consideramos el siguiente procedimiento para la simulación:
 
@@ -72,7 +72,7 @@ O sea que la función de densidad de cada $X$ es:
 
 $$
 \begin{aligned}
-f_X(x) = \lambda e^{-\lambda x} \mathcal{I}_{x \geq0}
+f_X(x) = \lambda e^{-\lambda x} \mathcal{I}_{\{x \geq0\}}
 \end{aligned}
 $$
 
@@ -80,15 +80,15 @@ Justamente por ser independientes, la densidad condicional se puede escribir com
 
 $$
 \begin{aligned}
-f(\underset{\bar{}}{x}) = \prod_{i=1}^{n} \lambda e^{-\lambda x_i} \mathcal{I}_{x_i \geq0}
+f(\underset{\bar{}}{x}) = \prod_{i=1}^{n} \lambda e^{-\lambda x_i} \mathcal{I}_{\{x_i \geq0\}}
 \end{aligned}
 $$
 
-Y por ser identicamente distribuidas podemos operar y llegar a:
+Y por ser id?nticamente distribuidas podemos operar y llegar a:
 
 $$
 \begin{aligned}
-f(\underset{\bar{}}{x}) = \lambda^{n} e^{-\lambda \sum_{i=1}^n x_i} \prod_{i=1}^{n} \mathcal{I}_{x_i \geq0}
+f(\underset{\bar{}}{x}) = \lambda^{n} e^{-\lambda \sum_{i=1}^n x_i} \prod_{i=1}^{n} \mathcal{I}_{\{x_i \geq0\}}
 \end{aligned}
 $$
 
@@ -99,7 +99,7 @@ $$
 A(\lambda) &= \lambda^n \\
 C(\lambda) &= -\lambda \\
 r(\underset{\bar{}}{x}) &= \sum_{i=1}^n x_i \\
-h(\underset{\bar{}}{x}) &= \prod_{i=1}^n \mathcal{I}_{x_i \geq0}
+h(\underset{\bar{}}{x}) &= \prod_{i=1}^n \mathcal{I}_{\{x_i \geq0\}}
 \end{aligned}
 $$
 
@@ -120,7 +120,7 @@ $$
     \begin{cases}
       1 \quad si \quad -\sum_{i=1}^n X_i > K_{\alpha} \\
       0 \quad si \quad no
-    \end{cases}\,.
+    \end{cases}\, ,
 \end{aligned}
 $$
 
@@ -129,14 +129,14 @@ con $K_{\alpha}$ tal que:
 $$
 \begin{aligned}
   P_{\lambda=0.5}[\delta(\underset{\bar{}}{X})=1] = \alpha
-\end{aligned}
+\end{aligned} .
 $$
 
-Entonces, lo siguiente que tenemos que hacer es calcular $K_{\alpha}$, y para esto vemos a "pararnos" en un mundo en el que $H_0$ es verdadera. Bajo el mundo $H_0$, vamos a considerar al parámetro como $\lambda = 0.5$, por lo tanto, la distribución de cada una de las variables aleatorias será $X_i \overset{i.i.d}\sim \mathcal E(\frac{1}{2})$. Con esto en mente, podemos determinar la distribución de la suma de variables aleatorias (que es el estadístico $T_1$):
+Entonces, lo siguiente que tenemos que hacer es calcular $K_{\alpha}$, y para esto vemos a "pararnos" en un mundo en el que $H_0$ es verdadera. Bajo el mundo $H_0$, vamos a considerar al parámetro como $\lambda = 0.5$ y, por lo tanto, la distribución de cada una de las variables aleatorias será $X_i \overset{i.i.d}\sim \mathcal E(\frac{1}{2})$. Con esto en mente, podemos determinar la distribución de la suma de variables aleatorias (que es el estadístico $T_1$):
 
 $$
 \begin{aligned}
-  \sum_{i=1}^n X_i &\sim  \Gamma(n,\frac{1}{2}) \\
+  \sum_{i=1}^n X_i &\sim  \Gamma\left(n,\frac{1}{2}\right) \\
   &\sim  \chi^2_{2n}
 \end{aligned}
 $$
@@ -154,9 +154,9 @@ $$
 
 Es decir, $-K_{\alpha}$ es igual al cuantil $\alpha$ de la distribución Chi cuadrado de grados de libertad $2n$ ($\chi^2_{2n,\alpha}$).
 
-Por ejemplo, en la figura a continuación podemos ver, para $n=10$ y $\alpha=0.05$, el cuantil de la distribución (línea roja vertical, $\chi^2_{2n,\alpha}$) junto con el área gris que representa a la probabilidad acumulada de $\alpha = 0.05$.
+Por ejemplo, en la figura que se muestra a continuación podemos ver, para $n=10$ y $\alpha=0.05$, el cuantil de la distribución (línea roja vertical, $\chi^2_{2n,\alpha}$) junto con el área gris que representa a la probabilidad acumulada de $\alpha = 0.05$.
 
-```{r, echo=FALSE, warning=FALSE, fig.height = 4, fig.width = 4, fig.align = "center"}
+```{r, echo=FALSE, warning=FALSE, fig.height = 3, fig.width = 4, fig.align = "center"}
 n <- 10
 df <- 2*n
 alpha <- .05
@@ -193,13 +193,13 @@ dist %>%
     
 ```
 
-Finalmente, podemos al test de nivel exacto como:
+Finalmente, podemos definir al test de nivel exacto como:
 
 $$
 \begin{aligned}
     \delta(\underset{\bar{}}{x}) =
     \begin{cases}
-      1 \quad si \quad \sum_{i=1}^n x_i > \chi^2_{2n,\alpha} \\
+      1 \quad si \quad \sum_{i=1}^n X_i < \chi^2_{2n,\alpha} \\
       0 \quad si \quad no
     \end{cases}\,.
 \end{aligned}
@@ -219,8 +219,8 @@ Sabemos que $E(X_i) = \frac{1}{\lambda}$ y que $V(X_i) = \frac{1}{\lambda^2}$, p
 
 $$
 \begin{aligned}
-\frac{\bar{X}-\frac{1}{\lambda}}{\sqrt{\frac{1}{n\lambda^2}}} &\overset{\mathcal{D}}\sim \mathcal{N}(0,1) \\
-\sqrt{n} \frac{\bar{X}-\frac{1}{\lambda}}{1/\lambda} &\overset{\mathcal{D}}\sim \mathcal{N}(0,1)
+\frac{\bar{X}-\frac{1}{\lambda}}{\sqrt{\frac{1}{n\lambda^2}}} &\overset{\mathcal{D}}\rightarrow \mathcal{N}(0,1) \\
+\sqrt{n} \frac{\bar{X}-\frac{1}{\lambda}}{1/\lambda} &\overset{\mathcal{D}}\rightarrow \mathcal{N}(0,1)
 \end{aligned}
 $$
 
@@ -228,17 +228,17 @@ Ahora volvemos a "pararnos" en $H_0$ y a considerar a $\lambda = 0.5$ (el suprem
 
 $$
 \begin{aligned}
-\sqrt{n} \frac{\bar{X}-\frac{1}{0.5}}{1/0.5} &\overset{\mathcal{D}}\sim \mathcal{N}(0,1) \\
-\sqrt{n} \frac{\bar{X}-2}{2} &\overset{\mathcal{D}}\sim \mathcal{N}(0,1)
+\sqrt{n} \frac{\bar{X}-\frac{1}{0.5}}{1/0.5} &\overset{\mathcal{D}}\rightarrow \mathcal{N}(0,1) \\
+\sqrt{n} \frac{\bar{X}-2}{2} &\overset{\mathcal{D}}\rightarrow \mathcal{N}(0,1) \, ,
 \end{aligned}
 $$
 
-Que corresponde con el estadístico $T_2$ planteado en el enunciado. Luego, hallamos un $K'_{\alpha}$ tal que:
+que corresponde con el estadístico $T_2$ planteado en el enunciado. Luego, hallamos un $K'_{\alpha}$ tal que:
 
 $$
 \begin{aligned}
-  P_{\lambda=0.5}\left(\sqrt{n} \frac{\bar{X}-2}{2}\right < K'_{\alpha}) &\overset{n \to \infty}\rightarrow \alpha
-\end{aligned}
+  P_{\lambda=0.5}\left(\sqrt{n} \frac{\bar{X}-2}{2} < K'_{\alpha}\right) &\overset{n \to \infty}\rightarrow \alpha
+\end{aligned} .
 $$
 
 De forma que el test asintótico de nivel $\alpha$ queda definido como:
@@ -250,12 +250,12 @@ $$
       1 \quad si \quad \sqrt{n} \frac{\bar{X}-2}{2} < Z_\alpha \\
       0 \quad si \quad no
     \end{cases}\
-\end{aligned}
+\end{aligned}.
 $$
 
-En este caso el cuantil que tenemos que buscar es el de una distribución $\mathcal{N}(0,1)$. Por ejemplo, para $\alpha=.05$:
+En este caso el cuantil que tenemos que buscar es el de una distribución $\mathcal{N}(0,1)$. Por ejemplo, para $\alpha=0.05$:
 
-```{r, echo=FALSE, warning=FALSE, fig.height = 4, fig.width = 4, fig.align = "center"}
+```{r, echo=FALSE, warning=FALSE, fig.height = 3, fig.width = 4, fig.align = "center"}
 n <- 10
 df <- 2*n
 alpha <- .05
@@ -293,7 +293,7 @@ dist %>%
 
 ## c. Realizar la simulación pedida para los diferentes valores de $n$, calcular el nivel empírico y expresarlo en una tabla.
 
-Ahora lo que vamos a hacer es simular el "experimento" y medir la cantidad de veces que se rechazó $H_0$ para ver como se relaciona eso con el $n$ para cada uno de los tests propuestos (el UMP y el asintótico). Vamos a realizar `Nrep=10000` simulaciones de cada test con valores de `n = c(10,30,100,1000)`.
+Ahora lo que vamos a hacer es simular el "experimento", generando muestras de tamaño $n$ con distribución $\mathcal E(\frac{1}{2})$, y medir la cantidad de veces que se rechazó $H_0$ para ver c?mo se relaciona eso con el $n$ para cada uno de los tests propuestos (el UMP y el asintótico). Vamos a realizar `Nrep=10000` simulaciones de cada test con valores de `n = c(10,30,100,1000)`.
 
 ```{r}
 # La función simulación simula el experimento y se fija el resultado del test
@@ -338,7 +338,7 @@ tabla %>%
 
 ## d. Para cada uno de los valores propuestos de $n$ y eligiendo una grilla de valores para $\lambda$, aproximar y graficar la función potencia.
 
-Para estas simulaciones vamos a utilizar el mismo `Nrep` y los mismos valores de `n` del inciso anterior pero nos vamos a mover del $\lambda = 0.5$ y vamos a barrer valores de lambda desde $0.1$ a $1$, con un paso de $0.01$.
+Para estas simulaciones vamos a utilizar el mismo `Nrep` y los mismos valores de `n` del inciso anterior pero nos vamos a mover del $\lambda = 0.5$ y vamos a barrer valores de lambda desde $0.1$ a $1$, con un paso de $0.01$. De esta manera, para los distintos valores de $\lambda$ generaremos muestras con distribución $\mathcal E(\lambda)$ y estimaremos la probabiliad de rechazar $H_0$ (es decir, la potencia) a partir de la proporción empírica de rechazos.
 
 ```{r, fig.height = 8, fig.width = 8, fig.align = "center"}
 # La función simulación simula el experimento y se fija el resultado del test
@@ -365,7 +365,7 @@ potencias %>% ggplot(aes(x = Lambda,
   theme(legend.position = "top")
 ```
 
-En la figura podemos ver la función potencia $adsf$ para el test UMP (celeste) y asintótico (rosa) en función del $\lambda$ y separado para distintos valores de n. Se observa que para n pequeño (<100) hay una diferencia en la potencia empírica a favor del test UMP, que en esta figura puede verse principalmente para la zona de $\lambda>0.5$. Si quisiéramos ver más en detalle que pasa en la región de $\Theta_1$, podemos hacer un zoom.
+En la figura podemos ver la función potencia $\pi_\delta(\lambda)$ para el test UMP (celeste) y asintótico (rosa) en función del $\lambda$ y separado para distintos valores de n. Se observa que para n pequeño (<100) hay una diferencia en la potencia empírica a favor del test UMP, que en esta figura puede verse principalmente para la zona de $\lambda>0.5$. Si quisiéramos ver más en detalle que pasa en la región de $\Theta_1$, podemos hacer un zoom.
 
 ```{r, echo = FALSE, fig.height = 8, fig.width = 8, fig.align = "center"}
 potencias %>% 
@@ -382,7 +382,7 @@ potencias %>%
   theme(legend.position = "top")
 ```
 
-Acá podemos er claramente que para $n<100$ también resulta conveniente (desde el punto de vista de la potencia) utilizar el test UMP. También se ve claramente como la potencia para $\lambda=0.5$ está muy cercana al $0.05$ para el test UMP (con alguna variabilidad porque son simulaciones) pero da bastante inferior para el test asintótico.
+Para $\lambda<0.5$ resulta un poco más complejo analizar qué test es "mejor". Tomemos como ejemplo $n=10$: si bien en este caso el test asintótico sería "mejor" no rechazando $H_0$, que es lo que tiene que hacer, vemos que la potencia para $\lambda=0.5$ no vale $0.05$ como queríamos al diseñar el test sino aproximadamente la mitad^[Notar que estos graficos de potencia fueron realizados con unas simulaciones diferentes a los de la tabla del inciso c), y es por eso que sus valores para $\lambda=0.5$ difieren ligeramente ($~0.22$ y $~0.25$).]. Entonces esta mejora no rechazando $H_0$ cuando no es falsa viene a expensas de un mayor rechazo cuando esta sí es falsa, inflando el error de tipo II, como puede verse en la figura anterior. Es por eso que consideramos que para $n$ bajos, el test UMP sigue siendo mejor que el asintótico. Por otro lado, al igual que al ver la potencia para $\lambda>0.5$, podemos ver que para $n>1000$ ambos test son indistinguibles. 
 
 Otra cosa que podemos ver es como varía la potencia para cada test con el $n$. 
 
@@ -398,7 +398,7 @@ potencias %>% ggplot(aes(x = Lambda,
   theme(legend.position = "top")
 ```
 
-En este caso la conclusión principal, y algo trivial, es que al aumentar el $n$ la potencia "mejora" (la pendiente es más empinada). Y lo mismo lo podemos ver para los $\lambda<0.5$
+En este caso la conclusión principal, y algo trivial, es que al aumentar el $n$ la potencia "mejora" (la pendiente es más empinada). Y lo mismo lo podemos ver para los $\lambda<0.5$. De esta manera, vemos que al aumentar el n, para ambos tests la potencia "mejora".
 
 ```{r, echo = FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
 potencias %>% 
@@ -416,3 +416,5 @@ potencias %>%
 ```
 
 ## e. Concluir en base a los resultados observados.
+
+A partir de los resultados obtenidos podemos concluir que ambos tests garantizan el nivel empírico deseado para los distintos valores de $n$ estudiados. Para valores de $n<100$ el nivel del test asintótico resulta más bajo que el del test exacto, pero vemos que la potencia para lambdas mayores que $0.5$ es mejor en el caso del test exacto y, en este sentido, podría resultar más conveniente utilizar este último. Para valores mayores de $n$, el desempeño de ambos tests resulta muy similar.
