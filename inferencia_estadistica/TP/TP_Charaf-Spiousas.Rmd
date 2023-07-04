@@ -84,7 +84,7 @@ f(\underset{\bar{}}{x}) = \prod_{i=1}^{n} \lambda e^{-\lambda x_i} \mathcal{I}_{
 \end{aligned}
 $$
 
-Y por ser id?nticamente distribuidas podemos operar y llegar a:
+Y por ser idénticamente distribuidas podemos operar y llegar a:
 
 $$
 \begin{aligned}
@@ -293,7 +293,7 @@ dist %>%
 
 ## c. Realizar la simulación pedida para los diferentes valores de $n$, calcular el nivel empírico y expresarlo en una tabla.
 
-Ahora lo que vamos a hacer es simular el "experimento", generando muestras de tamaño $n$ con distribución $\mathcal E(\frac{1}{2})$, y medir la cantidad de veces que se rechazó $H_0$ para ver c?mo se relaciona eso con el $n$ para cada uno de los tests propuestos (el UMP y el asintótico). Vamos a realizar `Nrep=10000` simulaciones de cada test con valores de `n = c(10,30,100,1000)`.
+Ahora lo que vamos a hacer es simular el "experimento", generando muestras de tamaño $n$ con distribución $\mathcal E(\frac{1}{2})$, y medir la cantidad de veces que se rechazó $H_0$ para ver cómo se relaciona eso con el $n$ para cada uno de los tests propuestos (el UMP y el asintótico). Vamos a realizar `Nrep=10000` simulaciones de cada test con valores de `n = c(10,30,100,1000)`.
 
 ```{r}
 # La función simulación simula el experimento y se fija el resultado del test
@@ -365,7 +365,9 @@ potencias %>% ggplot(aes(x = Lambda,
   theme(legend.position = "top")
 ```
 
-En la figura podemos ver la función potencia $\pi_\delta(\lambda)$ para el test UMP (celeste) y asintótico (rosa) en función del $\lambda$ y separado para distintos valores de n. Se observa que para n pequeño (<100) hay una diferencia en la potencia empírica a favor del test UMP, que en esta figura puede verse principalmente para la zona de $\lambda>0.5$. Si quisiéramos ver más en detalle que pasa en la región de $\Theta_1$, podemos hacer un zoom.
+En la figura podemos ver la función potencia $\pi_\delta(\lambda)$ para el test UMP (celeste) y asintótico (rosa) en función del $\lambda$ y separado para distintos valores de n. Se observa que para n pequeño (<100) hay una diferencia en la potencia empírica a favor del test UMP, principalmente para la zona de $\lambda>0.5$ donde vemos claramente que la función de potencia del test exacto es mayor que la del test asintótico. En cambio, para valores de $n$ más grandes las funciones de potencia resultan muy parecidas.
+
+Si quisiéramos ver con mayor detalle qué pasa en la región de $\Theta_1$, podemos hacer un zoom como se muestra a continuación.
 
 ```{r, echo = FALSE, fig.height = 8, fig.width = 8, fig.align = "center"}
 potencias %>% 
@@ -382,9 +384,9 @@ potencias %>%
   theme(legend.position = "top")
 ```
 
-Para $\lambda<0.5$ resulta un poco más complejo analizar qué test es "mejor". Tomemos como ejemplo $n=10$: si bien en este caso el test asintótico sería "mejor" no rechazando $H_0$, que es lo que tiene que hacer, vemos que la potencia para $\lambda=0.5$ no vale $0.05$ como queríamos al diseñar el test sino aproximadamente la mitad^[Notar que estos graficos de potencia fueron realizados con unas simulaciones diferentes a los de la tabla del inciso c), y es por eso que sus valores para $\lambda=0.5$ difieren ligeramente ($~0.22$ y $~0.25$).]. Entonces esta mejora no rechazando $H_0$ cuando no es falsa viene a expensas de un mayor rechazo cuando esta sí es falsa, inflando el error de tipo II, como puede verse en la figura anterior. Es por eso que consideramos que para $n$ bajos, el test UMP sigue siendo mejor que el asintótico. Por otro lado, al igual que al ver la potencia para $\lambda>0.5$, podemos ver que para $n>1000$ ambos test son indistinguibles. 
+Para $\lambda<0.5$ resulta un poco más complejo analizar qué test es "mejor". Tomemos como ejemplo $n=10$: si bien en este caso la función de potencia parece indicar que el test asintótico es más conveniente, ya que la probabilidad de rechazo cuando nos encontramos en $H_0$ es más baja que la del test exacto, vemos que la potencia para $\lambda=0.5$ no vale $0.05$ como queríamos al diseñar el test, sino aproximadamente la mitad^[Notar que estos graficos de potencia fueron realizados con unas simulaciones diferentes a los de la tabla del inciso c), y es por eso que sus valores para $\lambda=0.5$ difieren ligeramente ($~0.22$ y $~0.25$).]. Entonces, esta mejora observada en el error de Tipo I, tiene la contraparte de una menor probabilidad de rechazo cuando $H_0$ sí es falsa (es decir, a partir de 0.5 en $\lambda$), inflando el error de tipo II, como puede verse en la figura anterior. Es por eso que consideramos que para $n$ bajos, el test UMP sigue siendo mejor que el asintótico. Por otro lado, al igual que en el caso de $\lambda>0.5$, podemos ver que para $n>1000$ ambos test son indistinguibles.
 
-Otra cosa que podemos ver es como varía la potencia para cada test con el $n$. 
+Otro aspecto que podemos analizar es cómo varía la potencia para cada test con el $n$. 
 
 ```{r, echo = FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
 potencias %>% ggplot(aes(x = Lambda,
@@ -398,7 +400,7 @@ potencias %>% ggplot(aes(x = Lambda,
   theme(legend.position = "top")
 ```
 
-En este caso la conclusión principal, y algo trivial, es que al aumentar el $n$ la potencia "mejora" (la pendiente es más empinada). Y lo mismo lo podemos ver para los $\lambda<0.5$. De esta manera, vemos que al aumentar el n, para ambos tests la potencia "mejora".
+En este caso la conclusión principal (y algo trivial) es que al aumentar el $n$ la potencia "mejora", dado que la pendiente es más empinada cerca de $0.5$. Y lo mismo podemos ver haciendo un zoom para los $\lambda<0.5$, como se muestra en el siguiente gráfico.
 
 ```{r, echo = FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
 potencias %>% 
@@ -417,4 +419,4 @@ potencias %>%
 
 ## e. Concluir en base a los resultados observados.
 
-A partir de los resultados obtenidos podemos concluir que ambos tests garantizan el nivel empírico deseado para los distintos valores de $n$ estudiados. Para valores de $n<100$ el nivel del test asintótico resulta más bajo que el del test exacto, pero vemos que la potencia para lambdas mayores que $0.5$ es mejor en el caso del test exacto y, en este sentido, podría resultar más conveniente utilizar este último. Para valores mayores de $n$, el desempeño de ambos tests resulta muy similar.
+A partir de los resultados obtenidos podemos concluir que ambos tests garantizan que la proporción de rechazo bajo $H_0$ sea menor que 0.05 para los distintos valores de $n$ estudiados. Para valores de $n<100$ el nivel del test asintótico resulta más bajo que el del test exacto, pero observamos que el nivel del test exacto se aproxima mejor al deseado. A su vez, la potencia para valores de $\lambda$ mayores que $0.5$ es mejor en el caso del test exacto y, en este sentido, consideramos que podría resultar más conveniente utilizar este último. Por otra parte, para valores mayores de $n$, el desempeño de ambos tests resulta muy similar.
