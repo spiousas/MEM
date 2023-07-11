@@ -1,0 +1,229 @@
+---
+title: "Trabajo final - Métodos de Estimación 2023"
+author: "Jesica Charaf e Ignacio Spiousas"
+date: '2023-07-08'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Presentación
+
+La ditribución elegida para trabajar es la binomial negativa. Para el desarrollo utilizaremos la parametrización con $r$ y $\mu$ que se muestra a continuación:
+
+Sea $X \sim BN(r,\mu)$, entonces, su función de probabilidad puntual puede expresarse como:
+
+$$Px(x) = \frac{\Gamma(x+r)}{x!\Gamma(r)} \left( \frac{r}{r+\mu} \right)^r \left( \frac{\mu}{r+\mu} \right)^x,$$
+con $x=1,2,3,...$. 
+
+Además, se tiene que: $\mathbb{E}(X)=\mu$ y $V(X)=\mu + \frac{\mu^2}{r}$.
+
+# Estimadores de momentos para $r$ y $\mu$
+
+## Obtención de los estimadores
+
+Consideremos al conjunto de parámetros $\theta = (r,\mu)$ y que $X_1,...,X_n \overset{iid}{\sim} BN(r,\mu)$. Como tenemos dos parámetros, para obtener los estimadores de momentos tendremos que utilizar el primer y segundo momento.
+
+### Primer momento
+
+De plantear el primer momentos obtenemos:
+
+$$
+\begin{aligned}
+\overline{X} &= \mathbb{E}_{\hat{\theta}}(X) \\
+\overline{X} &= \hat{\mu}.
+\end{aligned}
+$$
+
+### Segundo momento
+
+Para el segundo momento tenemos que plantear:
+
+$$
+\frac{1}{n} \sum_{i=1}^n X_i^2 = \mathbb{E}_{\hat{\theta}}(X^2),
+$$
+Y para esto vamos a recordar que $V(X) = \mathbb{E}_{\hat{\theta}}(X^2) - (\mathbb{E}_{\hat{\theta}}(X))^2$, por lo tanto:
+
+$$
+\begin{aligned}
+\frac{1}{n} \sum_{i=1}^n X_i^2 &= \mathbb{E}_{\hat{\theta}}(X^2) \\
+\frac{1}{n} \sum_{i=1}^n X_i^2 &= V(X) + (\mathbb{E}_{\hat{\theta}}(X))^2 \\
+\frac{1}{n} \sum_{i=1}^n X_i^2 &= \hat{\mu} + \frac{\hat{\mu}^2}{\hat{r}} + \hat{\mu}^2.
+\end{aligned}
+$$
+
+### Resumiendo
+
+Entonces, el sistema de ecuaciones que tenemos que resolver para hallar $\hat{r}$ y $\hat{\mu}$ es:
+
+$$
+\begin{aligned}
+\overline{X} &= \hat{\mu} \\
+\frac{1}{n} \sum_{i=1}^n X_i^2 &= \hat{\mu} + \frac{\hat{\mu}^2}{\hat{r}} + \hat{\mu}^2.
+\end{aligned}
+$$
+
+### El despeje
+
+En el caso del estimador de $\hat{\mu}$, no hace falta despejar nado ya que queda directamente definido por el primer momento. Por otro lado, a $\hat{r}$ lo podemos despejar fácilmente del segundo momento reemplazando $\mu$ por $\overline{X}$:
+
+$$
+\begin{aligned}
+\frac{1}{n} \sum_{i=1}^n X_i^2  - \hat{\mu} - \hat{\mu}^2 &= \frac{\hat{\mu}^2}{\hat{r}} \\
+\frac{1}{n} \sum_{i=1}^n X_i^2  - \overline{X} - \overline{X}^2 &= \frac{\overline{X}^2}{\hat{r}} \\ 
+\hat{r} &= \frac{\overline{X}^2}{\frac{1}{n} \sum_{i=1}^n X_i^2  - \overline{X} - \overline{X}^2}
+\end{aligned}
+$$
+
+Entonces los estimadores de momentos son:
+
+$$
+\begin{aligned}
+\hat{\mu}_{mo} &= \overline{X}  \\
+\hat{r}_{mo} &= \frac{\overline{X}^2}{\frac{1}{n} \sum_{i=1}^n X_i^2  - \overline{X} - \overline{X}^2}
+\end{aligned}
+$$
+
+## Consistencia
+
+De nuevo, probar la consistencia del estimador de $\mu_{mo}$ es directo, ya que por LGN $\overline{X} \overset{c.s.}{\rightarrow}\mu$, entonces, $\hat{\mu}_{mo}$ es una estimador consistente para $\mu$.
+
+Para estudiar la consistencia de $\hat{r}_{mo}$ también vamos a utilizae LGN, pero vamos a tener que utilizar algunas propiedades. Por LGN sabemos que:
+
+$$\sum_{i=1}^n X_i^2 \overset{c.s.}{\rightarrow} \mathbb{E}_{\hat{\theta}}(X^2) =  \mu + \frac{\mu^2}{r} + \mu^2.$$
+
+Además, como $\overline{X} \overset{c.s.}{\rightarrow}\mu$ y $g(t)=t^2$ es una función continua, podemos afirmar que $\overline{X}^2 \overset{c.s.}{\rightarrow} \mu^2$. Luego
+
+$$
+\begin{aligned}
+\frac{\overline{X}^2}{\frac{1}{n} \sum_{i=1}^n X_i^2  - \overline{X} - \overline{X}^2} &\overset{c.s.}{\rightarrow} \frac{\mu^2}{\mu + \frac{\mu^2}{r} + \mu^2 - \mu - \mu^2} \\
+\frac{\overline{X}^2}{\frac{1}{n} \sum_{i=1}^n X_i^2  - \overline{X} - \overline{X}^2} &\overset{c.s.}{\rightarrow} \frac{\mu^2}{\frac{\mu^2}{r}} = r.
+\end{aligned}
+$$
+
+Por lo tanto, $\hat{r}_{mo}$ es un estimador consistente para $r$.
+
+## Distribución asintótica
+
+Para la distribución asintótica vamos a generar simulaciones de datos con distribución binomial negativa y parámetros poblacionales $r = 1$ y $\mu = 5$ y para cuatro tamaños de muestra, con $n={10, 50, 100, 500}$. Con cada simulación vamos a estimar los parámetros utilizando los estimadores de momentos ($\hat{\theta}$) y, a partir de ellos vamos a calcular los estimadores estandarizados de acuerdo a:
+
+$$
+\frac{\hat{\theta}-\theta}{se(\hat{\theta})}.
+$$
+
+Una vez obtenidos los valores estandarizados para $\hat{r}$ y $\hat{\mu}$ graficaremos los histogramas de ambas distribuciones comparados con la densidad de una distribución $\mathcal{N}(0,1)$.
+
+Primero defino las funciones que me generarán mis estimaciones de momentos
+
+```{r}
+mu_mo <- function(x) {
+  mean(x)
+}
+
+r_mo <- function(x) {
+  (mean(x))^2/(mean(x^2) - mean(x) - mean(x)^2)
+}
+```
+
+Luego, voy a realizar `Nrep` simulaciones del vector aleatorio $X$ con $\{X_i, ... , X_n\} \sim BN(\mu=5,r=1)$:
+
+```{r simulacion MO}
+ns <- c(1e1, 5e1, 1e2, 5e2)
+Nrep <- 1e4
+mu_pob <- 5
+r_pob <- 1
+
+est_rs <- vector(length = length(ns)*Nrep)
+est_mus <- vector(length = length(ns)*Nrep)
+est_ns <- vector(length = length(ns)*Nrep)
+
+set.seed(12)
+for (i in 1:length(ns)) {
+  for (j in 1:Nrep) {
+    data <- rnbinom(n = ns[i], size = r_pob, mu = mu_pob)
+    est_ns[(i-1)*Nrep+ j] <- ns[i]
+    est_mus[(i-1)*Nrep + j] <- mu_mo(data)
+    est_rs[(i-1)*Nrep + j] <- r_mo(data)
+  }
+}
+```
+
+Luego estandarizamos los estimadores obtenidos con las muestra simuladas:
+
+```{r}
+sim_mo <- tibble(n = est_ns,
+                 mu = est_mus,
+                 r = est_rs) %>%
+  filter(r!=Inf) %>%
+  group_by(n) %>%
+  mutate(mu_est = (mu - mu_pob)/sd(mu),
+         r_est = (r - r_pob)/sd(r))
+```
+
+Y, finalmente, vemos los histogramas de estos estimadores estandarizados comparados con una distribución $\mathcal{N}(0,1)$. Primero $\hat{\mu}_{mo,est}$:
+
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=2, fig.align='center'}
+sim_mo %>%
+  ggplot() +
+  geom_histogram(aes(x = mu_est, y = ..density..), alpha = .5, bins = 30 ) + 
+  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 1), color = "red", linewidth = 1) +
+  scale_x_continuous(limits = c(-3,3)) +
+  facet_grid(.~n, labeller = label_both) +
+  labs(x = "mu de momentos estandarizado (Nrep = 10000)",
+       y = "densidad") +
+  theme_bw()
+```
+
+En los histogramas puede verse que, aún para valores chicos de $n$, la distribución del estimador estandarizado $\hat{\mu}_{mo,est}$ es muy similar a la línea roja, es decir, su distribución asintótica es una $\mathcal{N}(0,1)$. Por otro lado, algo que podemos observar es que el estimador no pareciera tener un sesgo para ningún valor de $n$.
+
+Y para $\hat{r}_{mo,est}$:
+
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=2, fig.align='center'}
+sim_mo %>%
+  ggplot() +
+  geom_histogram(aes(x = r_est, y = ..density..), alpha = .5, bins = 30) + 
+  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 1), color = "red", linewidth = 1) +
+  scale_x_continuous(limits = c(-3,3)) +
+  ggh4x::facet_grid2(. ~ n, scales = "free_y", independent = "y") +
+  labs(x = "r de momentos estandarizado (Nrep = 10000)",
+       y = "densidad") +
+  theme_bw()
+```
+
+Y en este caso, y al contrario que para $\hat{\mu}_{mo,est}$, vemos que sólo para valores de $n$ grandes la distribución de $\hat{r}_{mo,est}$ se aproxima a la $\mathcal{N}(0,1)$, mientras que para valores chicos de $n$ muestra una distribución más concentrada y sesgada hacia la derecha.
+
+Una cosa extra que podemos hacer, ya que tenemos simulaciones, es verificar la consistencia calculando el error cuadrático medio empírico (ECME):
+
+```{r}
+sim_mo %>% 
+  group_by(n) %>%
+  summarise(ECME_r = mean(r - r_pob)^2,
+            ECME_mu = mean(mu - mu_pob)^2) %>%
+  knitr::kable()
+```
+
+Puede verse que ambos estimadores son consistentes aunque, como se ve en los histogramas, $\hat{\mu}_{mo}$ parece ser un estimador insesgado mientras que $\hat{r}_{mo}$ parece ser un estimador asintóticamente insesgado, pero con un sesgo a derecha para valores chicos de n.
+
+# Estimadores de máxima verosimilitud para $r$ y $\mu$
+
+Para hallar los estimadores de máxima versosimilitud utilizaremos el comando `fitdistr`.
+
+## Obtención de los estimadores
+
+A modo de ejemplo obtendremos los parámetros $\hat{r}_{mv}$ y $\hat{\mu}_{mv}$ a partir de una muestra aleatoria de variables iid distribuidas como binomial negativa con parámetros $r=1$ y $\mu=10$.
+
+## Consistencia
+
+## Distribución asintótica
+
+# Aplicaciones y datos
+
+
+<!-- In the context of ecology and biodiversity, a more relevant parametrisation and interpretation of the negative binomial distribution relates to the counting process of some random phenomena (e.g., occurrences of plants or animals, abundance of species). This is achieved by reparametrising Equation (1) in terms of its mean 𝜇 -->
+<!--  and a dispersion or aggregation index 𝜅 -->
+<!--  governing the count variation. Specifically, let 𝑝=𝜅/(𝜅+𝜇) -->
+<!-- , where 𝜅=𝑟 -->
+<!-- . Then, we can write Equation (1) as -->
