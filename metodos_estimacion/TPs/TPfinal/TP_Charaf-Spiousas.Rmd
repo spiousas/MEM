@@ -34,7 +34,7 @@ Consideremos al conjunto de parámetros $\theta = (r,\mu)$ y que $X_1,...,X_n \o
 
 ### Primer momento
 
-De plantear el primer momentos obtenemos:
+De plantear el primer momento obtenemos:
 
 $$
 \begin{aligned}
@@ -55,7 +55,7 @@ Y para esto vamos a recordar que $V_{\hat{\theta}}(X) = \mathbb{E}_{\hat{\theta}
 $$
 \begin{aligned}
 \frac{1}{n} \sum_{i=1}^n X_i^2 &= \mathbb{E}_{\hat{\theta}}(X^2) \\
-\frac{1}{n} \sum_{i=1}^n X_i^2 &= V(X) + (\mathbb{E}_{\hat{\theta}}(X))^2 \\
+\frac{1}{n} \sum_{i=1}^n X_i^2 &= V_{\hat{\theta}}(X) + (\mathbb{E}_{\hat{\theta}}(X))^2 \\
 \frac{1}{n} \sum_{i=1}^n X_i^2 &= \hat{\mu} + \frac{\hat{\mu}^2}{\hat{r}} + \hat{\mu}^2.
 \end{aligned}
 $$
@@ -94,13 +94,13 @@ $$
 
 ## Consistencia
 
-De nuevo, probar la consistencia del estimador $\hat{\mu}_{mo}$ es directo, ya que por LGN $\overline{X} \overset{c.s.}{\rightarrow}\mu$. Entonces, $\hat{\mu}_{mo}$ es una estimador consistente para $\mu$.
+De nuevo, probar la consistencia del estimador $\hat{\mu}_{mo}$ es directo, ya que por LGN $\overline{X} \overset{c.s.}{\rightarrow}\mu$. Entonces, $\hat{\mu}_{mo}$ es un estimador consistente para $\mu$.
 
 Para estudiar la consistencia de $\hat{r}_{mo}$ también vamos a utilizar LGN, pero vamos a tener que utilizar algunas propiedades. Por LGN sabemos que:
 
 $$\sum_{i=1}^n X_i^2 \overset{c.s.}{\rightarrow} \mathbb{E}(X^2) =  \mu + \frac{\mu^2}{r} + \mu^2.$$
 
-Además, como $\overline{X} \overset{c.s.}{\rightarrow}\mu$ y $g(t)=t^2$ es una función continua, podemos afirmar que $\overline{X}^2 \overset{c.s.}{\rightarrow} \mu^2$. Luego, utilizando propiedasdes de convergencia casi segura:
+Además, como $\overline{X} \overset{c.s.}{\rightarrow}\mu$ y $g(t)=t^2$ es una función continua, podemos afirmar que $\overline{X}^2 \overset{c.s.}{\rightarrow} \mu^2$. Luego, utilizando propiedades de convergencia casi segura:
 
 $$
 \begin{aligned}
@@ -139,7 +139,7 @@ r_mo <- function(x) {
 }
 ```
 
-Luego, vamos a realizar `Nrep=10000` simulaciones del vector aleatorio ($\{X_1, ... , X_n\}$) con $X_i \sim BN(\mu=5,r=1)$:
+Luego, vamos a realizar `Nrep=10000` simulaciones del vector aleatorio $(X_1, ... , X_n)$ con $X_i \sim BN(\mu=5,r=1)$:
 
 ```{r simulacion MO}
 ns <- c(1e1, 5e1, 1e2, 5e2)
@@ -216,7 +216,7 @@ sim_mo %>%
   knitr::kable()
 ```
 
-Puede verse que ambos estimadores son consistentes dado que el ECME tiende a cero cuando $n$ crece, como se ve en los histogramas, $\hat{\mu}_{mo}$ parece ser un estimador insesgado mientras que $\hat{r}_{mo}$ parece ser un estimador asintóticamente insesgado, pero con un sesgo a derecha para valores chicos de $n$.
+Puede verse que ambos estimadores son consistentes dado que el ECME tiende a cero cuando $n$ crece. A a su vez, a partir de los histogramas, pareciera que $\hat{\mu}_{mo}$ es un estimador insesgado mientras que $\hat{r}_{mo}$ uno asintóticamente insesgado, pero con un sesgo a derecha para valores chicos de $n$.
 
 # Estimadores de máxima verosimilitud para $r$ y $\mu$
 
@@ -263,31 +263,35 @@ for (i in 1:length(ns)) {
 }
 ```
 
-Luego, estandarizamos las estimaciones obtenidas con las muestras simuladas:
+Luego, calculamos el ECME:
 
 ```{r}
 sim_mv <- tibble(n = est_ns,
                  mu = est_mus,
                  r = est_rs) %>%
-  filter(r!=Inf) %>%
-  group_by(n) %>%
-  mutate(mu_est = (mu - mu_pob)/sd(mu),
-         r_est = (r - r_pob)/sd(r))
-```
-
-Y, por último, calculamos el ECME:
-
-```{r}
-sim_mv %>% 
+  filter(r!=Inf) 
+  
+ECME_mv <- sim_mv %>%
   group_by(n) %>%
   summarise(ECME_r = mean(r - r_pob)^2,
-            ECME_mu = mean(mu - mu_pob)^2) %>%
+            ECME_mu = mean(mu - mu_pob)^2) 
+
+ECME_mv %>%
   knitr::kable()
 ```
 
 De la misma forma que en los estimadores de momentos, $\hat{\mu}_{mv}$ y $\hat{r}_{mv}$ parecen ser consistentes, aunque $\hat{\mu}_{mv}$ parece ser insesgado mientras que $\hat{r}_{mv}$ asintóticamente insesgado.
 
 ## Distribución asintótica
+
+Lo primero que hacemos es estandarizar las estimaciones de los parámetros obtenidas a partir de las muestras simuladas:
+
+```{r}
+sim_mv <- sim_mv %>%
+  group_by(n) %>%
+  mutate(mu_est = (mu - mu_pob)/sd(mu),
+         r_est = (r - r_pob)/sd(r))
+```
 
 Después de estandarizar podemos ver los histogramas para $\hat{\mu}_{mv,est}$:
 
@@ -317,13 +321,13 @@ sim_mv %>%
   theme_bw()
 ```
 
-En estos, al igual que en los estimadores de momentos se ve que la distribución asintótica para ambos parámetros se parece una $\mathcal{N}(0,1)$, pero con diferencias para valores de $n$ pequeños.
+En estos, al igual que en los estimadores de momentos se ve que la distribución asintótica para ambos parámetros se parece a una $\mathcal{N}(0,1)$, pero con diferencias para valores de $n$ pequeños.
 
 # Aplicaciones y datos
 
 En la parametrización que se presenta en este trabajo no tenemos a la distribución negativa como una distribución que se utiliza para modelar la cantidad de fracasos hasta tener $k$ éxitos, sino como un caso general de la distribución de Poisson en el que la media no es igual a la varianza. Al igual que la distribución de Poisson, la binomial negativa con esta parametrización se utiliza para modelar el conteo de un proceso aleatorio, en particular en casos donde hay sobredispersión, es decir, donde la varianza es más grande que la esperanza [@stoklosa2022overview].
 
-Recordando los valores de la esperanza y la varianza, $\mathbb{E}(X)=\mu$ y $V(X)=\mu + \frac{\mu^2}{r}$, podemos ver que es el parámetro $r$ el que gobierna la relación entre esperanza y varianza, donde con valores de $r$ más pequeños se tienen poblaciones más dispersas (en la literaura se conoce a $r$ como factor de dispersión) y con valores de $r$ grandes se tienen poblaciones más similares a una Poisson (se puede demostrar que cuando $r\rightarrow \infty$ la binomial negativa se transforma en una Poisson). Como ejemplos de sobredispersión tenemos el caso de los días de hospitalización de un individuo [@weaver2015analyzing] el censo de alguna especie en una grilla geográfica [@stoklosa2022overview].
+Recordando los valores de la esperanza y la varianza, $\mathbb{E}(X)=\mu$ y $V(X)=\mu + \frac{\mu^2}{r}$, podemos ver que es el parámetro $r$ el que gobierna la relación entre esperanza y varianza, donde con valores de $r$ más pequeños se tienen poblaciones más dispersas (en la literatura se conoce a $r$ como factor de dispersión) y con valores de $r$ grandes se tienen poblaciones más similares a una Poisson (se puede demostrar que cuando $r\rightarrow \infty$ la binomial negativa se transforma en una Poisson). Como ejemplos de sobredispersión tenemos el caso de los días de hospitalización de un individuo [@weaver2015analyzing] o el censo de alguna especie en una grilla geográfica [@stoklosa2022overview].
 
 En particular cuando lidiamos con el conteo de una especie podemos esperar que no esté distribuido uniformemente, sino que los individuos aparezcan en grupos o comunidades. Como se menciona en [@stoklosa2022overview], esto hace que la varianza de la muestra sea muy superior a la media, lo que indicaría que debemos abandonar el modelo de Poisson y considerar modelar los datos asumiendo que las variables aleatorias en juego provienen de una distribución binomial negativa (argumento que defienden fuertemente en [@stoklosa2022overview]).
 
@@ -355,7 +359,7 @@ data_geo %>% ggplot(aes(x = longitude_x, y = latitude_y)) +
   theme_bw()
 ```
 
-En este caso, vamos a realizar el experimento de contabilizar los individuos observados en cada parcelas (no necesariamente las de la figura, sino unas más pequeñas). Para este ejercicio en particular vamos a quitar los ceros de esa lista^[Habría que tener otras consideraciones que se van del alcance del presente trabajo] y a graficar un histograma para ver cómo se distribuyen esos conteos.
+En este caso, vamos a realizar el experimento de contabilizar los individuos observados en cada parcela (no necesariamente las de la figura, sino unas más pequeñas). Para este ejercicio en particular vamos a quitar los ceros de esa lista^[Habría que tener otras consideraciones que se van del alcance del presente trabajo] y a graficar un histograma para ver cómo se distribuyen esos conteos.
 
 ```{r, echo=FALSE, warning=FALSE, fig.width=4, fig.height=3, fig.align='center'}
 x <- especies %>% filter(species == "Alouatta guariba") %>% pull(longitude_x)
