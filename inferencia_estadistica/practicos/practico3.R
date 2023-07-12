@@ -44,7 +44,7 @@ ceiling(optim(par = c(10), target )$par)
 mu0 <- 0.7
 x_media <- 0.85
 S <- 0.05
-n <- 8
+n <- 12
 alfa <- .05
 
 t <- sqrt(n) * abs(x_media-mu0)/S
@@ -52,6 +52,8 @@ t
 cuantil <- qt(df = n-1, p = 1-alfa/2)
 cuantil
 t > cuantil
+
+2*(1-pt(df = n-1, q =t))
 
 ## b ####
 sigma0 <- 0.03
