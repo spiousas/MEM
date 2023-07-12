@@ -52,3 +52,26 @@ t
 cuantil <- qt(df = n-1, p = 1-alfa/2)
 cuantil
 t > cuantil
+
+## b ####
+sigma0 <- 0.03
+t <- (n-1) * (S/sigma0)^2
+cuantil <- qchisq(df = 12, p = .05)
+cuantil
+
+pchisq(df = 12, q = t)
+
+## Ejercicio 5 ####
+n <- 3*60*60
+x_mean <- 5029/n
+alfa <- .01
+cuantil <- qchisq(df = 1, p = 1-alfa)
+cuantil
+lambda0 <- .5
+
+t <- 2*n * (lambda0 - x_mean - x_mean * log(lambda0/x_mean))
+t
+t > cuantil
+
+p_valor <- 1 - pchisq(df = 1, q = t)
+p_valor

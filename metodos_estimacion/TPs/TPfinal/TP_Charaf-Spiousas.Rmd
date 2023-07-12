@@ -8,6 +8,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(MASS)
 ```
 
 # Presentación
@@ -209,20 +210,112 @@ Puede verse que ambos estimadores son consistentes aunque, como se ve en los his
 
 # Estimadores de máxima verosimilitud para $r$ y $\mu$
 
-Para hallar los estimadores de máxima versosimilitud utilizaremos el comando `fitdistr`.
+Para hallar los estimadores de máxima versosimilitud utilizaremos el comando `fitdistr` del paquete {MASS}. Al igual que hicimos con los estimadores de momentos, vamos 
 
 ## Obtención de los estimadores
 
 A modo de ejemplo obtendremos los parámetros $\hat{r}_{mv}$ y $\hat{\mu}_{mv}$ a partir de una muestra aleatoria de variables iid distribuidas como binomial negativa con parámetros $r=1$ y $\mu=10$.
 
+```{r}
+mu_mo <- function(x) {
+  fitdistr(x, densfun = "negative binomial")[2]
+}
+
+r_mo <- function(x) {
+  fitdistr(x, densfun = "negative binomial")[1]
+}
+```
+
+Puedo verirficar que las estimaciones me den bien:
+
 ## Consistencia
+
+Para la consistencia vamos a repetir el procedimiento utilizado para la distribución asintótica de los estimadores de momentos pero calcularemos el ECME. Primero hagamos la simulación:
+
+```{r simulacion EMV, warning=FALSE}
+ns <- c(1e1, 5e1, 1e2, 5e2)
+Nrep <- 1e4
+mu_pob <- 5
+r_pob <- 1
+
+est_rs <- vector(length = length(ns)*Nrep)
+est_mus <- vector(length = length(ns)*Nrep)
+est_ns <- vector(length = length(ns)*Nrep)
+
+set.seed(12)
+for (i in 1:length(ns)) {
+  cat(paste("n =", ns[i], "\n"))
+  for (j in 1:Nrep) {
+    data <- rnbinom(n = ns[i], size = r_pob, mu = mu_pob)
+    est_mv <- fitdistr(data, densfun = "negative binomial")
+    est_ns[(i-1)*Nrep+ j] <- ns[i]
+    est_mus[(i-1)*Nrep + j] <- est_mv$estimate[2]
+    est_rs[(i-1)*Nrep + j] <- est_mv$estimate[1]
+  }
+}
+```
+
+Luego, estandarizamos los estimadores obtenidos con las muestra simuladas:
+
+```{r}
+sim_mv <- tibble(n = est_ns,
+                 mu = est_mus,
+                 r = est_rs) %>%
+  filter(r!=Inf) %>%
+  group_by(n) %>%
+  mutate(mu_est = (mu - mu_pob)/sd(mu),
+         r_est = (r - r_pob)/sd(r))
+```
+
+Y, por último, calculamos el ECME:
+
+```{r}
+sim_mv %>% 
+  group_by(n) %>%
+  summarise(ECME_r = mean(r - r_pob)^2,
+            ECME_mu = mean(mu - mu_pob)^2) %>%
+  knitr::kable()
+```
+
+De la misma forma que en los estimadores de momentos, pareciera que, si bien ambos son consistentes, $\mu_{mv}$ es insesgado mientras que $r_{mv}$ es asintóticamente insesgado.
 
 ## Distribución asintótica
 
+Después de estandarizar podemos ver los histogramas para $\hat{\mu}_{mv,est}$:
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=2, fig.align='center'}
+sim_mv %>%
+  ggplot() +
+  geom_histogram(aes(x = mu_est, y = ..density..), alpha = .5, bins = 30 ) + 
+  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 1), color = "red", linewidth = 1) +
+  scale_x_continuous(limits = c(-3,3)) +
+  facet_grid(.~n, labeller = label_both) +
+  labs(x = "mu de momentos estandarizado (Nrep = 10000)",
+       y = "densidad") +
+  theme_bw()
+```
+
+, y para $\hat{r}_{mv,est}$:
+
+```{r, echo=FALSE, warning=FALSE, fig.width=8, fig.height=2, fig.align='center'}
+sim_mv %>%
+  ggplot() +
+  geom_histogram(aes(x = r_est, y = ..density..), alpha = .5, bins = 30) + 
+  stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = 1), color = "red", linewidth = 1) +
+  scale_x_continuous(limits = c(-3,3)) +
+  ggh4x::facet_grid2(. ~ n, scales = "free_y", independent = "y") +
+  labs(x = "r de momentos estandarizado (Nrep = 10000)",
+       y = "densidad") +
+  theme_bw()
+```
+
+En los que, al igual que para los estimadores de momentos se ve que la distribución asintótica para ambos parámetros es una $\mathcal{N}(0,1)$, pero con diferencias para valores de $n$ pequeños.
+
 # Aplicaciones y datos
 
+La principal aplicación de este tipo de distribuciones en el modelado estadístico es cuando tenemos una variable de cuenta en la que la varianza es más grande que la media, esto se llama que tenemos agregación. 
 
-<!-- In the context of ecology and biodiversity, a more relevant parametrisation and interpretation of the negative binomial distribution relates to the counting process of some random phenomena (e.g., occurrences of plants or animals, abundance of species). This is achieved by reparametrising Equation (1) in terms of its mean 𝜇 -->
+Por ejemplo, supongamos que tenemos 
+<!-- In the context of ecology and biodiversity, a more relevant parametrisation and interpretation of the negative binomial distribution relates to the counting process of some random phenomena (e.g., occurrences of plants or animals, abundance of species). This is achieved by reparametrising Equation (1) in terms of enemos una vits mean 𝜇 -->
 <!--  and a dispersion or aggregation index 𝜅 -->
 <!--  governing the count variation. Specifically, let 𝑝=𝜅/(𝜅+𝜇) -->
 <!-- , where 𝜅=𝑟 -->
