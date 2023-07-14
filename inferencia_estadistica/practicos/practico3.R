@@ -38,6 +38,17 @@ target <- function(n) {
 
 ceiling(optim(par = c(10), target )$par)
 
+## Ejercicio 2 ####
+mu0 <- 18
+n <- 12
+x <- c(21, 18, 19, 16, 18, 24, 22, 19, 24, 14, 18, 15)
+x_mean <- mean(x)
+x_mean
+S <- sd(x)
+alfa <- .08
+
+cuantil <- qt(df = n-1, p = 1-alfa)
+
 ## Ejercicio 3 ####
 ## a ####
 
@@ -56,12 +67,14 @@ t > cuantil
 2*(1-pt(df = n-1, q =t))
 
 ## b ####
+n <- 12
 sigma0 <- 0.03
 t <- (n-1) * (S/sigma0)^2
-cuantil <- qchisq(df = 12, p = .05)
+t
+cuantil <- qchisq(df = 12, p = .95)
 cuantil
 
-pchisq(df = 12, q = t)
+1-pchisq(df = 12, q = t)
 
 ## Ejercicio 5 ####
 n <- 3*60*60

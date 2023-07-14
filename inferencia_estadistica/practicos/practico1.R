@@ -1,3 +1,44 @@
+# Ejercicio 5 ####
+
+p <- .5
+x <- sum(rbinom(n = 2,size = 1, prob = p))
+
+test <- c()
+Nrep <- 10000
+for (i in 1:Nrep) {
+  x <- sum(rbinom(n = 2,size = 1, prob = p))
+  test[i] <- x!=1
+}
+mean(test)
+
+# Con binomial
+for (i in 1:Nrep) {
+  x <- rbinom(n = 2,size = 2, prob = p)
+  test[i] <- x!=1
+}
+mean(test)
+
+thetas <- 0:4
+pot_emp <- rep(NA, length(thetas))
+test <- rep(NA, Nrep)
+
+for (i in 1:length(thetas)) {
+  for (j in 1:Nrep) {
+    x <- rbinom(n = 2,size = 2, prob = thetas[i]/4)
+    test[j] <- x!=1
+  }
+  pot_emp[i] <- mean(test)
+}
+pot_emp
+
+# Con hipergeométrica
+1-choose(2,1)*choose(2,1)/choose(4,2)
+
+pot_teo <- function(theta) {
+  1-choose(theta,1)*choose(4-theta,1)/choose(4,2)
+}
+pot_teo(thetas)
+
 # Ejercicio 7 ####
 data <- c(37, 39.5, 41.7, 42, 40, 41.25, 43, 44.05, 38, 38.5)
 sum(data)
@@ -11,6 +52,7 @@ mu2 <- 40
 t <- (sum(data) - mu1*n)/sqrt(sd2_0*n)
 t
 
+sqrt(10) * (mean(data)-37)/5
 qnorm(p = .95)
 
 ## b ####
@@ -69,12 +111,12 @@ pchisq(df = 21, q = 21*0.6)
 # Ejercicio 13 ####
 ## a ####
 # Quiero ver la potencia
-thetas <- seq(0.9,1.1,.01)
+thetas <- seq(.9,1.1,.001)
 alpha <- .05
 n <- 100
-pot <- 1 - (1-alpha)/(thetas)^(2*n)
+pot <- 1 - (1-alpha)/(thetas)^(n)
 plot(thetas, pot)
-
+pot[thetas==1]
 log(9.5)/log(1.1)
 
 ## b-i ####
