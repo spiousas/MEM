@@ -151,7 +151,7 @@ plot(thetas, pot_unilateral_exacto_uniforme(thetas,20,2,0.05))
 
 ## ├Poblacion Pareto: Ensayo Unilateral para $m$ con $\beta$ conocido. ####
 ## ├Pareto unilateral ####
-library(EnvStats)
+library(sads)
 nivel_empirico_unilateral_exacto_pareto_para_m=function(nrep,n,m0,beta,alfa){
   vec_rechazos=c()
   for (i in 1:nrep){
@@ -194,3 +194,139 @@ pot_unilateral_bernoulli(.5,2500,0.5,0.05)
 # Sampleo para todos los ps validos
 ps <- seq(0,1,.01)
 plot(ps, pot_unilateral_bernoulli(ps,20,0.5,0.05))
+
+## ├Poblacion Binomial con k>1 conocido: Ensayo Unilateral asintotico para $p$. ####
+# Binomial asintotico unilateral k conocido:
+# Lo hacemos para p mayor en la alternativa
+nivel_empirico_binomial_asiontotico=function(nrep,n,k,p0,alfa){
+  vec_rechazos=c()
+  for (i in 1:nrep){
+    muestra=rbinom(n,size=k,prob = p0) 
+    estadistico_obs=(sum(muestra)-(n*k*p0))/(sqrt( n*k*(1-p0)*p0))
+    cuantil=qnorm(p = 1-alfa)
+    vec_rechazos=c(vec_rechazos,estadistico_obs>cuantil)
+  }
+  return(mean(vec_rechazos))
+}
+nivel_empirico_binomial_asiontotico(1000,2000,5,0.5,0.05)
+
+# La potencia
+pot_binomial_asiontotico=function(p,n,k,p0,alfa){
+  1-pnorm(qnorm(1-alfa)*sqrt(p0*(1-p0))/sqrt(p*(1-p)) + sqrt(n*k)/sqrt((p*(1-p))) * (p-p0))
+}
+
+# Para p=.5
+pot_binomial_asiontotico(0.5,2500,5,0.5,0.05)
+
+# Sampleo para todos los ps validos
+ps <- seq(0,1,.01)
+plot(ps, pot_binomial_asiontotico(ps,20,5,0.5,0.05))
+
+## ├Poblacion Poisson: Ensayo Unilateral asintotico para $\lambda$. ####
+# Poisson asintotico Unilateral
+# Lo hacemos para lambda mayor en la alternativa
+nivel_empirico_unilateral_poisson=function(nrep,n,lambda0,alfa){
+  vec_rechazos=c()
+  for (i in 1:nrep){
+    muestra=rpois(n,lambda = lambda0) 
+    estadistico_obs=(sum(muestra)-n*lambda0)/sqrt(n*lambda0)
+    cuantil=qnorm(p = 1-alfa)
+    vec_rechazos=c(vec_rechazos,estadistico_obs>cuantil)
+  }
+  return(mean(vec_rechazos))
+}
+
+nivel_empirico_unilateral_poisson(1000,2500,2,0.05)
+
+# La potencia
+pot_unilateral_poisson=function(lambda,n,lambda0,alfa){
+  1-pnorm(qnorm(1-alfa)*sqrt(lambda0)/sqrt(lambda) + sqrt(n)/sqrt(lambda) * (lambda0-lambda))
+}
+
+# Para lambda0
+pot_unilateral_poisson(2,2500,2,0.05)
+
+# Sampleo lambda
+lambdas <- seq(1,3,.01)
+plot(lambdas, pot_unilateral_poisson(lambdas,2500,2,0.05))
+
+## ├Poblacion Exponencial: Ensayo Unilateral asintotico para $\lambda$. ####
+# Exponencial asintotico Unilateral
+# Lo hacemos para lambda mayor en la alternativa
+nivel_empirico_unilateral_exponencial=function(nrep,n,lambda0,alfa){
+  vec_rechazos=c()
+  for (i in 1:nrep){
+    muestra=rexp(n,rate =  lambda0) 
+    estadistico_obs=(sum(muestra)-n/lambda0)/sqrt(n/lambda0^2)
+    cuantil=qnorm(p = alfa)
+    vec_rechazos=c(vec_rechazos,estadistico_obs<cuantil)
+  }
+  return(mean(vec_rechazos))
+}
+
+nivel_empirico_unilateral_exponencial(1000,2500,2,0.05)
+
+# La potencia
+pot_unilateral_exponencial_asintotico=function(lambda,n,lambda0,alfa){
+  pnorm(qnorm(alfa)*lambda/lambda0 + lambda*sqrt(n)*(1/lambda0-1/lambda))
+}
+
+# Para lambda0
+pot_unilateral_exponencial_asintotico(2,30,2,0.05)
+
+# Sampleo lambda
+lambdas <- seq(1,3,.01)
+plot(lambdas, pot_unilateral_exponencial_asintotico(lambdas,100,2,0.05))
+
+## ├Poblacion Geometrica: Ensayo Unilateral asintotico para $p$. ####
+# geometrica asintotico unilateral (con H1 en mayor):
+nivel_empirico_geometrica_asiontotico=function(nrep,n,p0,alfa){
+  vec_rechazos=c()
+  for (i in 1:nrep){
+    muestra=rgeom(n,prob = p0)+1 # tenes que correrlo uno porque la primer tirada te la cuenta como la tirada cero
+    estadistico_obs=(sum(muestra)-(n/p0))/(sqrt( (n*(1-p0))/p0^2))
+    cuantil=qnorm(p = alfa)
+    vec_rechazos=c(vec_rechazos,estadistico_obs<cuantil)
+  }
+  return(mean(vec_rechazos))
+}
+nivel_empirico_geometrica_asiontotico(1000,1000,0.5,0.05)
+
+# La potencia
+pot_geometrica_asiontotico=function(p,n,p0,alfa){
+  pnorm(qnorm(alfa)*sqrt(((1-p0)*p)/((1-p)*p0)) + p*sqrt(n)/sqrt(1-p)*(1/p0-1/p))
+}
+
+# Para p=.5
+pot_geometrica_asiontotico(.5,1000,0.5,0.05)
+
+# Sampleo los ps
+ps <- seq(0,1,.01)
+plot(ps, pot_geometrica_asiontotico(ps,100,0.5,0.05))
+
+## ├Poblacion Geometrica: Ensayo Unilateral asintotico para $p$. ####
+# pascal asintotico unilateral (H1 con mayor):
+nivel_empirico_pascal_asiontotico=function(nrep,n,k,p0,alfa){
+  vec_rechazos=c()
+  for (i in 1:nrep){
+    muestra=rnbinom(n,size = k,prob = p0)+k # tenes que correrlo k lugares porque la primer tirada te la cuenta como la tirada cero
+    estadistico_obs=(sum(muestra)-(n*k/p0))/(sqrt( (n*k*(1-p0))/p0^2))
+    cuantil=qnorm(p = alfa)
+    vec_rechazos=c(vec_rechazos,estadistico_obs<cuantil)
+  }
+  return(mean(vec_rechazos))
+}
+
+nivel_empirico_pascal_asiontotico(1000,1000,10,0.5,0.05)
+
+# La potencia
+pot_pascal_asiontotico=function(p,n,k,p0,alfa){
+  pnorm(qnorm(alfa)*sqrt(((1-p0)*p^2)/((1-p)*p0^2)) + p*sqrt(k*n)/sqrt(1-p)*(1/p0-1/p))
+}
+
+# Para p=.5
+pot_pascal_asiontotico(.5,1000,10,0.5,0.05)
+
+# Sampleo los ps
+ps <- seq(0,1,.01)
+plot(ps, pot_pascal_asiontotico(ps,10,5,0.5,0.05))
