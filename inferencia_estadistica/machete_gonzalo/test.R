@@ -330,3 +330,36 @@ pot_pascal_asiontotico(.5,1000,10,0.5,0.05)
 # Sampleo los ps
 ps <- seq(0,1,.01)
 plot(ps, pot_pascal_asiontotico(ps,10,5,0.5,0.05))
+
+# IUMP Exactos - Una Muestra ####
+## ├Poblacion normal: Ensayo Bilateral para $\mu$ con $\sigma$ concido. ####
+# Normal para la media sigma conocido  bilateral:
+nivel_empirico_bilateral_exacto_dist_normal_mu_sigma_conocido=function(nrep,n,mu0,sigma,alfa){
+  vec_rechazos=c()
+  for (i in 1:nrep){
+    muestra=rnorm(n,mu0,sigma) 
+    estadistico_obs=sqrt(n)*abs(mean(muestra)-mu0)/(sigma)
+    cuantil=qnorm(p = 1-alfa/2)
+    vec_rechazos=c(vec_rechazos,estadistico_obs>cuantil)
+  }
+  return(mean(vec_rechazos))
+}
+
+nivel_empirico_bilateral_exacto_dist_normal_mu_sigma_conocido(5000,1000,2,1,0.05)
+
+
+# La potencia
+pot_bilateral_exacto_dist_normal_mu_sigma_conocido=function(mu,n,mu0,sigma,alfa{
+  pnorm(qnorm(alfa)*sqrt(((1-p0)*p^2)/((1-p)*p0^2)) + p*sqrt(k*n)/sqrt(1-p)*(1/p0-1/p))
+}
+
+# Para mu=2
+pot_bilateral_exacto_dist_normal_mu_sigma_conocido(2,1000,2,1,0.05)
+
+# Sampleo los mus
+mus <- seq(0,3,.01)
+plot(mus, pot_bilateral_exacto_dist_normal_mu_sigma_conocido(mus,1000,2,1,0.05))
+
+## ├Poblacion normal: Ensayo Bilateral para $\mu$ con $\sigma$ concido. ####
+## ├Poblacion normal: Ensayo Bilateral para $\mu$ con $\sigma$ concido. ####
+## ├Poblacion normal: Ensayo Bilateral para $\mu$ con $\sigma$ concido. ####

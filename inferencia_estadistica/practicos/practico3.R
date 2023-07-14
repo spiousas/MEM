@@ -47,7 +47,15 @@ x_mean
 S <- sd(x)
 alfa <- .08
 
+# a ####
+t <- sqrt(n) * (x_mean-mu0)/S
+t
 cuantil <- qt(df = n-1, p = 1-alfa)
+cuantil
+t>cuantil
+
+1 - pt(df=n-1, q=t)
+# b ####
 
 ## Ejercicio 3 ####
 ## a ####
