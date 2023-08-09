@@ -1,0 +1,175 @@
+---
+title: "Entrega 6.2"
+author: "Ignacio Spiousas"
+date: '2023-08-02'
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, here, MASS)
+```
+
+## Funciones para hallar los intervalos de confianza
+
+### Intervalo de confianza de la mediana con Bootstrap no paramétrico
+
+Para cada repetición tomamos una muestra no paramétrica (una submuestra de x), y con eso calculamos el IC.
+
+```{r}
+int_mediana_bootu <- function(x, nBootstrap, alpha){
+    set.seed(1)
+    estim_boot <- rep(0, nBootstrap)
+    
+    for(i in 1:nBootstrap){
+      x_sample <- sample(x, length(x), replace = TRUE)
+      estim_boot[i] <- median(x_sample)
+    }
+    se <- sqrt(mean((estim_boot-mean(estim_boot))^2))
+    z <- qnorm(p = 1-alpha/2, 
+               mean = 0, 
+               sd = 1)
+    
+    ci_inf <- median(x) - (z*se)
+    ci_sup <- median(x) + (z*se)
+    
+    return(c(ci_inf,ci_sup))
+  }
+```
+
+### Intervalo de confianza de la mediana con Bootstrap paramétrico
+
+Para cada repetición generamos una muestra paramétrica a partir de los parámetros estimados por la muestra original, y con eso calculamos el IC.
+
+```{r}
+int_mediana_bootp <- function(x, nBootstrap, alpha){
+    set.seed(1)
+    estim_boot <- rep(0, nBootstrap)
+    estim <- fitdistr(x, densfun = "gamma")$estimate
+    
+    for(i in 1:nBootstrap){
+      x_sample <- rgamma(n = length(x), 
+                         shape = estim[1], 
+                         rate = estim[2])
+      estim_boot[i] <- median(x_sample)
+    }
+    
+    se <- sqrt(mean((estim_boot-mean(estim_boot))^2))
+    z <- qnorm(p = 1-alpha/2, 
+               mean = 0, 
+               sd = 1)
+    
+    ci_inf = median(x) - (z*se)
+    ci_sup = median(x) + (z*se)
+    
+    return(c(ci_inf,ci_sup))
+}
+```
+
+### Intervalo de confianza de la mediana teórico no paramétrico
+
+Lo calculo a partir de la estimación de la densidad.
+
+```{r}
+int_mediana_teonp <- function(x, alpha){
+  
+  densidad_est <- density(x)
+  estim <- median(x)
+  f_hat <- approxfun(densidad_est)(estim)
+  
+  se = (1/(2*sqrt(length(x))*f_hat))
+  z = qnorm(p = 1-alpha/2, 
+            mean = 0, 
+            sd = 1)
+  
+  ci_inf = median(x) - (z*se)
+  ci_sup = median(x) + (z*se)
+  return(c(ci_inf,ci_sup))
+}
+```
+
+### Intervalo de confianza de la mediana teórico paramétrico
+
+Lo calculo a partir de los parámetros de la distribución gamma, por eso es paramétrico.
+
+```{r}
+int_mediana_teop <- function(x, alpha){
+  
+  estimates <- fitdistr(x, densfun = "gamma")$estimate
+  estim <- median(x)
+  
+  f_hat <- dgamma(estim, 
+                  shape = estimates[1], 
+                  rate = estimates[2])
+  
+  se = (1/(2*sqrt(length(x))*f_hat))
+  z = qnorm(p = 1-alpha/2, 
+            mean = 0, 
+            sd = 1)
+  
+  ci_inf = median(x) - (z*se)
+  ci_sup = median(x) + (z*se)
+  return(c(ci_inf,ci_sup))
+}
+```
+
+## Cubrimientos empíricos
+
+Ahora voy a calcular el cubrimiento empírico de cada uno de estos ICs.
+
+```{r}
+cubrimientos_empiricos<-function(n, Nrep, alpha, seed, shape, rate){
+  
+  # La mediana estimada
+  theta <- qgamma(0.5, shape = shape, rate = rate)
+  
+  cubrimiento <- matrix(, nrow = Nrep, ncol = 4)
+  
+  set.seed(seed)
+  
+  for (i in 1:Nrep){
+    # Tomo una muestra de una gamma
+    x_sample <- rgamma(n, 
+                       shape = shape, 
+                       rate = rate)
+    
+    # Calculo los 4 intervalos
+    ci_1 <- int_mediana_bootu(x = x_sample,
+                              alpha = alpha,
+                              nBootstrap = 5000)
+    ci_2 <- int_mediana_bootp(x = x_sample,
+                              alpha = alpha,
+                              nBootstrap = 5000)
+    ci_3 <- int_mediana_teonp(x = x_sample,
+                              alpha = alpha)
+    ci_4 <- int_mediana_teop(x = x_sample,
+                             alpha = alpha)
+    #print(ci_1)
+    cubrimiento[i,1] <- ci_1[1] < theta & theta < ci_1[2]
+    cubrimiento[i,2] <- ci_2[1] < theta & theta < ci_2[2]
+    cubrimiento[i,3] <- ci_3[1] < theta & theta < ci_3[2]
+    cubrimiento[i,4] <- ci_4[1] < theta & theta < ci_4[2]
+    #print(i)
+  }
+  return(c(mean(cubrimiento[,1]),
+           mean(cubrimiento[,2]),
+           mean(cubrimiento[,3]),
+           mean(cubrimiento[,4])))
+}
+```
+
+Los cubrimientos en función de n:
+
+```{r, warning=FALSE, echo=FALSE}
+resultados_cubrimientos<-matrix(NA,nrow=3,ncol=4)
+colnames(resultados_cubrimientos) <- c("I1","I2","I3","I4")
+rownames(resultados_cubrimientos) <- c("n=8","n=30","n=100")
+resultados_cubrimientos[1,] <- cubrimientos_empiricos(n = 8, Nrep = 1000, alpha = 0.05, seed = 1, shape =20, rate = 4)
+resultados_cubrimientos[2,] <- cubrimientos_empiricos(n = 30, Nrep = 1000, alpha = 0.05, seed = 1, shape =20, rate = 4)
+resultados_cubrimientos[3,] <- cubrimientos_empiricos(n = 100, Nrep = 1000, alpha = 0.05, seed = 1, shape =20, rate = 4)
+
+as_tibble(resultados_cubrimientos) %>% 
+  bind_cols(n = c(8, 30, 100)) %>% 
+  relocate(n, .before = I1) %>% 
+  knitr::kable()
+```
