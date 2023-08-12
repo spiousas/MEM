@@ -152,25 +152,23 @@ M <- cov(x)
 M
 distance(x, m, M)
 
-# Ejercicio 5 ####
-x <- matrix(rnorm(100), ncol=2)
-x
 
+# Ejercicio 5 ####
 set.seed(1234)
 x <- mvrnorm(n = 50, mu = c(0,0), Sigma = matrix(c(2,1,1,2), nrow = 2))
 data <- as_tibble(x, .name_repair = "universal") %>%
   rename(x1 = "...1", x2 = "...2")
 
+# a <- matrix(c(1, 1), nrow = 2)
 a <- matrix(c(cos(pi/4), cos(pi/4)), nrow = 2)  
 
-data_rot <- as_tibble(x %*% a, .name_repair = "universal") %>%
-  rename(mod = "...1") %>%
-  mutate(x1 = mod * cos(pi/4),
-         x2 = mod * sin(pi/4))
+# La x proyectada en la recta y después puesta en R2 es x %*% a %*% t(a)
+data_rot <- as_tibble(x %*% a %*% t(a), .name_repair = "universal") %>% 
+  rename(x1 = "...1", x2 = "...2") 
 data_rot
 
 data %>% ggplot(aes(x = x1,
-           y = x2)) +
+                    y = x2)) +
   geom_point(color = "grey") + 
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_vline(xintercept = 0, linetype = "dotted") +
@@ -179,5 +177,39 @@ data %>% ggplot(aes(x = x1,
   scale_x_continuous(limits = c(-4,4), minor_breaks = NULL) +
   scale_y_continuous(limits = c(-4,4), minor_breaks = NULL) +
   theme_bw() 
+
+# Interpretación con componentes principales
+# t(A) * x = psi
+# Poblacional ->
+# A = [b1, b2] donde b1 y b2 son los autovectores asosiados a los autovalores
+# lambda1 >= lambda2 de la matriz Sigma
+# Muestral ->
+# x * Ahat = Z
+# Ahat = [v1_hat, v2_hat] donde v1_hat y v2_hat son los autovectores asosiados
+# a los autovalores lambda1 >= lambda2 de la matriz S (la estimada de Sigma)
+# Z es psi_hat
+
+Sigma <- matrix(c(2,1,1,2), nrow = 2)
+A <- eigen(Sigma)$vectors
+A_hat <- eigen(cov(x))$vectors
+
+data_PCA_data <- as_tibble(x %*% A_hat, .name_repair = "universal") %>% 
+  rename(x1 = "...1", x2 = "...2") 
+
+data %>% ggplot(aes(x = x1,
+                    y = x2)) +
+  geom_point(color = "grey") + 
+  geom_hline(yintercept = 0, linetype = "dotted") +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_abline(slope = 1, intercept = 0) +
+  geom_point(data = A_hat[2,1]/A_hat[1,1], color = "red") +
+  scale_x_continuous(limits = c(-4,4), minor_breaks = NULL) +
+  scale_y_continuous(limits = c(-4,4), minor_breaks = NULL) +
+  theme_bw() 
+
+eigen(cov(x))$values/sum(eigen(cov(x))$values)
+
+
 
 
