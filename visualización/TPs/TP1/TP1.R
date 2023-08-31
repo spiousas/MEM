@@ -125,7 +125,7 @@ i <- 1
 
 d <- sqrt(t(x[i,]-m) %*% M %*% (x[i,]-m))
 
-distance <- function(x, m, M) {
+distance <- function(x, m, M) {                                                                               
   for (i in 1:nrow(x)) {
     d[i] <- sqrt(t(x[i,]-m) %*% inv(M) %*% (x[i,]-m))
   }
