@@ -9,7 +9,7 @@ data_constructora_center <-
   data_constructora %>% 
   mutate(x1 = x1 - mean(x1),
          x2 = x2 - mean(x2),
-         x2 = x3 - mean(x3))
+         x3 = x3 - mean(x3))
          
 data_constructora_center %>% ggplot(aes(x = x1,
                                         y = x2)) +
@@ -51,7 +51,16 @@ sum(eigen(cov(as.matrix(data_constructora_center[,2:4])))$values[1:2]) / sum(eig
 # Las dos primeras componentes explican el 100% de la variabilidad
 
 ## e ####
-# NO ENTIENDO QUÉ TENGO QUE HACER ACÁ
+a <- eigen(cov(as.matrix(data_constructora_center[,2:4])))
+a_cor <- eigen(cor(as.matrix(data_constructora_center[,2:4])))
+
+pca_scaled <- prcomp(scale(as.matrix(data_constructora_center[,2:4])))
+pca_scaled$sdev
+a_cor$values/3
+a_cor$values/3
+biplot(pca_scaled)
+pca <- prcomp(as.matrix(data_constructora_center[,2:4]))
+biplot(pca)
 
 # Ejercicio 2.4 ####
 data_paises <- read_csv(here("visualización/TPs/data/paises_mundo.csv"))
@@ -90,6 +99,7 @@ rbind(
   Cumulative = cumsum(eigs)/sum(eigs)*100)
 
 heatmap(summary(pca_paises)$rotation,  Colv = NA, Rowv = NA, scale="column")
+heatmap(cor(centered_x,scores),  Colv = NA, Rowv = NA, scale="column")
 
 ## Version ii. - Sin scale y transformando con log ####
 # Calculo el PCA
