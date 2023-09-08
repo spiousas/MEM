@@ -161,8 +161,8 @@ heatmap(summary(pca_paises_scaled)$rotation,  Colv = NA, Rowv = NA, scale="colum
 
 data_vinos <- read_csv(here("visualización/TPs/data/vinos.csv"))
 
-pca_nci_vinos <- prcomp(as.matrix(data_vinos), scale = T)
-biplot(pca_nci_vinos)
+pca_nci_vinos <- prcomp(scale(as.matrix(data_vinos)))
+
 
 # Voy a usar la función fviz_pca_biplot del paquete {factoextra}
 fviz_pca_biplot(pca_nci_vinos,

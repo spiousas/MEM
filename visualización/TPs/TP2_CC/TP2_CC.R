@@ -226,3 +226,55 @@ ZW <- cbind(X,W)
 round(colMeans(ZW), digits = 2)
 round(cov(ZW), digits = 2)
 round(sigma_total, digits = 2)
+
+## g ####
+# FALTA
+
+# Ejercicio 2.8 ####
+data_autos <- read_delim(here("visualización/TPs/TP2_CC/data/autos.txt"))
+data_autos
+
+X <- data_autos %>% dplyr::select(all_of(c("X1", "X2", "X5", "X7", "X8")))
+X
+
+Y <- data_autos %>% dplyr::select(all_of(c("X3", "X4")))
+Y
+
+# Calculos las varianzas
+sigma_x <- cov(X)
+sigma_x
+sigma_y <- cov(Y)
+sigma_y
+sigma_xy <- cov(X, Y)
+sigma_xy
+
+# Voy a llamar Ups a la matriz Upsilon
+Ups <- inv(sigma_x) %*% sigma_xy %*% inv(sigma_y) %*% t(sigma_xy)
+Ups
+
+# Ahora calculo los autovectores de esto
+eig <- eigen(Ups)
+
+# alpha_1
+m_1 <- matrix(eig$vectors[,1])
+k <- 1/sqrt(t(m_1) %*% sigma_x %*% m_1)
+alpha_1 <- as.numeric(k)*m_1
+alpha_1
+
+# beta_1
+n_1 <- 1/eig$values[1] * inv(sigma_y) %*% t(sigma_xy) %*% alpha_1
+k <- 1/sqrt(t(n_1) %*% sigma_y %*% n_1)
+beta_1 <- as.numeric(k)*n_1
+beta_1
+
+# alpha_2
+m_2 <- matrix(eig$vectors[,2])
+k <- 1/sqrt(t(m_2) %*% sigma_x %*% m_2)
+alpha_2 <- as.numeric(k)*m_2
+alpha_2
+
+# beta_2
+n_2 <- 1/eig$values[1] * inv(sigma_y) %*% t(sigma_xy) %*% alpha_2
+k <- 1/sqrt(t(n_2) %*% sigma_y %*% n_2)
+beta_2 <- as.numeric(k)*n_2
+beta_2

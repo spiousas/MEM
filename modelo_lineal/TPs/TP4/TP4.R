@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, here)
+pacman::p_load(tidyverse, here, janitor)
 
 # Ejercicio 1 ####
 ## a ####
@@ -163,7 +163,7 @@ sd_beta2 <- rep(NA, Nrep)
 cubrimiento_beta_1 <- rep(NA, Nrep)
 cubrimiento_beta_2 <- rep(NA, Nrep)
 
-set.seed(1234)
+set.seed(78454)
 for (i in 1:Nrep) {
   e <- rnorm(n)
   Y <- beta0 + beta1*X1 + beta2*X2 + e
@@ -254,3 +254,205 @@ sum(cubrimiento_beta_1 & cubrimiento_beta_2)/Nrep
 ## Conclusiones ####
 # En ambos casos el cubrimiento es muy bueno, aunque con n=10 la distribución de beta_1
 # pareciera estar sesgada.
+
+# Ejercicio 4 ####
+paralel <- read_csv(here("modelo_lineal/TPs/TP4/data/paralel.csv"))
+names(paralel)
+paralel
+
+## a ####
+n1 <- length(paralel$x1)
+n2 <- length(paralel$x2)
+y <- c(paralel$y1,paralel$y2)
+# Fabricamos la martriz de diseño a mano
+X <- matrix(0,n1+n2,2)
+X[1:n1,1] <- rep(1,n1)
+X[(n1+1):(n1+n2),2] <- rep(1,n2)
+
+ajuste <- lm(y~X-1) ## No queremos ajustar con intercept, por eso el -1
+summary(ajuste)
+p <- dim(X)[2]
+n <- length(y)
+s2 <- sum(ajuste$residuals^2)/(n-p)
+# s2 <- summary(ajuste)$sigma^2 # Da lo mismo así
+
+# Mis hipótesis son
+# H0: mu0 = mu1
+# vs.
+# H1: mu0 != mu1
+# H0 también se puede escribir como mu0 - mu1 = 0, por eso escribo al vector a como:
+a <- c(1,-1)
+# Construimos el estadistico del test en este caso (n este caso c=0)
+TE <- (t(a)%*%(ajuste$coefficients))/sqrt(s2*t(a)%*%solve(t(X)%*%X)%*%a) ## ver tema vector, matriz, dimension
+
+pvalor <- 2*pt(TE, df=n-p,lower.tail = FALSE)
+pvalor
+
+## Funcion que sirve para testear H_0: a^T beta = c versus H_0: a^T beta != c
+test.cl.beta <- function(X,y,a,c)
+{
+  ajuste <- lm(y~X-1)
+  summary(ajuste)
+  p <- dim(X)[2]
+  n <- length(y)
+  s2 <- sum(ajuste$residuals^2)/(n-p)
+  
+  TE <- (t(a)%*%(ajuste$coefficients)-c)/sqrt(s2*t(a)%*%solve(t(X)%*%X)%*%a)
+  
+  pvalor <- 2*pt(abs(TE), df=n-p,lower.tail = FALSE)
+  pvalor
+  
+}
+test.cl.beta(X,y,c(1,-1),c=0)
+# Esto también se puede hacer con el t.test de toda la vida.
+t.test(paralel$y1,paralel$y2,var.equal = TRUE)
+
+## Alternativa con intercept
+# Tiene la ventaja de que el parámetro (que es la diferencia entre las medias) es
+# directamente el test que estamos buscando
+n1 <- length(paralel$x1)
+n2 <- length(paralel$x2)
+y <- c(paralel$y1,paralel$y2)
+#fabricamos la matriz de disenio a mano
+X <- matrix(0,n1+n2,1)
+X[1:n1,1] <- rep(0,n1)
+X[(n1+1):(n1+n2),1] <- rep(1,n2)
+ajuste <- lm(y~X) ## No queremos ajustar con intercept ?que pasa si ajusto con intercept?
+summary(ajuste)
+
+# Ejercicio 5 ####
+
+# Ejercicio 6 ####
+
+data_salary <- read_delim(here("modelo_lineal/TPs/TP4/data/salary.txt")) %>%
+  clean_names() %>%
+  mutate(sex = if_else(sex==0, "Hombre", "Mujer"),
+         rank = if_else(rank==1, "Assistant Professor", if_else(rank==2, "Associate Professor", "Full Profesor")))
+
+
+data_salary
+
+## a ####
+data_salary %>%
+  ggplot(aes(x = year,
+             y = salary,
+             color = sex)) +
+  geom_point() + 
+  theme_bw()
+    
+data_salary %>%
+  ggplot(aes(x = y_sdeg,
+             y = salary,
+             color = sex)) +
+  geom_point() + 
+  theme_bw()
+
+data_salary %>%
+  ggplot(aes(x = sex,
+             y = salary,
+             color = sex)) +
+  geom_boxplot() +
+  geom_jitter() + 
+  theme_bw()
+
+data_salary %>%
+  ggplot(aes(x = rank,
+             y = salary,
+             color = sex)) +
+  geom_boxplot() +
+  theme_bw()
+
+## a ####
+x <- data_salary$salary[data_salary$sex=="Hombre"]
+y <- data_salary$salary[data_salary$sex=="Mujer"]
+t.test(x,y)
+
+# Ganan más los hombres pero la diferencia no es significativa.
+
+## c.i ####
+model_salary <- lm(data = data_salary,
+                   salary ~ sex + year)
+summary(model_salary)
+confint(model_salary)
+
+# Intervalo de confianza para sigma
+sigma <- sigma(model_salary)
+sigma
+
+n <- nrow(data_salary)
+k <- 2 # Dos predictores
+alpha <- 0.05
+
+lower <- (n-(k+1))*sigma^2/qchisq(alpha/2, df = n-(k+1), lower.tail = FALSE)
+upper <- (n-(k+1))*sigma^2/qchisq(1-alpha/2, df = n-(k+1), lower.tail = FALSE)
+
+confint_sigma <- round(sqrt(c(lower, upper)), 4)
+names(confint_sigma) <- c("lower", "upper")
+confint_sigma
+
+## c.ii ####
+# La hipótesis nula es que en parámetro (el que corresponde) es igual a cero y la 
+# alternativa es que es diferente de cero
+
+## c.iii ####
+colormap <- c("#E69F00", "#56B4E9")
+data_salary %>%
+  ggplot(aes(x = year,
+             y = salary,
+             color = sex)) +
+  geom_point() + 
+  geom_abline(intercept = model_salary$coefficients[1], slope = model_salary$coefficients[3], color = colormap[1], linewidth = 1) +
+  geom_abline(intercept = model_salary$coefficients[1] + model_salary$coefficients[2], slope = model_salary$coefficients[3], color = colormap[2], linewidth = 1) +
+  scale_color_manual(values =colormap) +
+  theme_bw() +
+  theme(legend.position = "top")
+
+# Observo que la reta para mujeres está ligeramente por encima de la recta para varones
+
+## c.iv ####
+model_salary_mujer <- lm(data = data_salary %>% filter(sex=="Mujer"),
+                   salary ~ year)
+summary(model_salary_mujer)
+
+model_salary_hombre <- lm(data = data_salary %>% filter(sex=="Hombre"),
+                   salary ~ year)
+summary(model_salary_hombre)
+
+colormap <- c("#E69F00", "#56B4E9")
+data_salary %>%
+  ggplot(aes(x = year,
+             y = salary,
+             color = sex)) +
+  geom_point() + 
+  geom_abline(intercept = model_salary_hombre$coefficients[1], slope = model_salary_hombre$coefficients[2], color = colormap[1], linewidth = 1) +
+  geom_abline(intercept = model_salary_mujer$coefficients[1], slope = model_salary_mujer$coefficients[2], color = colormap[2], linewidth = 1) +
+  scale_color_manual(values =colormap) +
+  theme_bw() +
+  theme(legend.position = "top")
+
+# Se pierde la posibilidad de comparar ambas rectas. Se gana que las pendientes pueden sre diferentes.
+
+## c.v ####
+# Para permitir distintas pendientes pero sin perder la posibilidad de comparar deberíamos
+# ajustar un modelo con interacción
+
+model_salary_interac <- lm(data = data_salary,
+                           salary ~ year * sex)
+summary(model_salary_interac)
+
+## d ####
+model_salary_rank <- lm(data = data_salary,
+                        salary ~ sex + year + rank)
+summary(model_salary_rank)
+confint(model_salary_rank)
+
+model.matrix(model_salary_rank)
+
+predict_tbl <- tibble(year = c(10, 10, 10, 10),
+                      sex = c("Mujer", "Hombre", "Mujer", "Hombre"),
+                      rank = c("Assistant Professor", "Assistant Professor",
+                               "Associate Professor", "Associate Professor")) 
+
+predicted <- predict_tbl %>%
+  mutate(pred_salary = predict(model_salary_rank, newdata = predict_tbl))
+predicted
