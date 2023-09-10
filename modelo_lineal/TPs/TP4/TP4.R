@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, here, janitor)
+pacman::p_load(tidyverse, here, janitor, matlib)
 
 # Ejercicio 1 ####
 ## a ####
@@ -321,6 +321,36 @@ ajuste <- lm(y~X) ## No queremos ajustar con intercept ?que pasa si ajusto con i
 summary(ajuste)
 
 # Ejercicio 5 ####
+data_paralel <- read_delim(here("modelo_lineal/TPs/TP4/data/paralel.csv"))
+
+# La matriz X queda definida de esta forma (con 0s y 1s metidos en el medio)
+X <- matrix(c(rep(1, 20), rep(0,20), data_paralel$x1, rep(0,20),
+              rep(0, 20), rep(1,20), rep(0,20), data_paralel$x2), 
+            ncol = 4)
+# La matriz Y es simplemente concatenar las Ys
+Y <- matrix(c(data_paralel$y1, data_paralel$y2), 
+           ncol = 1)
+
+# Calculo los betas y la varianza de los sigmas estimada a partir de la matriz
+# de diseño y las Ys
+betas <- inv(t(X) %*% X) %*% t(X) %*% Y
+sigma2 <- 1/(n-p) * t(Y-X %*% betas) %*% (Y-X %*% betas)
+
+# Para los grados de libertad
+n <- nrow(Y)
+p <- ncol(X)
+
+# Las matrices del test
+a <- matrix(c(0, 1, 0 , -1), ncol = 1)
+c <- 0
+
+# El estadístico
+TE <- (t(a)%*%(betas)-c)/sqrt(sigma2*t(a)%*%solve(t(X)%*%X)%*%a)
+TE
+
+# El p-valor
+p_value <- 2*pt(q = TE, df = n-p, lower.tail = F)
+p_value 
 
 # Ejercicio 6 ####
 
@@ -328,9 +358,6 @@ data_salary <- read_delim(here("modelo_lineal/TPs/TP4/data/salary.txt")) %>%
   clean_names() %>%
   mutate(sex = if_else(sex==0, "Hombre", "Mujer"),
          rank = if_else(rank==1, "Assistant Professor", if_else(rank==2, "Associate Professor", "Full Profesor")))
-
-
-data_salary
 
 ## a ####
 data_salary %>%

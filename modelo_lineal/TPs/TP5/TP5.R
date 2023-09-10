@@ -193,7 +193,7 @@ X <- model.matrix(model3_a)
 X
 
 # Calculo el F
-F_val <- t(A %*% betas) %*% inv(A %*% inv(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model2_b)$sigma^2)
+F_val <- t(A %*% betas) %*% inv(A %*% inv(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model3_a)$sigma^2)
 F_val
 
 # Y ahora el p-value
@@ -201,3 +201,4 @@ pf(df1 = nrow(A), df2 = nrow(X)-ncol(X), q = as.numeric(F_val), lower.tail = FAL
 
 # No tenemos evidencia suficiente como para decir que los parámetros poblacionales de las 
 # pendientes son diferentes.
+
