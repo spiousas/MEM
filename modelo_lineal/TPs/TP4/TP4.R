@@ -407,11 +407,11 @@ sigma <- sigma(model_salary)
 sigma
 
 n <- nrow(data_salary)
-k <- 2 # Dos predictores
+p <- ncol(model.matrix(model_salary)) # Tres predictores
 alpha <- 0.05
 
-lower <- (n-(k+1))*sigma^2/qchisq(alpha/2, df = n-(k+1), lower.tail = FALSE)
-upper <- (n-(k+1))*sigma^2/qchisq(1-alpha/2, df = n-(k+1), lower.tail = FALSE)
+lower <- (n-p)*sigma^2/qchisq(alpha/2, df = n-p, lower.tail = FALSE)
+upper <- (n-p)*sigma^2/qchisq(1-alpha/2, df = n-p, lower.tail = FALSE)
 
 confint_sigma <- round(sqrt(c(lower, upper)), 4)
 names(confint_sigma) <- c("lower", "upper")

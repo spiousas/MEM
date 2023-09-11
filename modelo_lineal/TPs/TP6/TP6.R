@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, here, AER)
+pacman::p_load(tidyverse, here, AER, GGally, ellipse)
 colormap <- c("#E69F00", "#56B4E9", "#51513D", "#A23B72", "#88292F")
 
 # Ejercicio 1 ####
@@ -371,3 +371,341 @@ model_stratio_full <- lm(data = CASchools,
                          score ~ stratio * english * compst)
 summary(model_stratio_full)
 car::Anova(model_stratio_full, type = 3)
+
+# Ejercicio 2 ####
+data_growth <- read_delim(here("modelo_lineal/TPs/TP6/data/growth.txt"))
+
+## a ####
+data_growth %>% ggplot(aes(x = supplement,
+                           y = gain,
+                           fill = diet)) +
+  stat_summary(geom = "bar", position = position_dodge2()) +
+  scale_fill_manual(values = colormap) +
+  theme_bw() +
+  theme(legend.position = "top")
+  
+## b ####
+model_growth <- lm(data = data_growth,
+                   gain ~ diet * supplement)
+summary(model_growth)
+
+## c ####
+interaction.plot(data_growth$diet,data_growth$supplement,data_growth$gain)
+interaction.plot(data_growth$supplement,data_growth$diet,data_growth$gain)
+
+data_growth %>% ggplot(aes(x = diet,
+                           y = gain,
+                           color = supplement)) +
+  stat_summary() +
+  scale_color_manual(values = colormap) +
+  theme_bw() +
+  theme(legend.position = "top")
+
+## d ####
+model_growth_no_int <- lm(data = data_growth,
+                          gain ~ diet + supplement)
+summary(model_growth_no_int)
+
+anova(model_growth_no_int, model_growth)
+
+# Plantenado todo como en el teorema 3.3
+betas <- matrix(model_growth$coefficients)
+
+# Quiero que los betas 3, 4 y 5 sean iguales a 0
+A <- matrix(c(0, 0, 0, 0, 0, 0,
+              0, 0, 0, 0, 0, 0,
+              0, 0, 0, 0, 0, 0,
+              0, 0, 0, 0, 0, 0,
+              0, 0, 0, 0, 0, 0,
+              0, 0, 0, 0, 0, 0,
+              1, 0, 0, 0, 0, 0,
+              0, 1, 0, 0, 0, 0,
+              0, 0, 1, 0, 0, 0,
+              0, 0, 0, 1, 0, 0,
+              0, 0, 0, 0, 1, 0,
+              0, 0, 0, 0, 0, 1), nrow = 6)
+A
+C <- matrix(c(0, 0, 0, 0, 0, 0), nrow = 6)
+C
+
+# La matriz del modelo
+X <- model.matrix(model_growth)
+X
+
+# Calculo el F
+F_val <- t(A %*% betas) %*% solve(A %*% solve(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model_growth)$sigma^2)
+F_val
+
+# Y ahora el p-value
+pf(df1 = nrow(A), df2 = nrow(X)-ncol(X), q = as.numeric(F_val), lower.tail = FALSE)
+
+## e ####
+model_growth_no_int <- lm(data = data_growth,
+                          gain ~ diet + supplement)
+summary(model_growth_no_int)
+
+## f ####
+model_growth_no_supplement <- lm(data = data_growth,
+                          gain ~ diet)
+summary(model_growth_no_supplement)
+
+anova(model_growth_no_int, model_growth_no_supplement)
+
+# Plantenado todo como en el teorema 3.3
+betas <- matrix(model_growth_no_int$coefficients)
+
+# Quiero que los betas 3, 4 y 5 sean iguales a 0
+A <- matrix(c(0, 0, 0,
+              0, 0, 0,
+              0, 0, 0,
+              1, 0, 0,
+              0, 1, 0,
+              0, 0, 1), nrow = 3)
+A
+C <- matrix(c(0, 0, 0), nrow = 3)
+C
+
+# La matriz del modelo
+X <- model.matrix(model_growth_no_int)
+X
+
+# Calculo el F
+F_val <- t(A %*% betas) %*% solve(A %*% solve(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model_growth_no_int)$sigma^2)
+F_val
+
+# Y ahora el p-value
+pf(df1 = nrow(A), df2 = nrow(X)-ncol(X), q = as.numeric(F_val), lower.tail = FALSE)
+
+## g ####
+new_data <- tibble(diet = c("oats", "barley"),
+                   supplement = c("supersupp", "agrimore"))
+new_data
+
+predict(model_growth_no_int, newdata = new_data)
+
+# Ejercicio 1 ####
+data(stackloss)
+stackloss <- tibble(stackloss) %>%
+  clean_names()
+stackloss
+
+## a ####
+# R base
+pairs(stackloss, font.labels = 3, font.axis = 5, pch = 19)
+# ggplot2
+ggpairs(stackloss) +
+  theme_bw()
+
+## b ####
+model_stackloss <- lm(data = stackloss,
+                      stack_loss ~ air_flow + water_temp + acid_conc)
+summary(model_stackloss)
+
+## c ####
+summary(model_stackloss)
+# Los parámetros dan todos significativos salvo acid_conc
+# DUDA: A qué se refiere con "Qué modelo se considera en cada test"?
+# Lo que podría estar pasando es que hay colinealidad entre acid_conc y el resto de las variables
+
+## d ####
+model_stackloss_simple <- lm(data = stackloss, 
+                             stack_loss ~ air_flow + water_temp)
+summary(model_stackloss_simple)
+# Si miramos el R ajustado es un modelo "mejor"
+
+## e ####
+confint(model_stackloss, level = .9)
+
+# A mano
+betas <- matrix(model_stackloss$coefficients)
+X <- model.matrix(model_stackloss)
+
+n <- nrow(model.matrix(model_stackloss))
+p <- ncol(model.matrix(model_stackloss))
+
+alpha <- .1
+
+# Intervalos de confianza para el beta_1
+a <- matrix(c(1, 0, 0, 0))
+t(a) %*%  betas # Valor predicho
+
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 1, 0, 0))
+t(a) %*%  betas # Valor predicho
+
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_3
+a <- matrix(c(0, 0, 1, 0))
+t(a) %*%  betas # Valor predicho
+
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_4
+a <- matrix(c(0, 0, 0, 1))
+t(a) %*%  betas # Valor predicho
+
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+## f ####
+new_data <- tibble(air_flow = 58, water_temp = 20, acid_conc = 86)
+new_data
+
+predict(model_stackloss, newdata = new_data, interval = "confidence", level = .95)
+
+# A mano
+# Intervalos de confianza para air_flow = 58, water_temp = 20, acid_conc = 86
+a <- matrix(c(1, 58, 20, 86))
+t(a) %*%  betas # Valor predicho
+
+alpha <- .05
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+## g ####
+predict(model_stackloss, newdata = new_data, interval = "prediction", level = .99)
+
+# A mano
+# Intervalos de confianza para air_flow = 58, water_temp = 20, acid_conc = 86
+a <- matrix(c(1, 58, 20, 86))
+t(a) %*%  betas # Valor predicho
+
+alpha <- .01
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(1 + t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(1 + t(a) %*% solve(t(X)%*%X) %*% a)
+
+## h ####
+
+# Quiero que los betas 3, 4 y 5 sean iguales a 0
+a <- matrix(c(0, 0, 1, 0), nrow = 4)
+a
+c <- 2
+c
+
+# La matriz del modelo
+X <- model.matrix(model_stackloss)
+X
+
+# Calculo el F
+TE_val <- (t(a) %*% betas - c) / sqrt(sigma(model_stackloss)^2 *t(a) %*% solve(t(X)%*%X) %*% a)
+TE_val
+
+# Y ahora el p-value
+pvalor <- pt(abs(TE_val), df=n-p, lower.tail = F)
+pvalor
+
+## i ####
+# Usando la librería ellipse
+data_ellipse <- as.tibble(ellipse(model_stackloss, which=c(2,3), level=.90),)
+plot_ellipse <- data_ellipse %>% 
+  ggplot(aes(x = air_flow,
+           y = water_temp)) +
+  geom_path() +
+  geom_point(x = coef(model_stackloss)[2], y = coef(model_stackloss)[3], size =2,color="red") +
+  theme_bw()
+plot_ellipse
+
+# Bonferroni
+q <- 2 # Cantidad de combinaciones lineales (0,0,1,0) y (0,1,0,0)
+alpha <- 0.1/(2*q)
+CIs_bonf <- confint(model_stackloss, level = 1-alpha)
+
+plot_bonferroni <- plot_ellipse +
+  geom_vline(xintercept = CIs_bonf[2,], color = colormap[1]) +
+  geom_hline(yintercept = CIs_bonf[3,], color = colormap[1])
+plot_bonferroni
+
+# A mano 
+betas <- matrix(model_stackloss$coefficients)
+X <- model.matrix(model_stackloss)
+
+n <- nrow(model.matrix(model_stackloss))
+p <- ncol(model.matrix(model_stackloss))
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 1, 0, 0))
+t(a) %*%  betas # Valor predicho
+
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_3
+a <- matrix(c(0, 0, 1, 0))
+t(a) %*%  betas # Valor predicho
+
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Scheffe a mano 
+alpha <- 0.1
+CIs_scheffe <- CIs_bonf[2:3,]
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 1, 0, 0))
+t(a) %*%  betas # Valor predicho
+
+CIs_scheffe[1,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[1,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 0, 1, 0))
+t(a) %*%  betas # Valor predicho
+
+CIs_scheffe[2,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[2,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+plot_scheffe <- plot_bonferroni +
+  geom_vline(xintercept = CIs_scheffe[1,], color = colormap[2]) +
+  geom_hline(yintercept = CIs_scheffe[2,], color = colormap[2])
+plot_scheffe
+
+## j ####
+# Usando la librería ellipse
+data_ellipse <- as.tibble(ellipse(model_stackloss, which=c(3,4), level=.90),)
+plot_ellipse <- data_ellipse %>% 
+  ggplot(aes(x = water_temp,
+             y = acid_conc)) +
+  geom_path() +
+  geom_point(x = coef(model_stackloss)[3], y = coef(model_stackloss)[4], size =2,color="red") +
+  theme_bw()
+plot_ellipse
+
+# Bonferroni
+q <- 2 # Cantidad de combinaciones lineales (0,0,1,0) y (0,1,0,0)
+alpha <- 0.1/(2*q)
+CIs_bonf <- confint(model_stackloss, level = 1-alpha)
+
+plot_bonferroni <- plot_ellipse +
+  geom_vline(xintercept = CIs_bonf[3,], color = colormap[1]) +
+  geom_hline(yintercept = CIs_bonf[4,], color = colormap[1])
+plot_bonferroni
+
+# Scheffe a mano 
+alpha <- 0.1
+CIs_scheffe <- CIs_bonf[3:4,]
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 0, 1, 0))
+t(a) %*%  betas # Valor predicho
+
+CIs_scheffe[1,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[1,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 0, 0, 1))
+t(a) %*%  betas # Valor predicho
+
+CIs_scheffe[2,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[2,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+plot_scheffe <- plot_bonferroni +
+  geom_vline(xintercept = CIs_scheffe[1,], color = colormap[2]) +
+  geom_hline(yintercept = CIs_scheffe[2,], color = colormap[2])
+plot_scheffe
+
