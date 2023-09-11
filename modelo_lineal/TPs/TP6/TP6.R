@@ -96,12 +96,15 @@ X
 betas <- model_grado3$coefficients
 
 # Calculo el F
-F_val <- t(A %*% betas) %*% inv(A %*% inv(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model_grado3)$sigma^2)
+F_val <- t(A %*% betas) %*% solve(A %*% solve(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model_grado3)$sigma^2)
 F_val
-# DUDA: La matriz no se puede invertir
+
+n <- nrow(X)
+p <- ncol(X)
+pf(df1 = n, df2 = n-p, q = as.numeric(F_val), lower.tail = FALSE)
 
 # Con anova
-anova(model_grado3, model_grado1)
+anova(model_grado1, model_grado3)
 
 ## m ####
 sigma(model_grado1)
@@ -266,7 +269,7 @@ X <- model.matrix(model_stratio_classeng)
 X
 
 # Calculo el F
-F_val <- t(A %*% betas) %*% inv(A %*% inv(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model_stratio_classeng)$sigma^2)
+F_val <- t(A %*% betas) %*% solve(A %*% solve(t(X) %*% X) %*% t(A)) %*% (A %*% betas) / (nrow(A)*summary(model_stratio_classeng)$sigma^2)
 F_val
 
 # Y ahora el p-value
@@ -324,8 +327,7 @@ summary(model_stratio_lunch)
 # aumentar el stratio disminuye score.
 
 ## g ####
-data(CASchools)
-CASchools <- tibble(CASchools) %>%
+CASchools <- CASchools %>%
   mutate(compst = computer/students)
 
 model_stratio_english_comp <- lm(data = CASchools, 
@@ -361,12 +363,8 @@ t(xh) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stra
 
 # Intervalos de prediccion
 alpha <- .05
-t(xh) %*%  betas + sqrt(p * qf(df1 = p, df2 = n-p, p = alpha, lower.tail = F)) *  sigma(model_stratio_english_comp)  * sqrt(t(xh) %*% solve(t(X)%*%X) %*% xh)
-t(xh) %*%  betas - sqrt(p * qf(df1 = p, df2 = n-p, p = alpha, lower.tail = F)) *  sigma(model_stratio_english_comp)  * sqrt(t(xh) %*% solve(t(X)%*%X) %*% xh)
-# DUDA: Los intervalos  de predicción a mano no me dan
 t(xh) %*%  betas +  qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stratio_english_comp)  * sqrt(1 + t(xh) %*% solve(t(X)%*%X) %*% xh)
 t(xh) %*%  betas -  qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stratio_english_comp)  * sqrt(1 + t(xh) %*% solve(t(X)%*%X) %*% xh)
-# Sale metiendo un 1 adentro de la raiz
 
 ## i ####
 model_stratio_full <- lm(data = CASchools, 
