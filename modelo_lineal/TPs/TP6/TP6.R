@@ -20,7 +20,7 @@ model_grado1 <- lm(data = CASchools, math ~ income)
 ## c ####
 model_grado1
 # El modelo es math = 625.539 + 1.815 * income
-sigma <- sqrt(sigma(model_grado1))
+sigma <- sigma(model_grado1)
 sigma
 
 ## d ####
@@ -101,7 +101,8 @@ F_val
 
 n <- nrow(X)
 p <- ncol(X)
-pf(df1 = n, df2 = n-p, q = as.numeric(F_val), lower.tail = FALSE)
+q <- nrow(C)
+pf(df1 = q, df2 = n-p, q = as.numeric(F_val), lower.tail = FALSE)
 
 # Con anova
 anova(model_grado1, model_grado3)
@@ -143,7 +144,7 @@ cor(CASchools$math, CASchools$read)
 ## b ####
 model_stratio <- lm(data = CASchools,
                     score ~ stratio)
-model_stratio
+summary(model_stratio)
 
 CASchools %>% ggplot(aes(x = stratio,
                          y = score)) +
@@ -372,7 +373,7 @@ model_stratio_full <- lm(data = CASchools,
 summary(model_stratio_full)
 car::Anova(model_stratio_full, type = 3)
 
-# Ejercicio 2 ####
+# Ejercicio 3 ####
 data_growth <- read_delim(here("modelo_lineal/TPs/TP6/data/growth.txt"))
 
 ## a ####
@@ -446,7 +447,7 @@ summary(model_growth_no_int)
 
 ## f ####
 model_growth_no_supplement <- lm(data = data_growth,
-                          gain ~ diet)
+                                 gain ~ diet)
 summary(model_growth_no_supplement)
 
 anova(model_growth_no_int, model_growth_no_supplement)
@@ -483,7 +484,7 @@ new_data
 
 predict(model_growth_no_int, newdata = new_data)
 
-# Ejercicio 1 ####
+# Ejercicio 4 ####
 data(stackloss)
 stackloss <- tibble(stackloss) %>%
   clean_names()
@@ -565,7 +566,7 @@ a <- matrix(c(1, 58, 20, 86))
 t(a) %*%  betas # Valor predicho
 
 alpha <- .05
-t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
 ## g ####
@@ -577,12 +578,12 @@ a <- matrix(c(1, 58, 20, 86))
 t(a) %*%  betas # Valor predicho
 
 alpha <- .01
-t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(1 + t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(1 + t(a) %*% solve(t(X)%*%X) %*% a)
 t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(1 + t(a) %*% solve(t(X)%*%X) %*% a)
 
 ## h ####
 
-# Quiero que los betas 3, 4 y 5 sean iguales a 0
+# Quiero que beta2 sea distinto a 0
 a <- matrix(c(0, 0, 1, 0), nrow = 4)
 a
 c <- 2
@@ -597,7 +598,7 @@ TE_val <- (t(a) %*% betas - c) / sqrt(sigma(model_stackloss)^2 *t(a) %*% solve(t
 TE_val
 
 # Y ahora el p-value
-pvalor <- pt(abs(TE_val), df=n-p, lower.tail = F)
+pvalor <- pt(TE_val, df=n-p, lower.tail = F)
 pvalor
 
 ## i ####
@@ -632,7 +633,7 @@ p <- ncol(model.matrix(model_stackloss))
 a <- matrix(c(0, 1, 0, 0))
 t(a) %*%  betas # Valor predicho
 
-t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% Matrix::solve(t(X)%*%X) %*% a)
+t(a) %*%  betas + qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 t(a) %*%  betas - qt(p = alpha/2, df = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
 # Intervalos de confianza para el beta_3
@@ -650,20 +651,43 @@ CIs_scheffe <- CIs_bonf[2:3,]
 a <- matrix(c(0, 1, 0, 0))
 t(a) %*%  betas # Valor predicho
 
-CIs_scheffe[1,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
-CIs_scheffe[1,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[1,1] <- t(a) %*%  betas - sqrt(p*qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[1,2] <- t(a) %*%  betas + sqrt(p*qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
 # Intervalos de confianza para el beta_2
 a <- matrix(c(0, 0, 1, 0))
 t(a) %*%  betas # Valor predicho
 
-CIs_scheffe[2,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
-CIs_scheffe[2,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[2,1] <- t(a) %*%  betas - sqrt(p*qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[2,2] <- t(a) %*%  betas + sqrt(p*qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
 plot_scheffe <- plot_bonferroni +
   geom_vline(xintercept = CIs_scheffe[1,], color = colormap[2]) +
   geom_hline(yintercept = CIs_scheffe[2,], color = colormap[2])
 plot_scheffe
+
+# Sin corregir a mano 
+alpha <- 0.1
+CIs_elipse <- CIs_scheffe
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 1, 0, 0))
+t(a) %*%  betas # Valor predicho
+
+CIs_elipse[1,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_elipse[1,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 0, 1, 0))
+t(a) %*%  betas # Valor predicho
+
+CIs_elipse[2,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_elipse[2,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+plot_todos <- plot_scheffe +
+  geom_vline(xintercept = CIs_elipse[1,], color = colormap[4]) +
+  geom_hline(yintercept = CIs_elipse[2,], color = colormap[4])
+plot_todos
 
 ## j ####
 # Usando la librería ellipse
@@ -678,8 +702,9 @@ plot_ellipse
 
 # Bonferroni
 q <- 2 # Cantidad de combinaciones lineales (0,0,1,0) y (0,1,0,0)
-alpha <- 0.1/(2*q)
+alpha <- 0.1/q
 CIs_bonf <- confint(model_stackloss, level = 1-alpha)
+CIs_bonf
 
 plot_bonferroni <- plot_ellipse +
   geom_vline(xintercept = CIs_bonf[3,], color = colormap[1]) +
@@ -694,18 +719,41 @@ CIs_scheffe <- CIs_bonf[3:4,]
 a <- matrix(c(0, 0, 1, 0))
 t(a) %*%  betas # Valor predicho
 
-CIs_scheffe[1,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
-CIs_scheffe[1,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[1,1] <- t(a) %*%  betas - sqrt(p * qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[1,2] <- t(a) %*%  betas + sqrt(p * qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
 # Intervalos de confianza para el beta_2
 a <- matrix(c(0, 0, 0, 1))
 t(a) %*%  betas # Valor predicho
 
-CIs_scheffe[2,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
-CIs_scheffe[2,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[2,1] <- t(a) %*%  betas - sqrt(p * qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_scheffe[2,2] <- t(a) %*%  betas + sqrt(p * qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
 plot_scheffe <- plot_bonferroni +
   geom_vline(xintercept = CIs_scheffe[1,], color = colormap[2]) +
   geom_hline(yintercept = CIs_scheffe[2,], color = colormap[2])
 plot_scheffe
+
+# Sin corregir a mano 
+alpha <- 0.1
+CIs_elipse <- CIs_scheffe
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 0, 1, 0))
+t(a) %*%  betas # Valor predicho
+
+CIs_elipse[1,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_elipse[1,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+# Intervalos de confianza para el beta_2
+a <- matrix(c(0, 0, 0, 1))
+t(a) %*%  betas # Valor predicho
+
+CIs_elipse[2,1] <- t(a) %*%  betas - qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+CIs_elipse[2,2] <- t(a) %*%  betas + qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
+
+plot_todos <- plot_scheffe +
+  geom_vline(xintercept = CIs_elipse[1,], color = colormap[4]) +
+  geom_hline(yintercept = CIs_elipse[2,], color = colormap[4])
+plot_todos
 
