@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, here, AER, GGally, ellipse)
+pacman::p_load(tidyverse, here, AER, GGally, ellipse, janitor)
 colormap <- c("#E69F00", "#56B4E9", "#51513D", "#A23B72", "#88292F")
 
 # Ejercicio 1 ####
