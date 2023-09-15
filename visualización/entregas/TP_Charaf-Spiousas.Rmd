@@ -1,0 +1,413 @@
+---
+title: "TP Técnicas de reducción y visualización de datos"
+author: "Jesica Charaf e Ignacio Spiousas"
+date: "12 de septiembre de 2023"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, latex2exp, MASS, patchwork)
+colormap <- c("#88292F", "#56B4E9")
+
+```
+
+# El problema (2.9)
+
+Sea $\mathbf{x} \in \mathbb{R}^2$  un vector aleatorio y $G$ una variable aleatoria discreta con rango ${1, 2}$ y probabilidades $P(G = 1) = \pi_1 = \frac{3}{4}$ y $P(G = 2) = \pi_2 =  \frac{1}{4}$. Los vectores condicionados $\mathbf{x}|G = 1$ y $\mathbf{x}|G = 2$ tienen distribución Normal con medias $\boldsymbol\mu_1 = (1, \frac{1}{2})^t$ y $\boldsymbol\mu_2 = (- \frac{1}{2}, 1)^t$ respectivamente, y la misma varianza:
+
+$$
+\boldsymbol\Sigma = \begin{pmatrix}
+1 & 1/2 \\
+1/2 & 1
+\end{pmatrix}
+$$
+
+### a. Escribir la función de densidad de $\mathbf{x}$. Calcular $\boldsymbol\mu_\mathbf{x}$ y $\boldsymbol\Sigma_\mathbf{x}$ e identificar las componentes de varianza dentro de grupos y entre grupos.
+
+Cuando la variable $\mathbf{x}$ está condicionada a la pertenencia al grupo $G$, tiene una distribución normal multivariada de acuerdo a:
+
+$$
+\begin{aligned}
+\mathbf{x}|G &= 1 \sim \mathcal{N}(\boldsymbol\mu_1,\, \boldsymbol\Sigma) \\
+\mathbf{x}|G &= 2 \sim \mathcal{N}(\boldsymbol\mu_2,\, \boldsymbol\Sigma)
+\end{aligned}
+$$
+
+Entonces, la función de densidad va a ser una combinación lineal de la densidad de dos normales multivariadas $\mathcal{N}(\boldsymbol\mu_j,\, \boldsymbol\Sigma_j)$ pesadas por su  correspondiente $\pi_j$ con $j=1,2$.
+
+$$
+\begin{aligned}
+f_{\mathbf{x}}(\boldsymbol{x}) &= f_{\mathbf{x}|G=1}(\boldsymbol{x}) P(G=1) + f_{\mathbf{x}|G=2}(\boldsymbol{x}) P(G=2) \\
+&= \sum_{j=1}^2 \frac{1}{2\pi[det(\boldsymbol\Sigma)]^{1/2}} e^{-\frac{1}{2}(\boldsymbol{x}-\boldsymbol\mu_j)^t\boldsymbol\Sigma^{-1}(\boldsymbol{x}-\boldsymbol\mu_j)} \pi_j \\
+&= \frac{[det(\boldsymbol\Sigma)]^{-1/2}}{2\pi} \sum_{j=1}^2  e^{-\frac{1}{2}(\boldsymbol{x}-\boldsymbol\mu_j)^t\boldsymbol\Sigma^{-1}(\boldsymbol{x}-\boldsymbol\mu_j)} \pi_j,
+\end{aligned}
+$$
+
+donde el $[det(\boldsymbol\Sigma)]^{-1/2}=[3/4]^{-1/2}=2/\sqrt3$. De este modo, la función de densidad resulta:
+
+$$
+\begin{aligned}
+f_{\mathbf{x}}(\boldsymbol{x}) &= \frac{1}{\pi\sqrt3} \sum_{j=1}^2  e^{-\frac{1}{2}(\boldsymbol{x}-\boldsymbol\mu_j)^t\boldsymbol\Sigma^{-1}(\boldsymbol{x}-\boldsymbol\mu_j)} \pi_j \\
+&= \frac{1}{\pi\sqrt3} \left( \frac{3}{4} e^{-\frac{1}{2}(\boldsymbol{x}-\boldsymbol\mu_1)^t\boldsymbol\Sigma^{-1}(\boldsymbol{x}-\boldsymbol\mu_1)} + \frac{1}{4} e^{-\frac{1}{2}(\boldsymbol{x}-\boldsymbol\mu_2)^t\boldsymbol\Sigma^{-1}(\boldsymbol{x}-\boldsymbol\mu_2)}  \right),
+\end{aligned}
+$$
+donde $\boldsymbol\mu_1 = (1, \frac{1}{2})^t$, $\boldsymbol\mu_2 = (- \frac{1}{2}, 1)^t$ y
+
+$$
+\boldsymbol\Sigma^{-1} = \begin{pmatrix}
+4/3 & -2/3 \\
+-2/3 & 4/3
+\end{pmatrix}.
+$$
+Luego, calculamos $\boldsymbol\mu_{\textbf{x}}$ a partir de un promedio pesado por $\pi_j$:
+
+$$
+\begin{aligned}
+\boldsymbol\mu_x &= \sum_{i=1}^2 \pi_i \boldsymbol\mu_i \\
+&= \frac{3}{4} \left( 1, \frac{1}{2} \right)^t + \frac{1}{4} \left(- \frac{1}{2},1 \right)^t \\
+&= \left( \frac{5}{8}, \frac{5}{8} \right)^t
+\end{aligned}.
+$$
+
+La componente de varianza \textit{within} ($\boldsymbol\Sigma_w$) se calcula también directamente como una combinación lineal de las varianzas de cada distribución:
+
+$$
+\begin{aligned}
+\boldsymbol\Sigma_w &= \sum_{i=1}^2 \pi_i \boldsymbol\Sigma_i = \boldsymbol\Sigma \sum_{i=1}^2 \pi_i = \boldsymbol\Sigma =
+\begin{pmatrix}
+1 & 1/2 \\
+1/2 & 1
+\end{pmatrix}
+\end{aligned}
+$$
+
+Como en este caso la varianza de ambos grupos es igual, el promedio pesado es igual a ellas también.
+
+Por otro lado, la componente de varianza \textit{between} ($\boldsymbol\Sigma_b$) está relacionada con la distancia entre cada vector $\boldsymbol\mu_j$ y el promedio pesado $\boldsymbol\mu_\textbf{x}$.
+
+$$
+\begin{aligned}
+\boldsymbol\Sigma_b &= \sum_{i=1}^2 \pi_i (\boldsymbol\mu_i-\boldsymbol\mu_\textbf{x})(\boldsymbol\mu_i-\boldsymbol\mu_\textbf{x})^t \\
+&= \frac{3}{4} \left(\begin{pmatrix} 1 \\ 1/2  \end{pmatrix} - \begin{pmatrix} 5/8 \\ 5/8  \end{pmatrix} \right) \left( \left(1, \frac{1}{2}\right)-\left(\frac{5}{8}, \frac{5}{8}\right) \right) +  \frac{1}{4} \left(\begin{pmatrix} -1/2 \\ 1  \end{pmatrix} - \begin{pmatrix} 5/8 \\ 5/8  \end{pmatrix} \right) \left( \left(-\frac{1}{2}, 1 \right)-\left(\frac{5}{8}, \frac{5}{8}\right) \right)\\
+&= \begin{pmatrix}
+0.422 & -0.141 \\
+-0.141 &   0.047
+\end{pmatrix}.
+\end{aligned}
+$$
+
+Y $\boldsymbol\Sigma_\mathbf{x}$ es la suma de ambas componentes:
+
+$$
+\begin{aligned}
+\boldsymbol\Sigma_\mathbf{x} &= \boldsymbol\Sigma_w + \boldsymbol\Sigma_b =
+\begin{pmatrix}
+1 & 1/2 \\
+1/2 & 1
+\end{pmatrix} +
+\begin{pmatrix}
+0.422 & -0.141 \\
+-0.141 &   0.047
+\end{pmatrix} = 
+\begin{pmatrix}
+1.422 & 0.359 \\
+0.359 & 1.047
+\end{pmatrix}
+\end{aligned}
+$$
+
+```{r echo=FALSE}
+# el código que encuentra A
+sigma <- matrix(c(1,1/2,1/2,1),2)
+pi1  <- 3/4
+pi2  <- 1/4
+mu1  <-matrix(c(1,1/2),2,1)
+mu2  <-matrix(c(-1/2,1),2,1)
+
+#item a
+mu_x <- pi1*mu1+pi2*mu2
+
+sigmaw <- sigma
+sigmab <- pi1*(mu1-mu_x)%*%t((mu1-mu_x))+pi2*(mu2-mu_x)%*%t((mu2-mu_x))
+sigma.x <- sigmaw+sigmab
+
+#item b
+eig.sigmaw <- eigen(sigma)
+U <- eig.sigmaw$vectors
+L <- diag(eig.sigmaw$values)
+
+C <- U%*%sqrt(L)%*%t(U)
+B <- t(solve(C))%*%sigmab%*%solve(C)
+eig.B <- eigen(B)
+betas <- eig.B$vectors
+L.B <- diag(eig.B$values)
+
+A <- solve(C)%*%betas
+```
+
+### b. Sea $\mathbf{z} = (Z_1, Z_2)$ el vector de coordenadas discriminantes. Hallar la transformación de la forma $\mathbf{z} = \mathbf{A}^t (\mathbf{x}-\boldsymbol\mu_\text{x})$ necesaria para obtenerlo.
+
+Vamos a buscar la matriz de transformación $\mathbf{A}$ a partir del cálculo de los autovectores y autovalores de la matriz $\mathbf{B}$, donde $\mathbf{B} = (\mathbf{C}^{-1})^t \mathbf{\Sigma}_b \mathbf{C}^{-1}$ y $\mathbf{C}$ es tal que  $\mathbf{\Sigma}_w=\mathbf{C}^t\mathbf{C}$. Es decir, $\mathbf{C}$ es la "raiz cuadrada" de $\mathbf{\Sigma}_w$. A partir de la descomoposición espectral de $\mathbf{\Sigma}_w = \mathbf{U} \Lambda \mathbf{U}^t$ obtenemos $\mathbf{C} = \mathbf{U} \Lambda^{1/2} \mathbf{U}^t$:
+
+$$
+\mathbf{C} =
+\begin{pmatrix}
+0.966 & 0.259 \\
+0.259 & 0.966
+\end{pmatrix}.
+$$
+
+Ahora, calculamos $\mathbf{B}$:
+
+$$
+\mathbf{B} =
+\begin{pmatrix}
+0.623 & -0.344 \\
+-0.344  & 0.190
+\end{pmatrix}.
+$$
+
+Luego, calculamos los autovectores $\boldsymbol\beta_j$ y sus respectivos autovalores $\lambda_j$:
+
+$$
+\begin{aligned}
+\boldsymbol\beta_1 &= (-0.875, 0.483)^t \\
+\boldsymbol\beta_2 &= (-0.483, -0.875)^t \\
+\lambda_1 &= 0.813 \\
+\lambda_2 &= 0
+\end{aligned}
+$$
+
+Una vez que tenemos los vectores $\boldsymbol\beta_j$ podemos calcular los $\boldsymbol\alpha_j$ con la transformación $\boldsymbol\alpha_j = \mathbf{C}^{-1}\boldsymbol\beta_j$:
+
+$$
+\begin{aligned}
+\boldsymbol\alpha_1 &= (-1.121, 0.801)^t \\
+\boldsymbol\alpha_2 &= (-0.277, -0.832)^t.
+\end{aligned}
+$$
+Entonces, la matriz de transformación $\mathbf{A}$ resulta:
+
+$$
+\mathbf{A} = (\boldsymbol\alpha_1, \boldsymbol\alpha_2) =
+\begin{pmatrix}
+-1.121 & -0.277 \\
+0.801  & -0.832
+\end{pmatrix}
+$$
+
+Finamlente, esta es la matriz $\mathbf{A}$ necesaria para la transformación $\mathbf{z} = \mathbf{A}^t (\mathbf{x}-\boldsymbol\mu_x)$.
+
+### c. Calcular las coordenadas de los centroides $\boldsymbol{\nu}_1$ y $\boldsymbol{\nu}_2$. Mostrar que la distancia euclídea entre ellos corresponde a la distancia de Mahalanobis entre $\boldsymbol{\mu}_1$ y $\boldsymbol{\mu}_2$ en el espacio original.
+
+Los $\boldsymbol{\nu}_j$ son las medias de las nuevas variables $\mathbf{z}$, por lo tanto, $\boldsymbol{\nu}_j = \mathbf{A}^t \boldsymbol{\mu}_j$:
+
+$$
+\begin{aligned}
+\boldsymbol\nu_1 &= (-0.721, -0.693)^t \\
+\boldsymbol\nu_2 &= (1.361, -0.693)^t \\
+\end{aligned}
+$$
+
+Ahora calculemos la distancia euclídea de los $\boldsymbol{\nu}_j$ y la distancia de Mahalanobis de los $\boldsymbol{\mu}_j$:
+$$
+\begin{aligned}
+d_{euclidea} &= (\boldsymbol{\nu}_1 - \boldsymbol{\nu}_2)^t (\boldsymbol{\nu}_1 - \boldsymbol{\nu}_2) = 4.333\\
+d_{Mahalanobis} &= (\boldsymbol{\mu}_1 - \boldsymbol{\mu}_2)^t \boldsymbol\Sigma^{-1} (\boldsymbol{\mu}_1 - \boldsymbol{\mu}_2) = 4.333
+\end{aligned}
+$$
+
+Podemos ver que efectivamente dan lo mismo.
+
+## d. Calcular $\boldsymbol{\Sigma}_\textbf{z}$ e identificar las componentes de varianza dentro de grupos y entre grupos. ¿Qué observa?
+
+Para obtener la varianza y sus componentes de la variable transformada haremos uso de la propiedad que relaciona la varianza sin transformar con su versión transformada:
+
+$$
+\begin{aligned}
+\boldsymbol{\Sigma}_\textbf{z} &= \mathbf{A}^t \boldsymbol{\Sigma} \mathbf{A} =
+\begin{pmatrix}
+1.813 & 0 \\
+0 & 1
+\end{pmatrix}\\
+\boldsymbol{\Sigma}_{\textbf{z},w} &= \mathbf{A}^t \boldsymbol{\Sigma}_w \mathbf{A} =
+\begin{pmatrix}
+1 & 0 \\
+0 & 1
+\end{pmatrix}\\
+\boldsymbol{\Sigma}_{\textbf{z},b} &= \mathbf{A}^t \boldsymbol{\Sigma}_b \mathbf{A} =
+\begin{pmatrix}
+0.813 & 0 \\
+0 & 0
+\end{pmatrix}\\
+\end{aligned}
+$$
+
+Se observa que $\boldsymbol{\Sigma}_{\textbf{z},w}$ es la identidad y $\boldsymbol{\Sigma}_{\textbf{z},b}$ es la matriz de autovalores.
+
+### e. Simular $n = 500$ observaciones del vector $\mathbf{x}$. Visualizarlas en un scatterplot con colores distintos según el valor de $G$.
+
+A continuación se muestra el *scatterplot* obtenido a partir de las $500$ observaciones del vector $\mathbf{x}$:
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 3, fig.width = 3, fig.align = "center"}
+#item e
+n <- 500
+obs <- matrix(NA, n, 3)
+
+set.seed(1234)
+for (i in 1:n) {
+  obs[i,1] <- rbinom(1, 1, 0.75) #1 si es grupo 1, 0 si es grupo 2
+  obs[i,2:3] <- obs[i,1] * mvrnorm(1, c(1,1/2), sigma) + (1-obs[i,1]) * mvrnorm(1, c(-1/2,1), sigma)
+}
+
+colnames(obs) <- c("G", "x1", "x2")
+obs_tbl <- as.tibble(obs) %>%
+  mutate(G = factor(G))
+
+obs_tbl %>% ggplot(aes(x = x1,
+                       y = x2,
+                       color = G)) +
+  geom_point(alpha = .5) +
+  scale_color_manual(values = colormap) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+### f. Aplicar la transformación hallada para obtener las coordenadas discriminantes y visualizarlas en otro gráfico. ¿Qué observa?
+
+Se observa que en las nuevas coordenadas los grupos están "mejor" diferenciados y que hay un efecto de estandarización multivariada, es decir, los datos dentro de cada grupo están distribuidos en forma de "pelota". Algo esperable ya que la matriz $\boldsymbol{\Sigma}_{\textbf{z},w}$ es la identidad.
+
+```{r, echo = FALSE, warning = FALSE, fig.height = 3, fig.width = 3, fig.align = "center"}
+#item f
+X <- obs[,2:3]
+Z <- X %*% A
+colnames(Z) <- c("z1", "z2")
+
+Z_tbl <- as.tibble(Z) %>%
+  cbind(G = obs_tbl$G)
+
+Z_tbl %>% ggplot(aes(x = z1,
+                     y = z2,
+                     color = G)) +
+  geom_point(alpha = .5) +
+  scale_color_manual(values = colormap) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+### BONUS
+
+En base a los datos simulados vamos a demostrar que la transformación de coordenadas discriminantes que obtuvimos es equivalente a la transformación de correlación canónica si hubiéramos considerado a un vector $\mathbf{y}$ que contenga al grupo de pertenencia $G$.
+
+Empecemos obteniendo la matriz $\mathbf{A}$ estimada a partir de los datos. El procedimiento es el mismo que el descrito anteriormente pero estimando $\boldsymbol\mu_j$ por $\hat{\boldsymbol\mu}_j$ y $\boldsymbol\Sigma$ (y sus componentes) por $\hat{\boldsymbol\Sigma}$. De esta forma llegamos a una matriz de transformación $\hat{\mathbf{A}}_{cd}$ (el cd por coordenadas discriminantes, para diferenciarlo del de correlación canónica) estimado:
+
+
+$$
+\begin{aligned}
+\hat{\mathbf{A}}_{cd} &=
+\begin{pmatrix}
+-1.174 & -0.298 \\
+0.802 & -0.893
+\end{pmatrix}
+\end{aligned}
+$$
+
+```{r echo=FALSE, fig.height = 3, fig.width = 3, fig.align = "center"}
+mu1_hat <- as.matrix(colMeans(obs[obs[,1]==1,2:3]), ncol = 1)
+mu2_hat <- as.matrix(colMeans(obs[obs[,1]==0,2:3]), ncol = 1)
+mu_x_hat <- pi1*mu1_hat+pi2*mu2_hat
+
+sigma_hat_1 <- cov(obs[obs[,1]==1,2:3])
+sigma_hat_2 <- cov(obs[obs[,1]==1,2:3])
+sigmaw_hat <- pi1*sigma_hat_1+pi2*sigma_hat_2
+sigmab_hat <- pi1*(mu1_hat-mu_x_hat)%*%t((mu1_hat-mu_x_hat))+pi2*(mu2_hat-mu_x_hat)%*%t((mu2_hat-mu_x_hat))
+sigma.x_hat <- sigmaw_hat+sigmab_hat
+# Esta sigma.x_hat en realidad es lo mismo que cov(obs[,2:3])
+
+#item b
+eig.sigmaw_hat <- eigen(sigmaw_hat)
+U <- eig.sigmaw_hat$vectors
+L <- diag(eig.sigmaw_hat$values)
+
+C <- U%*%sqrt(L)%*%t(U)
+B <- t(solve(C))%*%sigmab%*%solve(C)
+eig.B <- eigen(B)
+betas <- eig.B$vectors
+L.B <- diag(eig.B$values)
+
+A_CD <- solve(C)%*%betas # La matriz obtenida con coordenadas discriminantes
+
+Z <- X%*%A_CD
+colnames(Z) <- c("z1", "z2")
+Z_tbl <- as.tibble(Z) %>%
+  cbind(G = obs_tbl$G)
+
+fig_CD <- Z_tbl %>% ggplot(aes(x = z1,
+                               y = z2,
+                               color = G)) +
+  geom_point(alpha = .5) +
+  labs(subtitle = "Coordenadas discriminantes") +
+  scale_color_manual(values = colormap) +
+  theme_bw() +
+  theme(legend.position = "top",
+        plot.subtitle=element_text(size=8, hjust=0.5, face="italic"))
+```
+
+Ahora vamos a crear un vector $\mathbf{y}$ que codifique el grupo de pertenencia $G$, a construir la matriz $\hat{\boldsymbol\Upsilon} = \hat{\boldsymbol\Sigma}_\mathbf{x}^{-1} \hat{\boldsymbol\Sigma}_\mathbf{xy}  \hat{\boldsymbol\Sigma}_\mathbf{y}^{-1}  \hat{\boldsymbol\Sigma}_\mathbf{xy}^{t}$ y a calcular la matriz de proyección de correlación canónica $\hat{\mathbf{A}}_{cc}$ a partir de los autovectores de la matriz $\hat{\boldsymbol\Upsilon}$:
+
+$$
+\begin{aligned}
+\hat{\mathbf{A}}_{cc} &=
+\begin{pmatrix}
+0.844 & 0.234 \\
+-0.519 & 0.907
+\end{pmatrix}
+\end{aligned}
+$$
+
+La matriz no parece ser la misma, pero si graficamos las proyecciones obtenidas con los dos métodos vemos que, si bien hay un cambio de escala (incluido un cambio de signo en $u_1$), las coordenadas representan lo mismo.
+
+```{r, echo=FALSE, fig.height = 4, fig.width = 8, fig.align = "center"}
+x <- obs[,2:3]
+y <- obs[,1]
+sigma_x <- cov(x)
+sigma_y <- var(y)
+sigma_xy <- cov(x,y)
+
+# Voy a llamar Ups a la matriz Upsilon
+Ups <- solve(sigma_x) %*% sigma_xy %*% solve(sigma_y) %*% t(sigma_xy)
+
+# Ahora calculo los autovectores de esto
+eig <- eigen(Ups)
+m_1 <- matrix(eig$vectors[,1])
+m_2 <- matrix(eig$vectors[,2])
+
+# alpha_1 va a ser m_1 escalado a que la varianza de U1 sea 1
+# Lo divido por la sd entonces
+k_1 <- 1/sqrt(t(m_1) %*% sigma_x %*% m_1)
+k_2 <- 1/sqrt(t(m_2) %*% sigma_x %*% m_2)
+alpha_1_CC <- as.numeric(k_1)*m_1
+alpha_2_CC <- as.numeric(k_2)*m_2
+A_CC <- cbind(alpha_1_CC, alpha_2_CC)
+
+U <- x %*% A_CC
+colnames(U) <- c("u1", "u2")
+U_tbl <- as.tibble(U) %>%
+  cbind(G = obs_tbl$G)
+
+fig_CC <- U_tbl %>% ggplot(aes(x = u1,
+                               y = u2,
+                               color = G)) +
+  geom_point(alpha = .5) +
+  labs(subtitle = "Correlación canónica") +
+  scale_color_manual(values = colormap) +
+  theme_bw() +
+  theme(legend.position = "top",
+        plot.subtitle=element_text(size=8, hjust=0.5, face="italic"))
+
+fig_CD | fig_CC
+```

@@ -35,9 +35,10 @@ summary(model_grado1)
 # income en la casa mejores notas en math
 
 ## f ####
-CASchools %>% select(income) %>%
-  mutate(residuos = summary(model_grado1)$residuals) %>%
-  ggplot(aes(x = income,
+CASchools %>%
+  mutate(residuos = summary(model_grado1)$residuals,
+         fit = model_grado1$fitted.values) %>%
+  ggplot(aes(x = fit,
              y = residuos)) +
   geom_hline(yintercept = 0, linetype = "dashed") +
   geom_point(alpha = .5) + 
@@ -373,6 +374,21 @@ model_stratio_full <- lm(data = CASchools,
 summary(model_stratio_full)
 car::Anova(model_stratio_full, type = 3)
 
+
+model_stratio_comp <- lm(data = CASchools, 
+                         score ~ stratio * english * compst - stratio : english : compst)
+summary(model_stratio_comp)
+
+anova(model_stratio_comp, model_stratio_full)
+
+model_stratio_comp2 <- lm(data = CASchools, 
+                         score ~ stratio + english + compst + stratio:english + stratio:compst)
+summary(model_stratio_comp2)
+model_stratio_comp3 <- lm(data = CASchools, 
+                          score ~ stratio + english + compst)
+
+anova(model_stratio_comp2, model_stratio_comp)
+
 # Ejercicio 3 ####
 data_growth <- read_delim(here("modelo_lineal/TPs/TP6/data/growth.txt"))
 
@@ -603,18 +619,20 @@ pvalor
 
 ## i ####
 # Usando la librería ellipse
-data_ellipse <- as.tibble(ellipse(model_stackloss, which=c(2,3), level=.90),)
+data_ellipse <- as.tibble(ellipse(model_stackloss, which=c(2,3), level=.90))
+data_ellipse_Scheffe <- as.tibble(car::confidenceEllipse(model_stackloss, levels = .90, which.coef =c(2,3), Scheffe = T))
 plot_ellipse <- data_ellipse %>% 
   ggplot(aes(x = air_flow,
            y = water_temp)) +
   geom_path() +
+  geom_path(data = data_ellipse_Scheffe, aes(x =x, y =y), color = colormap[4]) +
   geom_point(x = coef(model_stackloss)[2], y = coef(model_stackloss)[3], size =2,color="red") +
   theme_bw()
 plot_ellipse
 
 # Bonferroni
 q <- 2 # Cantidad de combinaciones lineales (0,0,1,0) y (0,1,0,0)
-alpha <- 0.1/(2*q)
+alpha <- 0.1/(q)
 CIs_bonf <- confint(model_stackloss, level = 1-alpha)
 
 plot_bonferroni <- plot_ellipse +
@@ -654,7 +672,7 @@ t(a) %*%  betas # Valor predicho
 CIs_scheffe[1,1] <- t(a) %*%  betas - sqrt(p*qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 CIs_scheffe[1,2] <- t(a) %*%  betas + sqrt(p*qf(p = alpha, df1 = p, df2 = n-p, lower.tail = F)) *  sigma(model_stackloss)  * sqrt(t(a) %*% solve(t(X)%*%X) %*% a)
 
-# Intervalos de confianza para el beta_2
+# Intervalos de confianza para el beta_3
 a <- matrix(c(0, 0, 1, 0))
 t(a) %*%  betas # Valor predicho
 
@@ -692,10 +710,12 @@ plot_todos
 ## j ####
 # Usando la librería ellipse
 data_ellipse <- as.tibble(ellipse(model_stackloss, which=c(3,4), level=.90),)
+data_ellipse_Scheffe <- as.tibble(car::confidenceEllipse(model_stackloss, levels = .90, which.coef =c(3,4), Scheffe = T))
 plot_ellipse <- data_ellipse %>% 
   ggplot(aes(x = water_temp,
              y = acid_conc)) +
   geom_path() +
+  geom_path(data = data_ellipse_Scheffe, aes(x =x, y =y), color = colormap[4]) +
   geom_point(x = coef(model_stackloss)[3], y = coef(model_stackloss)[4], size =2,color="red") +
   theme_bw()
 plot_ellipse

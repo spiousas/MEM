@@ -203,7 +203,7 @@ sd(data[,8])
 cor(data[, 4], data[,8])
 
 # A pesar de que los scatter plots son tan diferentes, las medias, los desvíos,
-# y las correlaciones son iguales
+# y las correlaciones son igualesx
 
 # Ejercicio 7
 n <- 40
@@ -232,7 +232,7 @@ Y <- b0 + b1*X + rgamma(n = 40, shape = .4, rate = .01) + 30
 
 plot(X, Y)
 
-## a ####
+## d ####
 X <- rexp(n = 40, rate = 1)
 b0 <- 5
 b1 <- -2
