@@ -234,11 +234,11 @@ round(sigma_total, digits = 2)
 data_autos <- read_delim(here("visualización/TPs/TP2_CC/data/autos.txt"))
 data_autos
 
-X <- data_autos %>% dplyr::select(all_of(c("X1", "X2", "X5", "X7", "X8")))
+X <- as.matrix(data_autos %>% dplyr::select(all_of(c("X1", "X2", "X5", "X7", "X8"))))
 X
 
-Y <- data_autos %>% dplyr::select(all_of(c("X3", "X4")))
-Y
+Y <- as.matrix(data_autos %>% dplyr::select(all_of(c("X3", "X4"))))
+Y 
 
 # Calculos las varianzas
 sigma_x <- cov(X)
@@ -249,11 +249,12 @@ sigma_xy <- cov(X, Y)
 sigma_xy
 
 # Voy a llamar Ups a la matriz Upsilon
-Ups <- inv(sigma_x) %*% sigma_xy %*% inv(sigma_y) %*% t(sigma_xy)
+Ups <- solve(sigma_x) %*% sigma_xy %*% solve(sigma_y) %*% t(sigma_xy)
 Ups
 
 # Ahora calculo los autovectores de esto
 eig <- eigen(Ups)
+eig
 
 # alpha_1
 m_1 <- matrix(eig$vectors[,1])
@@ -278,3 +279,33 @@ n_2 <- 1/eig$values[1] * inv(sigma_y) %*% t(sigma_xy) %*% alpha_2
 k <- 1/sqrt(t(n_2) %*% sigma_y %*% n_2)
 beta_2 <- as.numeric(k)*n_2
 beta_2
+
+u1 <- X %*% alpha_1
+v1 <- Y %*% beta_1
+
+u2 <- X %*% alpha_2
+v2 <- Y %*% beta_2
+
+# Usamos la funcion cancor
+ccaXY <- cancor(X, Y)
+ccaXY
+
+XautovecST<-as.matrix(ccaXY$xcoef) * 1/sqrt(diag(t(as.matrix(ccaXY$xcoef))%*%sigma_x%*%as.matrix(ccaXY$xcoef)))
+YautovecST<-as.matrix(ccaXY$ycoef) * 1/sqrt(diag(t(as.matrix(ccaXY$ycoef))%*%sigma_y%*%as.matrix(ccaXY$ycoef)))
+# Los vectores dan iguales
+
+## a, b, c y d ####
+# Usamos la funcion CCorA de {vegan}
+cca <- CCorA(Y,X)
+biplot(cca)
+
+# Hay una manera de pedirle ploetar ambos grupos contra U y ambos grupos contra V
+par(mfrow=c(2,2))
+
+biplot(x =cca$Cx,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cx),main="U1 y U2 vs X e Y")
+biplot(x =cca$Cy,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cy),main="V1 y V2 vs X e Y")
+biplot(x =cbind(cca$Cx[,1], cca$Cy[,1]),y = rbind(cbind(cca2$corr.X.Cx[,1],cca2$corr.X.Cy[,1])
+                                                  , cbind(cca2$corr.Y.Cx[,1],cca2$corr.Y.Cy[,1])),main="U1 y V1 vs X e Y")
+biplot(x =cbind(cca$Cx[,2], cca$Cy[,2]),y = rbind(cbind(cca2$corr.X.Cx[,2],cca2$corr.X.Cy[,2])
+                                                  , cbind(cca2$corr.Y.Cx[,2],cca2$corr.Y.Cy[,2])),main="U2 y V2 vs X e Y")
+
