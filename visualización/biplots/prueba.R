@@ -1,4 +1,4 @@
-pacman::p_load(tidyverse, MASS)
+pacman::p_load(tidyverse, MASS, factoextra)
 
 biplot_nacho <- function(X, V, lambdas, scale = 1, pc_biplot = F) {
   
@@ -19,16 +19,16 @@ biplot_nacho <- function(X, V, lambdas, scale = 1, pc_biplot = F) {
     geom_hline(yintercept = 0, linetype = "dashed") +
     geom_vline(xintercept = 0, linetype = "dashed") +
     geom_point(color = "gray80", alpha = .8) +
-    geom_segment(data = as_tibble(A),
+    geom_segment(data = as_tibble(V),
                  aes(xend = scale * V1 * sqrt(lambda1), 
-                     yend = scale * V2 * sqrt(lambda2)), 
+                     yend = scale * V2 * sqrt(lambda1)), 
                  x = 0, y = 0,
                  arrow = arrow(length = unit(0.03, "npc"), type = "closed"),
                  color = "steelblue") +
-    geom_text(data = as_tibble(A),
+    geom_text(data = as_tibble(V),
               aes(x = scale * V1 * sqrt(lambda1), 
                   y = scale * V2 * sqrt(lambda2)), 
-              label = paste0("X", 1:nrow(A)),
+              label = paste0("X", 1:nrow(V)),
               vjust = "outward", hjust = "outward") +
     labs(title = "Biplot Nacho",
          x = paste0("PC1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
@@ -49,4 +49,15 @@ A <- eigen(cov(as.matrix(Xsc)))$vectors[,1:2]
 eigvalues <- eigen(cov(as.matrix(Xsc)))$values
 
 biplot_nacho(Xsc, A, eigvalues, scale = 3.4, pc_biplot = F)
-  
+
+pca_fun <- prcomp(Xsc)
+pca_fun
+summary(pca_fun)
+
+biplot_nacho(Xsc, cbind(-A[,1], A[,2]), eigvalues, scale = 3.4, pc_biplot = F)
+
+fviz_pca_biplot(pca_fun,
+                label = "var",
+                col.ind = "grey80",
+                size.ind = .1,
+                ggtheme = theme_bw())
