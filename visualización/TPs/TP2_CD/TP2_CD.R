@@ -1,5 +1,5 @@
 pacman::p_load(here, tidyverse, matlib, factoextra, MASS, rgl, ggord, wordspace,
-               GGally, tourr)
+               GGally, tourr, plotly)
 
 # Ejercicio 2.9 ####
 sigma<-matrix(c(1,1/2,1/2,1),2)
@@ -144,10 +144,11 @@ ss.split <- function(data, grouping) {
   U <- matrix(0, ncol(data), ncol(data))
   H <- matrix(0, ncol(data), ncol(data))
   
-  for (i in 1:max(unique(grouping))) {
-    x_i <- data[grouping==i,]
+  for (i in 1:length(unique(grouping))) {
+    group_i <- unique(grouping)[i]
+    x_i <- data[grouping==group_i,]
     
-    cat(paste0("El grupo ",i," tiene ", nrow(x_i), " miembros\n"))
+    cat(paste0("El grupo ",group_i, " tiene ", nrow(x_i), " miembros\n"))
     
     for (j in 1:nrow(x_i)) {
       U <- U + as.matrix(x_i[j,] - colMeans(x_i)) %*% t(as.matrix(x_i[j,] - colMeans(x_i)))  
@@ -162,16 +163,19 @@ ss.split <- function(data, grouping) {
 ## b ####
 # No dice que datos así que voy a usar los del 2.9
 sigma <- matrix(c(1,1/2,1/2,1),2)
-mu1<-matrix(c(1,1/2),2,1)
-mu2<-matrix(c(-1/2,1),2,1)
+mu1 <- matrix(c(1,1/2),2,1)
+mu2 <- matrix(c(-1/2,1),2,1)
 
+set.seed(123)
 data <- rbind(mvrnorm(150, mu1, sigma), mvrnorm(50, mu2, sigma))
 grouping <- rbind(as.matrix(rep(1, 150)), as.matrix(rep(2, 50)))
 
 matrices <- ss.split(data, grouping)
-matrices[[1]]/(nrow(data)-1) # Sigma within  
-matrices[[2]]/(nrow(data)-1) # Sigma between
-matrices[[3]]/(nrow(data)-1) # Sigma total
+k <- length(unique(grouping))
+n <- nrow(data)
+matrices[[1]]/(n-k) # Sigma within  
+matrices[[2]]/(n)   # Sigma between
+matrices[[3]]/(n-1) # Sigma total
 
 # Lo hago como en el 2.9 para comparar 
 pi1_hat <- sum(grouping==1)/nrow(grouping)
@@ -191,6 +195,16 @@ cov(data) # Sigma total con la función cov (da igual al de ss.split)
 
 ## c ####
 ### Poblacionales ####
+sigma <- matrix(c(1,1/2,1/2,1),2)
+mu1 <- matrix(c(1,1/2),2,1)
+mu2 <- matrix(c(-1/2,1),2,1)
+pi1 <- 3/4
+pi2 <- 1/4
+mu_x <- pi1*mu1+pi2*mu2
+sigmaw <- sigma
+sigmab <- pi1*(mu1-mu_x)%*%t((mu1-mu_x))+pi2*(mu2-mu_x)%*%t((mu2-mu_x))
+sigma.x <- sigmaw+sigmab
+
 eig.sigmaw <- eigen(sigmaw)
 U <- eig.sigmaw$vectors
 L <- diag(eig.sigmaw$values)
@@ -202,6 +216,7 @@ betas <- eig.B$vectors
 L.B <- diag(eig.B$values)
 
 A <- solve(C)%*%betas
+A
 
 # Nuevas medias en el espacio transformado
 v1 <- t(A) %*% mu1
@@ -210,17 +225,22 @@ v2 <- t(A) %*% mu2
 v2
 
 ### Muestrales ####
+mu1_hat <- as.matrix(colMeans(data[grouping==1,]), ncol = 1)
+mu2_hat <- as.matrix(colMeans(data[grouping==2,]), ncol = 1)
 matrices <- ss.split(data, grouping)
-sigmaw_hat <- matrices[[1]]/(nrow(data)-1) # Sigma within  
-sigmab_hat <- matrices[[2]]/(nrow(data)-1) # Sigma between
-sigma_hat <- matrices[[3]]/(nrow(data)-1) # Sigma total
+k <- length(unique(grouping))
+n <- nrow(data)
+sigmaw_hat <- matrices[[1]]/(n-k) # Sigma within  
+sigmaw_hat
+sigmab_hat <- matrices[[2]]/(n)   # Sigma between
+sigmab_hat
 
 eig.sigmaw <- eigen(sigmaw_hat)
 U <- eig.sigmaw$vectors
 L <- diag(eig.sigmaw$values)
 
 C <- U%*%sqrt(L)%*%t(U)
-B <- t(solve(C))%*%sigmab%*%solve(C)
+B <- t(solve(C))%*%sigmab_hat%*%solve(C)
 eig.B <- eigen(B)
 betas <- eig.B$vectors
 L.B <- diag(eig.B$values)
@@ -228,25 +248,59 @@ L.B <- diag(eig.B$values)
 A_hat <- solve(C)%*%betas
 
 # Nuevas medias en el espacio transformado
-v1_hat <- t(A) %*% mu1_hat
+v1_hat <- t(A_hat) %*% mu1_hat
 v1
 v1_hat
-v2_hat <- t(A) %*% mu2_hat
+v2_hat <- t(A_hat) %*% mu2_hat
 v2
 v2_hat
 
 # Son estimaciones bastante razonables
 
 # Ejercicio 2.11 ####
+
+## Mi función para CD
+CD_Spiousas <- function(data, grouping, center = T, scale = F) {
+  data <- scale(data, scale = scale, center = center)
+  
+  matrices <- ss.split(data, grouping)
+
+  n <- nrow(data)
+  k <- length(unique(grouping))
+
+  sigmaw_hat <- matrices[[1]]/(n-k) # Sigma within  
+  sigmab_hat <- matrices[[2]]/(n-1) # Sigma between
+  sigma_hat <- matrices[[3]]/(n-1) # Sigma total
+  
+  eig.sigmaw <- eigen(as.matrix(sigmaw_hat))
+  U <- eig.sigmaw$vectors
+  L <- diag(eig.sigmaw$values)
+  
+  C <- U%*%sqrt(L)%*%t(U)
+  B <- t(solve(C))%*%sigmab_hat%*%solve(C)
+  eig.B <- eigen(B)
+  betas <- eig.B$vectors
+  L.B <- diag(eig.B$values)
+  
+  A_hat <- solve(C)%*%betas
+  
+  prop_trace <- eig.B$values[1:k-1]/sum(eig.B$values)
+  salida <- list(prop_trace, A_hat[,1:k-1], eig.B$values[1:k-1])
+  names(salida) <- c("prop_trace", "rotation", "eigenvalues")
+  salida
+}
+
 ## a ####
 data_cocos <- read_csv(here("visualización/TPs/TP2_CD/data/cocodrilos.csv"))
 X_cocos <- scale(data_cocos[,1:11])
 especies <- data_cocos[,12]
 
 matrices <- ss.split(X_cocos, especies)
-sigmaw_hat <- matrices[[1]]/(nrow(X_cocos)-1) # Sigma within  
-sigmab_hat <- matrices[[2]]/(nrow(X_cocos)-1) # Sigma between
-sigma_hat <- matrices[[3]]/(nrow(X_cocos)-1) # Sigma total
+n <- nrow(X_cocos)
+k <- nrow(unique(especies))
+sigmaw_hat <- matrices[[1]]/(n-k) # Sigma within  
+sigmab_hat <- matrices[[2]]/(n) # Sigma between
+sigma_hat <- matrices[[3]]/(n-1) # Sigma total
 sigma_hat - cov(X_cocos) # Dan iguales ambas matrices
 
 eig.sigmaw <- eigen(sigmaw_hat)
@@ -273,11 +327,19 @@ plot3d(X_cocos_transf,
        cube=TRUE, 
        size = 10)
 
+figura <- plot_ly(data.frame(X_cocos_transf),x = ~cd1, y = ~cd2, z = ~cd3, color = ~as.factor(especies$especie))
+figura <- figura %>% add_markers()
+figura <- figura %>% layout(scene = list(xaxis = list(title = 'C1'),
+                                         yaxis = list(title = 'C2'),
+                                         zaxis = list(title = 'C3')))
+
+figura
+
 # Al igual que en PCA las varianzas explicadas son los autovalores de B dividido su suma
 eig.B$values[1:3]/sum(eig.B$values)
 
 # A partir del 4to autovalor valen cero, es decir, pareciera que sólo se peuden tener 
-# tres k-1 coordenaads discriminantes que expliqeun varianza (siendo k el número de grupos)
+# tres k-1 coordenadas discriminantes que expliquen varianza (siendo k el número de grupos)
 
 ## c ####
 # Calculo el PCA
@@ -292,6 +354,8 @@ plot3d(X_cocos_transf_PCA,
        cube=TRUE, 
        size = 10)
 
+figura
+
 eigen(sigma_hat)$values[1:3]/sum(eigen(sigma_hat)$values)
 
 # Si bien la primera componente de PCA explica mucha varianza, no optimiza la 
@@ -300,8 +364,18 @@ eigen(sigma_hat)$values[1:3]/sum(eigen(sigma_hat)$values)
 ## Repito b y c usando funciones ####
 # Primero coordenadas discriminantes
 especies <- data_cocos[,12]$especie
-CD_cocos <- lda(especies~., data = data_cocos[,1:11])
+X <- data_cocos[,1:11]
+# Sin centrar
+CD_cocos <- lda(especies~., data = X)
 CD_cocos
+CD_Spiousas(data = X, grouping = especies, center = F, scale = F)
+
+# Centrado
+CD_cocos <- lda(especies~., data = as.data.frame(X_cocos))
+CD_cocos
+CD_Spiousas(data = X, grouping = especies, center = T, scale = T)
+
+eig.B$values[1:3]/sum(eig.B$values)
 A_hat[,1:3]
 # DUDA Son como versiones escaleadas, pero da lo mismo
 
@@ -326,6 +400,7 @@ category <- data_olmos$cat
 CD_olmos <- lda(category~., data = X_olmos)
 CD_olmos
 
+CD_olmos_mio <- CD_Spiousas(data = X_olmos, grouping = category, center = F)
 ggord(CD_olmos, category)
 # Sin estandarizar las cd están en un plano que contiene a X1 y es perpendicular a
 # las demás DUDA No termino de entender bien por qué
@@ -335,6 +410,12 @@ CD_olmos_std <- lda(category~., data = as_tibble(scale(X_olmos)))
 CD_olmos_std
 
 ggord(CD_olmos_std, category)
+
+set.seed(123)
+data <- rbind(mvrnorm(150, mu1, sigma), mvrnorm(50, mu2, sigma), mvrnorm(50, mu1+mu2, sigma))
+grouping <- rbind(as.matrix(rep(1, 150)), as.matrix(rep(2, 50)), as.matrix(rep(3, 50)))
+lda(grouping~., data = as.data.frame(data))
+ggord(lda(grouping~., data = as.data.frame(data)))
 # Cuando estandarizamos se reparte mejor la proyección de las variables en el biplot.
 # Pero la varianza explicada por cada componente es la misma y pareciera que las 
 # coordenadas discriminantes son las mismas.

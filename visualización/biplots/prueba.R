@@ -1,12 +1,14 @@
 pacman::p_load(tidyverse, MASS, factoextra)
 
-biplot_nacho <- function(X, V, lambdas, scale = 1, pc_biplot = F) {
+biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, isPCA = F) {
   # Plotea un biplot dados X (datos), V (Matriz de rotación) y lambdas (autovalores)
   #
   # pc_biplot: Si pc_biplot==T entonces divide los scores por sqrt(lambda_j) y
   # multiplica los vectores v_i scores por sqrt(lambda_j).
   #
   # scale: Simplemente alarga o acorta las flechas por un factor.
+  #
+  # isPCA: Es un booleano que si es PCA te pone el porcentaje de varianza explicada
   
   # Genero las Xs rotadas y la shago un tibble
   rotX <- as.matrix(X) %*% V
@@ -16,6 +18,21 @@ biplot_nacho <- function(X, V, lambdas, scale = 1, pc_biplot = F) {
   # Hago un tibble con los vectores de rotación
   colnames(V) <- c("v1", "v2")
   V <- as_tibble(V)
+  
+  if (isPCA) {
+    label <- list(
+      labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
+           x = paste0("PC1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
+           y = paste0("PC2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)"))
+    )  
+  } else {
+    label <- list(
+      labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
+           x = "Componente 1",
+           y = "Componente 2")
+    ) 
+  }
+  
   
   # Si pc_biplot es T escaleo con lambdas, sino con 1s
   if (pc_biplot) {
@@ -42,9 +59,7 @@ biplot_nacho <- function(X, V, lambdas, scale = 1, pc_biplot = F) {
                   y = scale * v2 * sqrt(lambda2)), 
               label = paste0("X", 1:nrow(V)),
               vjust = "outward", hjust = "outward") +
-    labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
-         x = paste0("PC1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
-         y = paste0("PC2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)")) +
+    label +
     theme_bw()
 }
 
@@ -73,4 +88,5 @@ fviz_pca_biplot(pca_fun,
                 ggtheme = theme_bw())
 
 # Doy vuelta la primera columna de A
-biplot_nacho(Xsc, cbind(-A[,1], A[,2]), eigvalues, scale = 3.4, pc_biplot = F)
+biplot_Spiousas(Xsc, cbind(-A[,1], A[,2]), eigvalues, scale = 3.4, pc_biplot = T, isPCA = F)
+
