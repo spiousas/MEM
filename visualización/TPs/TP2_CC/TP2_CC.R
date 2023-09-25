@@ -1,4 +1,4 @@
-pacman::p_load(here, tidyverse, matlib, factoextra, MASS)
+pacman::p_load(here, tidyverse, matlib, factoextra, MASS, vegan)
 
 # Ejercicio 2.7 ####
 ## a ####
@@ -275,7 +275,7 @@ alpha_2 <- as.numeric(k)*m_2
 alpha_2
 
 # beta_2
-n_2 <- 1/eig$values[1] * inv(sigma_y) %*% t(sigma_xy) %*% alpha_2
+n_2 <- 1/eig$values[2] * inv(sigma_y) %*% t(sigma_xy) %*% alpha_2
 k <- 1/sqrt(t(n_2) %*% sigma_y %*% n_2)
 beta_2 <- as.numeric(k)*n_2
 beta_2
@@ -290,6 +290,10 @@ v2 <- Y %*% beta_2
 ccaXY <- cancor(X, Y)
 ccaXY
 
+biplot_Spiousas(X = CD_olmos_mio_std$x, V = CD_olmos_mio_std$rotation, 
+                lambdas = CD_olmos_mio_std$eigenvalues, group_color = category, method = "cd",
+                ellipse = T)
+
 XautovecST<-as.matrix(ccaXY$xcoef) * 1/sqrt(diag(t(as.matrix(ccaXY$xcoef))%*%sigma_x%*%as.matrix(ccaXY$xcoef)))
 YautovecST<-as.matrix(ccaXY$ycoef) * 1/sqrt(diag(t(as.matrix(ccaXY$ycoef))%*%sigma_y%*%as.matrix(ccaXY$ycoef)))
 # Los vectores dan iguales
@@ -300,9 +304,11 @@ cca <- CCorA(Y,X)
 biplot(cca)
 
 # Hay una manera de pedirle ploetar ambos grupos contra U y ambos grupos contra V
-par(mfrow=c(2,2))
+par(mfrow=c(1,1))
 
-biplot(x =cca$Cx,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cx),main="U1 y U2 vs X e Y")
+biplot(x =cca$Cx,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cx), main="U1 y U2 vs X e Y")
+biplot_Spiousas(X = scale(X), V = rbind(cca$corr.X.Cx))
+
 biplot(x =cca$Cy,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cy),main="V1 y V2 vs X e Y")
 biplot(x =cbind(cca$Cx[,1], cca$Cy[,1]),y = rbind(cbind(cca2$corr.X.Cx[,1],cca2$corr.X.Cy[,1])
                                                   , cbind(cca2$corr.Y.Cx[,1],cca2$corr.Y.Cy[,1])),main="U1 y V1 vs X e Y")

@@ -1,6 +1,8 @@
 pacman::p_load(tidyverse, MASS, factoextra)
 
-biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, isPCA = F) {
+biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, method = NULL, group_color = NULL,
+                            ellipse = F) {
+  pacman::p_load(ggplot2, ggforce)
   # Plotea un biplot dados X (datos), V (Matriz de rotación) y lambdas (autovalores)
   #
   # pc_biplot: Si pc_biplot==T entonces divide los scores por sqrt(lambda_j) y
@@ -8,31 +10,39 @@ biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, isPCA = F) 
   #
   # scale: Simplemente alarga o acorta las flechas por un factor.
   #
-  # isPCA: Es un booleano que si es PCA te pone el porcentaje de varianza explicada
+  # method: Puede ser "pca" o "cd" para plotear cosas específicas de PCA o 
+  # coordenadas discriminantes, respectivamente.
+  #
+  # group_color: Pone el color de acuerdo al array que  venga ahí.
+  #
+  # ellipse: Plotea la elipse de los datos (asumiendo gaussiana). Util para CD.
+  
   
   # Genero las Xs rotadas y la shago un tibble
-  rotX <- as.matrix(X) %*% V
-  colnames(rotX) <- c("PC1", "PC2")
+  rotX <- as.matrix(X) %*% as.matrix(V)
+  colnames(rotX) <- c("C1", "C2")
   data <- as_tibble(rotX)
   
   # Hago un tibble con los vectores de rotación
   colnames(V) <- c("v1", "v2")
   V <- as_tibble(V)
   
-  if (isPCA) {
+  if (is.null(method)) {
     label <- list(
-      labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
-           x = paste0("PC1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
-           y = paste0("PC2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)"))
-    )  
-  } else {
-    label <- list(
-      labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
-           x = "Componente 1",
+      labs(x = "Componente 1",
            y = "Componente 2")
     ) 
+  } else if(method == "pca") {
+    label <- list(
+      labs(x = paste0("PC1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
+           y = paste0("PC2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)"))
+    )  
+  } else if (method == "cd") {
+    label <- list(
+      labs(x = paste0("LD1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
+           y = paste0("LD2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)"))
+    )
   }
-  
   
   # Si pc_biplot es T escaleo con lambdas, sino con 1s
   if (pc_biplot) {
@@ -43,11 +53,25 @@ biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, isPCA = F) 
     lambda2 <- 1
   }
   
-  data %>% ggplot(aes(x = PC1/sqrt(lambda1),
-                      y = PC2/sqrt(lambda2))) +
+  if (is.null(group_color)) {
+    puntos <- geom_point(color = "gray80", alpha = .8)
+  } else {
+    puntos <- geom_point(aes(color = group_color), alpha = .8)
+  }
+  
+  if (ellipse & !is.null(group_color)) {
+    elipse <- stat_ellipse(aes(color = group_color, fill = group_color), 
+                           geom = "polygon", alpha = .2)
+  } else {
+    elipse <- {}
+  }
+  
+  data %>% ggplot(aes(x = C1/sqrt(lambda1),
+                      y = C2/sqrt(lambda2))) +
     geom_hline(yintercept = 0, linetype = "dashed") +
     geom_vline(xintercept = 0, linetype = "dashed") +
-    geom_point(color = "gray80", alpha = .8) +
+    elipse +
+    puntos +
     geom_segment(data = V,
                  aes(xend = scale * v1 * sqrt(lambda1), 
                      yend = scale * v2 * sqrt(lambda1)), 
@@ -57,9 +81,12 @@ biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, isPCA = F) 
     geom_text(data = V,
               aes(x = scale * v1 * sqrt(lambda1), 
                   y = scale * v2 * sqrt(lambda2)), 
-              label = paste0("X", 1:nrow(V)),
+              label = colnames(X),
               vjust = "outward", hjust = "outward") +
+    labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
+         color = "Grupo") +
     label +
+    guides(fill = "none") +
     theme_bw()
 }
 

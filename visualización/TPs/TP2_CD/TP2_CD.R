@@ -285,8 +285,8 @@ CD_Spiousas <- function(data, grouping, center = T, scale = F) {
   A_hat <- solve(C)%*%betas
   
   prop_trace <- eig.B$values[1:k-1]/sum(eig.B$values)
-  salida <- list(prop_trace, A_hat[,1:k-1], eig.B$values[1:k-1])
-  names(salida) <- c("prop_trace", "rotation", "eigenvalues")
+  salida <- list(data, prop_trace, A_hat[,1:k-1], eig.B$values[1:k-1])
+  names(salida) <- c("x", "prop_trace", "rotation", "eigenvalues")
   salida
 }
 
@@ -399,17 +399,22 @@ category <- data_olmos$cat
 ## Sin estandarizar ####
 CD_olmos <- lda(category~., data = X_olmos)
 CD_olmos
-
-CD_olmos_mio <- CD_Spiousas(data = X_olmos, grouping = category, center = F)
 ggord(CD_olmos, category)
+
+CD_olmos_mio <- CD_Spiousas(data = X_olmos, grouping = category, center = T)
+biplot_Spiousas(X = CD_olmos_mio$x, V = CD_olmos_mio$rotation, lambdas = CD_olmos_mio$eigenvalues)
 # Sin estandarizar las cd están en un plano que contiene a X1 y es perpendicular a
 # las demás DUDA No termino de entender bien por qué
 
 ## Estandarizando ####
 CD_olmos_std <- lda(category~., data = as_tibble(scale(X_olmos)))
 CD_olmos_std
-
 ggord(CD_olmos_std, category)
+
+CD_olmos_mio_std <- CD_Spiousas(data = X_olmos, grouping = category, center = T, scale = T)
+biplot_Spiousas(X = CD_olmos_mio_std$x, V = CD_olmos_mio_std$rotation, 
+                lambdas = CD_olmos_mio_std$eigenvalues, group_color = category, method = "cd",
+                ellipse = T)
 
 set.seed(123)
 data <- rbind(mvrnorm(150, mu1, sigma), mvrnorm(50, mu2, sigma), mvrnorm(50, mu1+mu2, sigma))
