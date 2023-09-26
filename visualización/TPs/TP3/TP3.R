@@ -136,7 +136,8 @@ fviz_nbclust(x = HSAUR2::planets, FUNcluster = kmeans, method = "gap_stat", nboo
 # Ejercicio 3.2 ####
 ## a ####
 data_credit_card <- read_csv(here("visualización/TPs/TP3/data/credit-card-data.csv")) %>%
-  select_if(is.numeric) %>%
+  select(all_of(c("oneoff_purchases", "install_purchases", "cash_adv", "oneoff_purchases_freq",
+                  "install_purchases_freq", "cash_adv_freq", "purchases_trx", "credit_limit", "prc_full_payment"))) %>%
   drop_na() %>%
   scale(.)
 
@@ -172,25 +173,25 @@ set.seed(123)
 credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.25, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
 max(credit_card_dbscan$cluster)
-# El 97% de los puntos se considera ruido y hay 5 clusters
+# El 78.8% de los puntos se considera ruido y hay 9 clusters
 
 set.seed(123)
 credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.5, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
 max(credit_card_dbscan$cluster)
-# El 83% de los puntos se considera ruido y hay 2 clusters
+# El 47.4% de los puntos se considera ruido y hay 3 clusters
 
 set.seed(123)
 credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.35, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
 max(credit_card_dbscan$cluster)
-# El 94% de los puntos se considera ruido y hay 9 clusters
+# El 65% de los puntos se considera ruido y hay 5 clusters
 
 set.seed(123)
 credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.45, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
 max(credit_card_dbscan$cluster)
-# El 87% de los puntos se considera ruido y hay 6 clusters
+# El 52.5% de los puntos se considera ruido y hay 4 clusters
 
 credit_card_data_dbscan <- as_tibble(as.matrix(data_credit_card) %*% prcomp(data_credit_card)$rotation[,1:3]) %>%
   bind_cols(credit_card_dbscan$cluster) %>%
