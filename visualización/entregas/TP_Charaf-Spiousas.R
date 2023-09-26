@@ -82,7 +82,7 @@ mu2_hat <- as.matrix(colMeans(obs[obs[,1]==0,2:3]), ncol = 1)
 mu_x_hat <- pi1*mu1_hat+pi2*mu2_hat
 
 sigma_hat_1 <- cov(obs[obs[,1]==1,2:3]) 
-sigma_hat_2 <- cov(obs[obs[,1]==1,2:3]) 
+sigma_hat_2 <- cov(obs[obs[,1]==2,2:3]) 
 sigmaw_hat <- pi1*sigma_hat_1+pi2*sigma_hat_2
 sigmab_hat <- pi1*(mu1_hat-mu_x_hat)%*%t((mu1_hat-mu_x_hat))+pi2*(mu2_hat-mu_x_hat)%*%t((mu2_hat-mu_x_hat))
 sigma.x_hat <- sigmaw_hat+sigmab_hat
