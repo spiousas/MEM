@@ -23,22 +23,29 @@ biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, method = NU
   colnames(rotX) <- c("C1", "C2")
   data <- as_tibble(rotX)
   
+  # Labels de las direcciones
+  if (is.null(rownames(V))) {
+    labels_V <- paste0("X", 1:nrow(V))
+  } else {
+    labels_V <- rownames(V)
+  }
+  
   # Hago un tibble con los vectores de rotación
   colnames(V) <- c("v1", "v2")
   V <- as_tibble(V)
   
   if (is.null(method)) {
-    label <- list(
+    labels <- list(
       labs(x = "Componente 1",
            y = "Componente 2")
     ) 
-  } else if(method == "pca") {
-    label <- list(
+  } else if (method == "pca") {
+    labels <- list(
       labs(x = paste0("PC1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
            y = paste0("PC2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)"))
     )  
   } else if (method == "cd") {
-    label <- list(
+    labels <- list(
       labs(x = paste0("LD1 (", round(lambdas[1]/sum(lambdas)*100, 2), "%)"),
            y = paste0("LD2 (", round(lambdas[2]/sum(lambdas)*100, 2), "%)"))
     )
@@ -81,11 +88,11 @@ biplot_Spiousas <- function(X, V, lambdas, scale = 1, pc_biplot = F, method = NU
     geom_text(data = V,
               aes(x = scale * v1 * sqrt(lambda1), 
                   y = scale * v2 * sqrt(lambda2)), 
-              label = colnames(X),
+              label = labels_V,
               vjust = "outward", hjust = "outward") +
     labs(title = paste0("Biplot", if_else(pc_biplot, ", con los scores y v escaleados con lambda.", ".")),
          color = "Grupo") +
-    label +
+    labels +
     guides(fill = "none") +
     theme_bw()
 }
@@ -102,8 +109,6 @@ Xsc <- scale(X)
 A <- eigen(cov(as.matrix(Xsc)))$vectors[,1:2]
 eigvalues <- eigen(cov(as.matrix(Xsc)))$values
 
-biplot_nacho(Xsc, A, eigvalues, scale = 3.4, pc_biplot = F)
-
 # Estos dos deberían dar iguales
 pca_fun <- prcomp(Xsc)
 pca_fun
@@ -115,5 +120,6 @@ fviz_pca_biplot(pca_fun,
                 ggtheme = theme_bw())
 
 # Doy vuelta la primera columna de A
-biplot_Spiousas(Xsc, cbind(-A[,1], A[,2]), eigvalues, scale = 3.4, pc_biplot = T, isPCA = F)
+biplot_Spiousas(Xsc, cbind(-A[,1], A[,2]), eigvalues, scale = 3.4, pc_biplot = F, method = "pca")
 
+biplot(Xsc %*% cbind(-A[,1], A[,2]), cbind(-A[,1], A[,2]), xlabs = rep("·", nrow(Xsc)), ylabs = rep(".", ncol(Xsc)))

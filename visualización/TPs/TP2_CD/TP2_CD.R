@@ -31,10 +31,10 @@ A<-solve(C)%*%betas
 ###
 # comparación con la solución para el alfa1 con k=2
 ###
-alfa1<-solve(sigmaw)%*%(mu1-mu2)
+alfa1<-solve(sigmaw)%*%sigmab
 c<-t(A[,1])%*%sigma%*%A[,1]/(t(A[,1])%*%(mu1-mu2))
-A[1,1]/c
-A[2,1]/c
+A[1,1] / alfa1[1]
+A[2,1] / alfa1[2]
 ###
 
 ## c ####
@@ -173,8 +173,8 @@ grouping <- rbind(as.matrix(rep(1, 150)), as.matrix(rep(2, 50)))
 matrices <- ss.split(data, grouping)
 k <- length(unique(grouping))
 n <- nrow(data)
-matrices[[1]]/(n-k) # Sigma within  
-matrices[[2]]/(n)   # Sigma between
+matrices[[1]]/(n-1) # Sigma within  
+matrices[[2]]/(n-1) # Sigma between
 matrices[[3]]/(n-1) # Sigma total
 
 # Lo hago como en el 2.9 para comparar 
@@ -268,7 +268,7 @@ CD_Spiousas <- function(data, grouping, center = T, scale = F) {
   n <- nrow(data)
   k <- length(unique(grouping))
 
-  sigmaw_hat <- matrices[[1]]/(n-k) # Sigma within  
+  sigmaw_hat <- matrices[[1]]/(n-1) # Sigma within  
   sigmab_hat <- matrices[[2]]/(n-1) # Sigma between
   sigma_hat <- matrices[[3]]/(n-1) # Sigma total
   
@@ -402,7 +402,7 @@ CD_olmos
 ggord(CD_olmos, category)
 
 CD_olmos_mio <- CD_Spiousas(data = X_olmos, grouping = category, center = T)
-biplot_Spiousas(X = CD_olmos_mio$x, V = CD_olmos_mio$rotation, lambdas = CD_olmos_mio$eigenvalues)
+biplot_Spiousas(X = CD_olmos_mio$x, V = CD_olmos_mio$rotatHacion, lambdas = CD_olmos_mio$eigenvalues)
 # Sin estandarizar las cd están en un plano que contiene a X1 y es perpendicular a
 # las demás DUDA No termino de entender bien por qué
 

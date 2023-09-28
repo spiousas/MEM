@@ -139,8 +139,8 @@ data_sim %>% ggplot(aes(x = X1,
 # Efectivamente la línea azul pareciera partir los datos más "equitativamente"
 
 # Ejercicio 4.3 ####
-sigma1 <- matrix(c(1,0.9,0.9,1),2)
-sigma2 <- matrix(c(1,1/2,1/2,1),2)
+sigma2 <- matrix(c(1,0.9,0.9,1),2)
+sigma1 <- matrix(c(1,1/2,1/2,1),2)
 pi1 <- 3/4
 pi2 <- 1/4
 mu1 <- matrix(c(1,1/2),2,1)
@@ -171,13 +171,14 @@ g_hat_opt_cuad <- function(X, Y) {
   sigma1_hat <- cov(X[Y==1,]) 
   sigma2_hat <- cov(X[Y==2,]) 
   
+  print(sigma2_hat)
   Y_hat <- rep(NA, length(Y))
   
   for (i in 1:length(Y_hat)) {
     # El lado izquierdo
-    W1 <- t(X[i,]-mu1_hat) %*% sigma1_hat %*% (X[i,]-mu1_hat) - log(pi1_hat)
+    W1 <- t(X[i,]-mu1_hat) %*% solve(sigma1_hat) %*% (X[i,]-mu1_hat) - log(pi1_hat)
     # El lado derecho
-    W2 <- t(X[i,]-mu2_hat) %*% sigma2_hat %*% (X[i,]-mu2_hat) - log(pi2_hat)
+    W2 <- t(X[i,]-mu2_hat) %*% solve(sigma2_hat) %*% (X[i,]-mu2_hat) - log(pi2_hat)
     
     Y_hat[i] <- if_else(W1 < W2, 1, 2)  
   }
@@ -298,8 +299,60 @@ data_plot_fondo <- as_tibble(as.matrix(data_fondo) %*% LDA$scaling) %>%
 data_plot %>% ggplot(aes(x = LD1,
                          y = LD2,
                          color = as.factor(group))) +
-  geom_point(data = data_plot_fondo, alpha = .01) +
+  geom_point(data = data_plot_fondo, alpha = .1, size = 3) +
   geom_point() +
   theme_bw() +
   labs(color = "Grupo") +
+  scale_x_continuous(limits = c(min(data_plot$LD1), max(data_plot$LD1))) +
+  scale_y_continuous(limits = c(min(data_plot$LD2), max(data_plot$LD2))) +
+  theme(legend.position = "top")
+
+## con QDA ####
+QDA <- qda(formula = group ~ FL + RW + CL + CW + BD,
+           data = data_cangrejos)
+
+X <- rbind(as.matrix(data_cangrejos[data_cangrejos[,1]==1,-1]) %*% QDA$scaling[,,1][,1:2],
+           as.matrix(data_cangrejos[data_cangrejos[,1]==2,-1]) %*% QDA$scaling[,,2][,1:2],
+           as.matrix(data_cangrejos[data_cangrejos[,1]==3,-1]) %*% QDA$scaling[,,3][,1:2])
+
+data_plot <- as_tibble(X) %>%
+  mutate(group = data_cangrejos$group) %>%
+  rename(QD1 = `1`) %>%
+  rename(QD2 = `2`)
+
+data_plot %>% ggplot(aes(x = QD1,
+                         y = QD2,
+                         color = as.factor(group))) +
+  geom_point() +
+  theme_bw() +
+  labs(color = "Grupo") +
+  theme(legend.position = "top")
+
+data_fondo <- expand_grid(FL = seq(min(data_cangrejos$FL),max(data_cangrejos$FL),2),
+                          RW = seq(min(data_cangrejos$RW),max(data_cangrejos$RW),2),
+                          CL = seq(min(data_cangrejos$CL),max(data_cangrejos$CL),2),
+                          CW = seq(min(data_cangrejos$CW),max(data_cangrejos$CW),2),
+                          BD = seq(min(data_cangrejos$BD),max(data_cangrejos$BD),2))
+
+
+prediction <- as.numeric(predict(object = QDA, newdata = data_fondo,  method = "predictive")$class)
+
+X_fondo <- rbind(as.matrix(data_fondo[prediction==1,]) %*% QDA$scaling[,,1][,1:2],
+                 as.matrix(data_fondo[prediction==2,]) %*% QDA$scaling[,,2][,1:2],
+                 as.matrix(data_fondo[prediction==3,]) %*% QDA$scaling[,,3][,1:2])
+
+data_plot_fondo <- as_tibble(X_fondo) %>%
+  mutate(group = prediction) %>%
+  rename(QD1 = `1`) %>%
+  rename(QD2 = `2`)
+
+data_plot %>% ggplot(aes(x = QD1,
+                         y = QD2,
+                         color = as.factor(group))) +
+  geom_point(data = data_plot_fondo, alpha = .1, size = 3) +
+  geom_point() +
+  theme_bw() +
+  labs(color = "Grupo") +
+  scale_x_continuous(limits = c(min(data_plot$QD1), max(data_plot$QD1))) +
+  scale_y_continuous(limits = c(min(data_plot$QD2), max(data_plot$QD2))) +
   theme(legend.position = "top")

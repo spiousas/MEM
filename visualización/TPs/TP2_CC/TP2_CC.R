@@ -52,6 +52,18 @@ k <- 1/sqrt(t(n_1) %*% sigma_y %*% n_1)
 beta_1 <- as.numeric(k)*n_1
 beta_1
 
+# Forma alternativa con Upsilon2
+Ups_2 <- solve(sigma_y) %*% t(sigma_xy) %*% solve(sigma_x) %*% sigma_xy
+eig_2 <- eigen(Ups_2)
+n_1_alt <- matrix(eig_2$vectors[,1])
+k <- 1/sqrt(t(n_1_alt) %*% sigma_y %*% n_1_alt)
+beta_1_alt <- as.numeric(k)*n_1_alt
+beta_1_alt
+
+# Loa autovalores de anbas Upsilons son iguales
+eig$values
+eig_2$values
+
 # Acá también chequeo lo de Izenman
 n_1_Izenman <- sigma_y_inv_sqrt %*% r_1
 k <- 1/sqrt(t(n_1_Izenman) %*% sigma_y %*% n_1_Izenman)
@@ -290,28 +302,42 @@ v2 <- Y %*% beta_2
 ccaXY <- cancor(X, Y)
 ccaXY
 
-biplot_Spiousas(X = CD_olmos_mio_std$x, V = CD_olmos_mio_std$rotation, 
-                lambdas = CD_olmos_mio_std$eigenvalues, group_color = category, method = "cd",
-                ellipse = T)
+biplot_Spiousas(X = scale(X, scale = T), V = ccaXY$xcoef[,1:2], scale = 3)
+cca <- CCorA(Y, X)
+biplot(cca)
 
-XautovecST<-as.matrix(ccaXY$xcoef) * 1/sqrt(diag(t(as.matrix(ccaXY$xcoef))%*%sigma_x%*%as.matrix(ccaXY$xcoef)))
-YautovecST<-as.matrix(ccaXY$ycoef) * 1/sqrt(diag(t(as.matrix(ccaXY$ycoef))%*%sigma_y%*%as.matrix(ccaXY$ycoef)))
+XautovecST <- as.matrix(ccaXY$xcoef) * 1/sqrt(diag(t(as.matrix(ccaXY$xcoef))%*%sigma_x%*%as.matrix(ccaXY$xcoef)))
+YautovecST <- as.matrix(ccaXY$ycoef) * 1/sqrt(diag(t(as.matrix(ccaXY$ycoef))%*%sigma_y%*%as.matrix(ccaXY$ycoef)))
 # Los vectores dan iguales
 
 ## a, b, c y d ####
 # Usamos la funcion CCorA de {vegan}
 cca <- CCorA(Y,X)
 biplot(cca)
+plot.cc(cca)
 
 # Hay una manera de pedirle ploetar ambos grupos contra U y ambos grupos contra V
 par(mfrow=c(1,1))
 
-biplot(x =cca$Cx,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cx), main="U1 y U2 vs X e Y")
-biplot_Spiousas(X = scale(X), V = rbind(cca$corr.X.Cx))
+biplot(x = cca$Cx, y = rbind(cca$corr.X.Cx), 
+       xlabs = rep("·", nrow(cca$Cx)), 
+       main="U1 y U2 vs X")
 
-biplot(x =cca$Cy,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cy),main="V1 y V2 vs X e Y")
-biplot(x =cbind(cca$Cx[,1], cca$Cy[,1]),y = rbind(cbind(cca2$corr.X.Cx[,1],cca2$corr.X.Cy[,1])
-                                                  , cbind(cca2$corr.Y.Cx[,1],cca2$corr.Y.Cy[,1])),main="U1 y V1 vs X e Y")
-biplot(x =cbind(cca$Cx[,2], cca$Cy[,2]),y = rbind(cbind(cca2$corr.X.Cx[,2],cca2$corr.X.Cy[,2])
-                                                  , cbind(cca2$corr.Y.Cx[,2],cca2$corr.Y.Cy[,2])),main="U2 y V2 vs X e Y")
+biplot(x = cca$Cy, y = rbind(cca$corr.Y.Cy), 
+       xlabs = rep("·", nrow(cca$Cy)), 
+       main="U1 y U2 vs X e Y")
+
+biplot_Spiousas(X = scale(X), V = cbind(alpha_1, alpha_2), scale = 4)
+biplot_Spiousas(X = scale(Y), V = cbind(beta_1, beta_2), scale = 5)
+
+biplot(x =cca$Cx,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cy), xlabs = rep("x", nrow(cca$Cx)), main="U1 y U2 vs X e Y")
+biplot(x =cca$Cy,y =rbind(cca$corr.X.Cx, cca$corr.Y.Cy), xlabs = rep("x", nrow(cca$Cx)), main="V1 y V2 vs X e Y")
+biplot(x = cbind(cca$Cx[,1], cca$Cy[,1]), y = rbind(cbind(cca$corr.X.Cx[,1],cca$corr.X.Cy[,1])
+                                                  , cbind(cca$corr.Y.Cx[,1],cca$corr.Y.Cy[,1])), 
+       xlabs = rep("x", nrow(cbind(cca$Cx[,1], cca$Cy[,1]))),
+       main="U1 y V1 vs X e Y")
+biplot(x =cbind(cca$Cx[,2], cca$Cy[,2]),y = rbind(cbind(cca$corr.X.Cx[,2],cca$corr.X.Cy[,2])
+                                                  , cbind(cca$corr.Y.Cx[,2],cca$corr.Y.Cy[,2])),
+       xlabs = rep("x", nrow(cbind(cca$Cx[,2], cca$Cy[,2]))),
+       main="U2 y V2 vs X e Y")
 
