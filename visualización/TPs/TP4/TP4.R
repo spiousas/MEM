@@ -176,9 +176,9 @@ g_hat_opt_cuad <- function(X, Y) {
   
   for (i in 1:length(Y_hat)) {
     # El lado izquierdo
-    W1 <- t(X[i,]-mu1_hat) %*% solve(sigma1_hat) %*% (X[i,]-mu1_hat) - log(pi1_hat)
+    W1 <- -1/(2 * sqrt(2*pi*det(sigma1_hat))) * exp(-1/2 * t(X[i,]-mu1_hat) %*% solve(sigma1_hat) %*% (X[i,]-mu1_hat)) * pi1_hat 
     # El lado derecho
-    W2 <- t(X[i,]-mu2_hat) %*% solve(sigma2_hat) %*% (X[i,]-mu2_hat) - log(pi2_hat)
+    W2 <- -1/(2 * sqrt(2*pi*det(sigma2_hat))) * exp(-1/2 * t(X[i,]-mu2_hat) %*% solve(sigma2_hat) %*% (X[i,]-mu2_hat)) * pi2_hat 
     
     Y_hat[i] <- if_else(W1 < W2, 1, 2)  
   }
@@ -188,6 +188,13 @@ g_hat_opt_cuad <- function(X, Y) {
 
 Y_hat_opt <- g_hat_opt_cuad(X,Y)
 1 - sum(Y_hat_opt==Y)/nRep 
+
+# Ahora lo prubo con QDA a ver si me da igual
+colnames(X) <- c("X1", "X2")
+data <- as_tibble(X) %>% bind_cols(Y)
+
+QDA <- qda(formula = Y ~ X1 + X2, data = data)
+1 - sum(predict(QDA, data)$class==Y)/nRep 
 
 colnames(X) <- c("X1", "X2")
 
@@ -353,6 +360,6 @@ data_plot %>% ggplot(aes(x = QD1,
   geom_point() +
   theme_bw() +
   labs(color = "Grupo") +
-  scale_x_continuous(limits = c(min(data_plot$QD1), max(data_plot$QD1))) +
-  scale_y_continuous(limits = c(min(data_plot$QD2), max(data_plot$QD2))) +
+  #scale_x_continuous(limits = c(min(data_plot$QD1), max(data_plot$QD1))) +
+  #scale_y_continuous(limits = c(min(data_plot$QD2), max(data_plot$QD2))) +
   theme(legend.position = "top")

@@ -1,4 +1,66 @@
-pacman::p_load(here, tidyverse, matlib, factoextra)
+pacman::p_load(here, tidyverse, matlib, factoextra, MASS, GGally)
+
+# Ejercicio 2.1 ####
+sigma <- matrix(c(3,1,1,1,3,1,1,1,5), nrow = 3)
+sigma
+
+## a ####
+eigen(sigma)
+U <- eigen(sigma)$vectors
+V <- diag(eigen(sigma)$values)
+
+U %*% V %*% t(U)
+
+## c ####
+A <- U
+sigma_epsilon <- t(A) %*% sigma %*% A
+sigma_epsilon
+
+## d ####
+tr(sigma)
+tr(sigma_epsilon)
+
+## e ####
+tr(sigma_epsilon[1:2,1:2])/tr(sigma) * 100
+
+## f ####
+x <-  matrix(c(2,2,1), nrow = 3)
+x
+t(A) %*% x
+
+## f ####
+sigma %*% A
+
+# Ejercicio 2.2 ####
+## d ####
+sigma <- matrix(c(3,1,1,1,3,1,1,1,5), nrow = 3)
+sigma
+mu <- matrix(c(0,0,0), nrow = 3)
+mu
+
+n <- 1000
+X <- mvrnorm(n = n, mu = mu, Sigma = sigma)
+colMeans(X)
+cov(X)
+
+ggpairs(as_tibble(X)) + theme_bw()
+
+# La raiz cuadrada invertida de sigma
+sigma_raiz_inv <- eigen(sigma)$vectors %*% diag((eigen(sigma)$values)^(-1/2)) %*% t(eigen(sigma)$vectors)
+sigma_raiz_inv
+
+# Ahora hacemos la normalización multivariada. No le resto mu porque es cero.
+ggpairs(as_tibble(X %*% sigma_raiz_inv)) + theme_bw()
+# Quean como redonditas, ya no más alineadas
+
+cov(X %*% sigma_raiz_inv)
+
+PCA <- prcomp(scale(X))
+PCA$rotation
+
+cov(scale(X) %*% PCA$rotation)
+
+ggpairs(as_tibble(scale(X) %*% PCA$rotation %*% t(PCA$rotation))) + theme_bw()
 
 # Ejercicio 2.3 ####
 data_constructora <- read_delim(here("visualización/TPs/data/constructora.txt")
@@ -27,7 +89,8 @@ data_constructora_center %>% ggplot(aes(x = x2,
 a <- eigen(cov(as.matrix(data_constructora_center[,2:4])))$vectors[,1:2]
 a
 
-as.matrix(data_constructora_center[,2:4]) %*% a
+cov(as.matrix(data_constructora_center[,2:4]) %*% a)
+# La covarianza cruzada da 0
 
 data_pca <- as_tibble(as.matrix(data_constructora_center[,2:4]) %*% a, .name_repair = "universal") %>% 
   rename(x1 = "...1", x2 = "...2") 
@@ -55,11 +118,14 @@ a <- eigen(cov(as.matrix(data_constructora_center[,2:4])))
 a_cor <- eigen(cor(as.matrix(data_constructora_center[,2:4])))
 
 pca_scaled <- prcomp(scale(as.matrix(data_constructora_center[,2:4])))
-pca_scaled$sdev
-a_cor$values/3
-a_cor$values/3
-biplot(pca_scaled)
 pca <- prcomp(as.matrix(data_constructora_center[,2:4]))
+
+pca_scaled$sdev^2
+a_cor$values
+pca$sdev^2
+a$values
+
+biplot(pca_scaled)
 biplot(pca)
 
 # Ejercicio 2.4 ####
@@ -81,10 +147,11 @@ summary(pca_paises)
 # }
 
 # Los scores son pca_nci_paises$x o también los puedo calcular como:
-centered_x <- as.matrix(data_paises[2:6]) - colMeans(data_paises[2:6])[col(data_paises[2:6])]
+#centered_x <- as.matrix(data_paises[2:6]) - colMeans(data_paises[2:6])[col(data_paises[2:6])]
+centered_x <- scale(data_paises[2:6], scale = F)
 scores <- centered_x %*% pca_paises$rotation 
 plot(scores)
-plot(pca_paises$x)
+plot(pca_paises$x) # Estas dos cosas son equivalentes
 
 fviz_pca_biplot(pca_paises,
                 label = "var",
@@ -169,3 +236,4 @@ fviz_pca_biplot(pca_nci_vinos,
                 label = "var",
                 col.ind = "gray80",
                 size.ind = .1)
+

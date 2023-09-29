@@ -1,4 +1,4 @@
-pacman::p_load(here, tidyverse, matlib, MASS, plotly)
+pacman::p_load(here, tidyverse, matlib, MASS, plotly, GGally, patchwork)
 
 # Ejercicio 1.1 ####
 
@@ -8,6 +8,7 @@ x <- as.matrix(data_pbi)
 
 ## b ####
 pairs(x, pch=20)  
+ggpairs(as_tibble(x)) + theme_bw()
 
 ## c ####
 media_muestral <- colMeans(x)
@@ -16,10 +17,12 @@ n <- nrow(x)
 I <- diag(rep(1, n))
 unos <- matrix(1, n, 1)
 
+# Matriz de centrado, I - (Matriz con todos unos)/n
 H <- I - 1/n * unos %*% t(unos)
 x_cent <- H %*% x
 
 pairs(x_cent, pch = 20)
+ggpairs(as_tibble(x_cent)) + theme_bw()
 
 ## d ####
 Q <- t(x_cent) %*% x_cent
@@ -34,6 +37,7 @@ Z <- H %*% x %*% D_12 # Matriz de datos estandarizada
 
 pairs(Z)
 cov(Z)
+cor(x_cent) # Dan igual!
 
 # Ejercicio 1.2 ####
 ## a ####
@@ -136,22 +140,24 @@ distance <- function(x, m, M) {
 distance(x, m, M)
 
 ## a ####
-# Justamente si M es la diagonal, d se convierte en la distancia euclidea.
+# Justamente si M es la identidad, d se convierte en la distancia euclidea.
 # Hagamos a mano para i=1
 sqrt((x[1,1]-m[1])^2 + (x[1,2]-m[2])^2)
+distance(x, m, M)[1]
+
+dist(rbind(x[1,], t(m)), method = "euclidean")
 distance(x, m, M)[1]
 
 ## b ####
 M <- diag(diag(cov(x)))
 M
 distance(x, m, M)
-# Lo que me devuelve es la distancia en cantidad de desviaciones estándar
+# Lo que me devuelve es la distancia en cantidad de Varianzas
 
 ## c ####
 M <- cov(x)
 M
 distance(x, m, M)
-
 
 # Ejercicio 1.5 ####
 set.seed(1234)
@@ -165,6 +171,7 @@ a <- matrix(c(cos(pi/4), cos(pi/4)), nrow = 2)
 # La x proyectada en la recta y después puesta en R2 es x %*% a %*% t(a)
 data_rot <- as_tibble(x %*% a %*% t(a), .name_repair = "universal") %>% 
   rename(x1 = "...1", x2 = "...2") 
+
 data_rot
 
 data %>% ggplot(aes(x = x1,
@@ -176,7 +183,7 @@ data %>% ggplot(aes(x = x1,
   geom_point(data = data_rot, color = "red") +
   scale_x_continuous(limits = c(-4,4), minor_breaks = NULL) +
   scale_y_continuous(limits = c(-4,4), minor_breaks = NULL) +
-  theme_bw() 
+  theme_bw() + theme(aspect.ratio=1)
 
 # Interpretación con componentes principales
 # t(A) * x = psi
@@ -193,7 +200,7 @@ Sigma <- matrix(c(2,1,1,2), nrow = 2)
 A <- eigen(Sigma)$vectors
 A_hat <- eigen(cov(x))$vectors
 
-data_PCA_data <- as_tibble(x %*% A_hat, .name_repair = "universal") %>% 
+data_PCA_data <- as_tibble(x %*% A_hat[,1] %*% t(A_hat[,1]), .name_repair = "universal") %>% 
   rename(x1 = "...1", x2 = "...2") 
 
 data %>% ggplot(aes(x = x1,
@@ -201,9 +208,9 @@ data %>% ggplot(aes(x = x1,
   geom_point(color = "grey") + 
   geom_hline(yintercept = 0, linetype = "dotted") +
   geom_vline(xintercept = 0, linetype = "dotted") +
-  geom_abline(slope = 1, intercept = 0) +
-  geom_abline(slope = 1, intercept = 0) +
-  geom_point(data = A_hat[2,1]/A_hat[1,1], color = "red") +
+  geom_abline(slope = 1, intercept = 0, linetype = "dotted") +
+  geom_abline(slope = A_hat[2,1]/A_hat[1,1], intercept = 0) +
+  geom_point(data = data_PCA_data, color = "red") +
   scale_x_continuous(limits = c(-4,4), minor_breaks = NULL) +
   scale_y_continuous(limits = c(-4,4), minor_breaks = NULL) +
   theme_bw() + theme(aspect.ratio=1)
@@ -221,11 +228,11 @@ EY1
 SigmaY1 <- t(a1) %*% Sigma %*% a1
 SigmaY1
 
-Y <- as_tibble(x %*% a, .name_repair = "universal") %>% 
-  rename(y1 = "...1") 
+Y <- as_tibble(x %*% a1, .name_repair = "universal") %>% 
+  rename(y = "...1") 
 
 ## b ####
-Y %>% ggplot(aes(x = y1)) +
+Y %>% ggplot(aes(x = y)) +
   geom_histogram(aes(y = after_stat(..density..))) + 
   geom_density() + 
   stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = sqrt(3)), color = "red") +
@@ -248,13 +255,11 @@ Y_prima <- as_tibble(x %*% a, .name_repair = "universal") %>%
 Y_prima
 
 # Ploteo Y e Y_prima en el espacio rotado
-Y %>% ggplot(aes(x = y1, y = y2)) +
-  geom_point(data = Y_prima, color = "red", shape = 21, size = 3, fill = "white") +
+Y_prima %>% ggplot(aes(x = y1, y = y2)) +
   geom_point() +
   theme_bw()
-# Obtengo el mismo resultado de ambas maneras
 
-Y %>% ggplot(aes(x = y2)) +
+Y_prima %>% ggplot(aes(x = y2)) +
   geom_histogram(aes(y = after_stat(..density..))) + 
   geom_density() + 
   stat_function(fun = dnorm, n = 101, args = list(mean = 0, sd = sqrt(1)), color = "red") +
@@ -289,7 +294,7 @@ data %>% ggplot(aes(x = x1,
   theme_bw() + theme(aspect.ratio=1)
 
 ## e ####
-Y %>% ggplot(aes(x = y1,
+Y_prima %>% ggplot(aes(x = y1,
                  y = y2)) +
   geom_point() + 
   geom_hline(yintercept = 0, linetype = "dotted") +
@@ -312,7 +317,7 @@ EY2
 SigmaY2 <- t(a2) %*% Sigma %*% a2
 SigmaY2
 
-Y <- as_tibble(x %*% a, .name_repair = "universal") %>% 
+Y <- as_tibble(x %*% a1, .name_repair = "universal") %>% 
   rename(y1 = "...1") 
 Y <- Y %>% mutate(y2 = x %*% a2) 
 
@@ -340,7 +345,6 @@ data %>% ggplot(aes(x = x1,
   scale_y_continuous(limits = c(-4,4), minor_breaks = NULL) +
   theme_bw() + theme(aspect.ratio=1)
 
-## e ####
 Y %>% ggplot(aes(x = y1,
                  y = y2)) +
   geom_point() + 
@@ -356,10 +360,10 @@ cor(Y)
 sum(diag(cov(x)))
 sum(diag(cov(Y)))
 
-# La suma de las diagonales de las matrices de covarianza son iguales
+# La suma de las diagonales de las matrices de covarianza no son iguales 
+# porque las nuevas coordenadas no son ortogonales
 
 # Ejercicio 1.7 ####
-
 data_Hg <- read_csv(here("visualización/TPs/data/mercurio.csv"))
 
 ## a ####
@@ -367,7 +371,7 @@ fig <- plot_ly(data_Hg,
                x = ~alcalinidad, 
                y = ~clorofila, 
                z = ~mercurio, 
-               color = ~etiqueta, 
+               color = ~as.factor(etiqueta), 
                colors = c('#BF382A', '#0C4B8E'))
 
 fig <- fig %>% add_markers()
@@ -386,7 +390,7 @@ fig <- plot_ly(data_Hg,
                x = ~w1, 
                y = ~w2, 
                z = ~w3, 
-               color = ~etiqueta, 
+               color = ~as.factor(etiqueta), 
                colors = c('#BF382A', '#0C4B8E'))
 
 fig <- fig %>% add_markers()
@@ -428,7 +432,7 @@ dist_E <- rep(NA, nrow(W))
 
 for (i in 1:nrow(W)) {
   dist_E[i] <- sqrt(norm(W[i,]-mediaW, type="2"))
-  dist_M[i] <- (W[i,]-mediaW) %*% inv(sigmaW) %*% t(W[i,]-mediaW)
+  dist_M[i] <- sqrt((W[i,]-mediaW) %*% solve(sigmaW) %*% t(W[i,]-mediaW))
 }
 
 data_Hg <- data_Hg %>% mutate(dist_E = dist_E,
@@ -438,4 +442,24 @@ data_Hg %>% ggplot(aes(x = dist_E,
                        y = dist_M)) +
   geom_point() + 
   theme_bw()
-  
+
+Y <- Y %>% mutate(dist_E = dist_E,
+                  dist_M = dist_M)
+
+mediaY <- mediaW %*% A
+
+# Distancia euclidea
+p1 <- Y %>% 
+  ggplot(aes(x = y1, y = y2, color = dist_E)) +
+  geom_point() +
+  geom_point(x = mediaY[1], y = mediaY[2], color = "red") +
+  theme_bw()
+
+# Distancia Mahalanobis
+p2 <- Y %>% 
+  ggplot(aes(x = y1, y = y2, color = dist_M)) +
+  geom_point() +
+  geom_point(x = mediaY[1], y = mediaY[2], color = "red") +
+  theme_bw()
+
+p1 / p2

@@ -1,4 +1,5 @@
-pacman::p_load(here, tidyverse, MASS, HSAUR2, plotly, factoextra, fpc, janitor, StatMatch)
+pacman::p_load(here, tidyverse, MASS, HSAUR2, plotly, factoextra, fpc, janitor, 
+               StatMatch, factoextra)
 
 # Ejercicio 3.1 ####
 ## a ####
@@ -10,7 +11,7 @@ cov(data_planets)
 # Uso K-medias
 set.seed(123)
 k <- 4
-planets_clusters <- kmeans(x = data_planets, centers = k)
+planets_clusters <- kmeans(x = data_planets, centers = k, nstart = 50)
 planets_clusters
 
 # planets_clusters tiene:
@@ -57,6 +58,7 @@ planets_totalss <- data_planets_cluster %>%
 
 planets_totalss
 planets_clusters$totss
+cov(data_planets) * (nrow(data_planets)-1)
 # Dan igual!
 
 planets_betweenss <- planets_center %>%
@@ -188,7 +190,7 @@ max(credit_card_dbscan$cluster)
 # El 65% de los puntos se considera ruido y hay 5 clusters
 
 set.seed(123)
-credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.45, MinPts = 15)
+credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 2, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
 max(credit_card_dbscan$cluster)
 # El 52.5% de los puntos se considera ruido y hay 4 clusters
@@ -205,16 +207,19 @@ plot_ly(credit_card_data_dbscan, x = ~PC1, y = ~PC2, z = ~PC3, color = ~as.facto
 data_credit_card_redux <- as_tibble(as.matrix(data_credit_card) %*% prcomp(data_credit_card)$rotation[,1:3])
 
 set.seed(123)
-credit_card_dbscan <- fpc::dbscan(data = data_credit_card_redux, eps = 0.1, MinPts = 15)
-sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
-max(credit_card_dbscan$cluster)
+credit_card_dbscan_redux <- fpc::dbscan(data = data_credit_card_redux, eps = 0.45, MinPts = 15)
+sum(credit_card_dbscan_redux$cluster==0)/nrow(data_credit_card_redux)
+max(credit_card_dbscan_redux$cluster)
 
-credit_card_data_dbscan <- data_credit_card_redux %>%
-  bind_cols(credit_card_dbscan$cluster) %>%
+credit_card_data_dbscan_redux <- data_credit_card_redux %>%
+  bind_cols(credit_card_dbscan_redux$cluster) %>%
   rename(cluster = `...4`) %>%
   filter(cluster !=0)
 
 plot_ly(credit_card_data_dbscan, x = ~PC1, y = ~PC2, z = ~PC3, color = ~as.factor(cluster)) %>% 
+  add_markers()
+
+plot_ly(credit_card_data_dbscan_redux, x = ~PC1, y = ~PC2, z = ~PC3, color = ~as.factor(cluster)) %>% 
   add_markers()
 # La verdad que me parece difícil entender si esto es o no una mejor clusterización
 
@@ -274,6 +279,7 @@ MDS %>% ggplot(aes(x = C1,
   geom_text(aes(label = name)) +
   theme_bw() +
   labs(color = "Grupo:") +
+  scale_color_viridis_d() +
   theme(legend.position = "top")
 
 # Está bastante bien, voy a probar ahora con 3
@@ -303,11 +309,9 @@ MDS %>% ggplot(aes(x = V1,
   theme_bw() +
   labs(color = "Grupo:") +
   theme(legend.position = "top")
-
 # Está girado pero da lo mismo.
 
 ## d ####
-
 distancias_euclidea<- dist(X, method="euclidean", diag=T, upper=T)
 
 hc <- hclust(distancias_euclidea, method = "ward.D2")
@@ -373,7 +377,7 @@ MDS <- as_tibble(Y) %>%
 plot_ly(MDS, x = ~C1, y = ~C2, z = ~C3, color = ~as.factor(grupo)) %>% 
   add_markers()
 
-# Ejercicio 3.5 ####
+# Ejercicio 3.4 ####
 ## a ####
 data_indumentaria <- readxl::read_excel(here("visualización/TPs/TP3/data/indumentaria.xlsx")) %>%
   clean_names()
@@ -397,22 +401,30 @@ dist_jaccard <- function(data) {
       }
     }  
   }
-  
   s
 }
 
 dist_jaccard <- dist_jaccard(X_indumentaria)
-sim <- 1 - dist_jaccard
+dissim <- sqrt(2 - 2*dist_jaccard)
 
 ## b ####
-MDS <- as_tibble(cmdscale(sim, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE))  %>%
+MDS <- as_tibble(cmdscale(dissim, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE))  %>%
   mutate(name = data_indumentaria$x1)
+
+# Para calcular el stress
+dist_reconstruida <- as.matrix(dist(as.matrix(MDS[,-3])))
+
+p_ij = dist_reconstruida[upper.tri(dist_reconstruida)]
+d_ij = dissim[upper.tri(dissim)]
+denominator = sum(p_ij^2)
+nominator = sum((d_ij - p_ij)^2)
+normalized_stress = sqrt(nominator/denominator)
+normalized_stress
 
 MDS %>% ggplot(aes(x = V1,
                    y = V2)) +
   geom_text(aes(label = name)) +
   theme_bw() +
-  labs(color = "Grupo:") +
   theme(legend.position = "top")
 
 ## c ####
@@ -487,3 +499,4 @@ MDS %>% ggplot(aes(x = V1,
   theme_bw() +
   labs(color = "Grupo:") +
   theme(legend.position = "top")
+

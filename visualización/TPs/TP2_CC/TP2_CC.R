@@ -1,4 +1,4 @@
-pacman::p_load(here, tidyverse, matlib, factoextra, MASS, vegan)
+pacman::p_load(here, tidyverse, matlib, factoextra, MASS, vegan, CCA, reshape)
 
 # Ejercicio 2.7 ####
 ## a ####
@@ -44,7 +44,7 @@ alpha_1_Izenman
 
 # Ahora vamos a calcular Var(U1)
 sigma_U1 <- t(alpha_1) %*% sigma_x %*% alpha_1
-sigma_U1
+sigma_U1 # La varianza da 1
 
 # Hago algo parecido con beta_1
 n_1 <- 1/eig$values[1] * inv(sigma_y) %*% t(sigma_xy) %*% alpha_1
@@ -143,57 +143,41 @@ sigma_V
 sigma_UV <- t(G) %*% sigma_xy %*% H
 round(sigma_UV, digits = 2)
 
+sigma_W <- round(rbind(cbind(sigma_U, sigma_UV), cbind(sigma_UV, sigma_V)), 2)
+colnames(sigma_W) <- c("U1", "U2", "V1", "V2")
+rownames(sigma_W) <- c("U1", "U2", "V1", "V2")
+heatmap(sigma_W, Rowv = NA, Colv = NA)
+
 ## e ####
 # Armo los versores
 e1 <- matrix(c(1,0), nrow = 2)
 e2 <- matrix(c(0,1), nrow = 2)
 
-sigma_x_est <- matrix(c(sigma_x[1,1]/sigma_x[1,1],
-                        sigma_x[2,1]/(sqrt(sigma_x[1,1])*sqrt(sigma_x[2,2])),
-                        sigma_x[1,2]/(sqrt(sigma_x[1,1])*sqrt(sigma_x[2,2])),
-                        sigma_x[2,2]/sigma_x[2,2]), 
-                      nrow = 2)
-sigma_x_est
-
-sigma_y_est <- matrix(c(sigma_y[1,1]/sigma_y[1,1],
-                        sigma_y[2,1]/(sqrt(sigma_y[1,1])*sqrt(sigma_y[2,2])),
-                        sigma_y[1,2]/(sqrt(sigma_y[1,1])*sqrt(sigma_y[2,2])),
-                        sigma_y[2,2]/sigma_y[2,2]), 
-                      nrow = 2)
-sigma_y_est
-
-sigma_xy_est <- matrix(c(sigma_xy[1,1]/(sqrt(sigma_x[1,1])*sqrt(sigma_y[1,1])),
-                         sigma_xy[2,1]/(sqrt(sigma_x[1,1])*sqrt(sigma_y[2,2])),
-                         sigma_xy[1,2]/(sqrt(sigma_x[2,2])*sqrt(sigma_y[1,1])),
-                         sigma_xy[2,2]/(sqrt(sigma_x[2,2])*sqrt(sigma_y[2,2]))), 
-                       nrow = 2)
-sigma_xy_est
-
-sigma_Ux <- t(G) %*% sigma_x_est
+sigma_Ux <- t(G) %*% sigma_x
 sigma_Ux
 
-sigma_Uy <- t(G) %*% sigma_xy_est
+sigma_Uy <- t(G) %*% sigma_xy
 sigma_Uy
 
-sigma_Vx <- t(H) %*% t(sigma_xy_est)
+sigma_Vx <- t(H) %*% t(sigma_xy)
 sigma_Vx
 
-sigma_Vy <- t(H) %*% sigma_y_est
+sigma_Vy <- t(H) %*% sigma_y
 sigma_Vy
 
 # Vuelvo a calcular estandarizando 
-sigma_U <- t(G) %*% sigma_x_est %*% G
+sigma_U <- t(G) %*% sigma_x %*% G
 sigma_U
 
-sigma_V <- t(H) %*% sigma_y_est %*% H
+sigma_V <- t(H) %*% sigma_y %*% H
 sigma_V
 
-sigma_UV <- t(G) %*% sigma_xy_est %*% H
+sigma_UV <- t(G) %*% sigma_xy %*% H
 round(sigma_UV, digits = 2)
 
 
 # Armo las matrices grandes
-sigma_z <- rbind(cbind(sigma_x_est, sigma_xy_est), cbind(t(sigma_xy_est), sigma_y_est))
+sigma_z <- rbind(cbind(sigma_x, sigma_xy), cbind(t(sigma_xy), sigma_y))
 colnames(sigma_z) <- c("x1", "x2", "y1", "y2")
 rownames(sigma_z) <- c("x1", "x2", "y1", "y2")
 round(sigma_z, digits = 3)
@@ -211,16 +195,17 @@ round(sigma_wz, digits = 3)
 sigma_total <- rbind(cbind(sigma_z, sigma_wz), cbind(t(sigma_wz), sigma_w))
 round(sigma_total, digits = 3)
 
-heatmap(sigma_total)
+heatmap(sigma_total, Rowv = NA, Colv = NA)
 
 ## f ####
 set.seed(1234)
-X <- mvrnorm(n = 500, mu = c(-3,2,0,1), Sigma = sigma_z)
+X <- mvrnorm(n = 5000, mu = c(0,0,0,0), Sigma = sigma_z)
 colnames(X) <- c("x1", "x2", "y1", "y2")
 head(X)
 
 round(colMeans(X), digits = 2)
 round(cov(X), digits = 2)
+sigma_z
 
 U <- X[,1:2] %*% G
 round(cov(U), digits = 2)
@@ -240,7 +225,18 @@ round(cov(ZW), digits = 2)
 round(sigma_total, digits = 2)
 
 ## g ####
-# FALTA
+U <- scale(X[,1:2]) %*% G
+V <- scale(X[,3:4]) %*% H
+
+pairs(as_tibble(X))
+
+W <- cbind(U, V)
+colnames(W) <- c("u1", "u2", "v1", "v2")
+pairs(as_tibble(W))
+cor(W)
+sqrt(eig$values[1])
+sqrt(eig$values[2])
+CCorA(X[,3:4], X[,1:2])
 
 # Ejercicio 2.8 ####
 data_autos <- read_delim(here("visualización/TPs/TP2_CC/data/autos.txt"))
@@ -298,23 +294,46 @@ v1 <- Y %*% beta_1
 u2 <- X %*% alpha_2
 v2 <- Y %*% beta_2
 
+W <- cbind(u1, u2, v1, v2)
+colnames(W) <- c("u1", "u2", "v1", "v2")
+
+# Dan lo mismo
+round(cov(W), 3)
+round(cor(W), 3)
+
 # Usamos la funcion cancor
 ccaXY <- cancor(X, Y)
 ccaXY
+eig$values[1]^(1/2)
+eig$values[2]^(1/2)
 
-biplot_Spiousas(X = scale(X, scale = T), V = ccaXY$xcoef[,1:2], scale = 3)
+# Función de CCA (la dejo acá)
+ccaXY <- cc(X, Y)
+
+# Las correlaciones tienen que dar eso
 cca <- CCorA(Y, X)
+cca$CanCorr
+
+eig$values[1]^(1/2)
+eig$values[2]^(1/2)
+
+pairs(W)
+
 biplot(cca)
 
+t(as.matrix(ccaXY$xcoef))%*%sigma_x%*%as.matrix(ccaXY$xcoef) # Las varianzas no me dan 1, normalizo
 XautovecST <- as.matrix(ccaXY$xcoef) * 1/sqrt(diag(t(as.matrix(ccaXY$xcoef))%*%sigma_x%*%as.matrix(ccaXY$xcoef)))
+t(XautovecST)%*%sigma_x%*%XautovecST
+# Por eso las columnas de XautovecST me dan igual a alpha1 y alpha2
+
+# Lo mismo para Y
 YautovecST <- as.matrix(ccaXY$ycoef) * 1/sqrt(diag(t(as.matrix(ccaXY$ycoef))%*%sigma_y%*%as.matrix(ccaXY$ycoef)))
-# Los vectores dan iguales
 
 ## a, b, c y d ####
 # Usamos la funcion CCorA de {vegan}
 cca <- CCorA(Y,X)
+cca
 biplot(cca)
-plot.cc(cca)
 
 # Hay una manera de pedirle ploetar ambos grupos contra U y ambos grupos contra V
 par(mfrow=c(1,1))

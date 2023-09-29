@@ -2,31 +2,31 @@ pacman::p_load(here, tidyverse, matlib, factoextra, MASS, rgl, ggord, wordspace,
                GGally, tourr, plotly)
 
 # Ejercicio 2.9 ####
-sigma<-matrix(c(1,1/2,1/2,1),2)
-pi1<-3/4
-pi2<-1/4
-mu1<-matrix(c(1,1/2),2,1)
-mu2<-matrix(c(-1/2,1),2,1)
+sigma <- matrix(c(1,1/2,1/2,1),2)
+pi1 <- 3/4
+pi2 <- 1/4
+mu1 <- matrix(c(1,1/2),2,1)
+mu2 <- matrix(c(-1/2,1),2,1)
 
 ## a ####
-mu_x<-pi1*mu1+pi2*mu2
+mu_x <- pi1*mu1+pi2*mu2
 
-sigmaw<-sigma
-sigmab<-pi1*(mu1-mu_x)%*%t((mu1-mu_x))+pi2*(mu2-mu_x)%*%t((mu2-mu_x))
-sigma.x<-sigmaw+sigmab
+sigmaw <- sigma
+sigmab <- pi1*(mu1-mu_x)%*%t((mu1-mu_x))+pi2*(mu2-mu_x)%*%t((mu2-mu_x))
+sigma.x <- sigmaw + sigmab
 
 ## b ####
-eig.sigmaw<-eigen(sigma)
-U<-eig.sigmaw$vectors
-L<-diag(eig.sigmaw$values)
+eig.sigmaw <- eigen(sigma)
+U <- eig.sigmaw$vectors
+L <- diag(eig.sigmaw$values)
 
-C<-U%*%sqrt(L)%*%t(U)
-B<-t(solve(C))%*%sigmab%*%solve(C)
-eig.B<-eigen(B)
-betas<-eig.B$vectors
-L.B<-diag(eig.B$values)
+C <- U%*%sqrt(L)%*%t(U)
+B <- t(solve(C))%*%sigmab%*%solve(C)
+eig.B <- eigen(B)
+betas <- eig.B$vectors
+L.B <- diag(eig.B$values)
 
-A<-solve(C)%*%betas
+A <- solve(C)%*%betas
 
 ###
 # comparación con la solución para el alfa1 con k=2
@@ -38,27 +38,33 @@ A[2,1] / alfa1[2]
 ###
 
 ## c ####
-v1<-t(A)%*%mu1
-v2<-t(A)%*%mu2
+v1 <- t(A)%*%mu1
+v2 <- t(A)%*%mu2
 
-d_euc<-t(v1-v2)%*%(v1-v2)
-d_Mahalanobis<-t(mu1-mu2)%*%solve(sigma)%*%(mu1-mu2)
+d_euc <- t(v1-v2)%*%(v1-v2)
+d_euc
+
+d_Mahalanobis <- t(mu1-mu2)%*%solve(sigma)%*%(mu1-mu2)
+d_Mahalanobis
+# Calculado con el método de Dani, ambas distancias son iguales
 
 ## d ####
-sigma.z<-t(A)%*%sigma.x%*%A
-sigmaw.z<-t(A)%*%sigmaw%*%A
-sigmab.z<-t(A)%*%sigmab%*%A
+sigma.z <- t(A)%*%sigma.x%*%A
+sigmaw.z <- t(A)%*%sigmaw%*%A
+sigmab.z <- t(A)%*%sigmab%*%A
 
 ###
 #chequeo de sigmab.z
 ###
-v_x<-pi1*v1+pi2*v2
-prueba<-pi1*(v1-v_x)%*%t((v1-v_x))+pi2*(v2-v_x)%*%t((v2-v_x))
+v_x <- pi1*v1+pi2*v2
+prueba <- pi1*(v1-v_x)%*%t((v1-v_x))+pi2*(v2-v_x)%*%t((v2-v_x))
+prueba
+sigmab.z
 ###
 
 ## e ####
-n<-500
-obs<-matrix(NA,n,3)
+n <- 500
+obs <- matrix(NA,n,3)
 set.seed(1234)
 for (i in 1:n) {
   obs[i,1]<-rbinom(1,1,0.75) #1 si es grupo 1, 0 si es grupo 2
@@ -67,13 +73,24 @@ for (i in 1:n) {
 
 colnames(obs) <- c("G", "x1", "x2")
 
-grupo<-as.factor(obs[,1])
-X<-obs[,2:3]
-plot(X,col=grupo,pch=20)
+as_tibble(obs) %>%
+  ggplot(aes(x = x1,
+             y = x2,
+             color = as.factor(G))) +
+  geom_point() +
+  theme_bw()
 
 ## f ####
-Z<-X%*%as.matrix(A)
-plot(Z,col=grupo,pch=20)
+Z <- X %*% as.matrix(A)
+colnames(Z) <- c("z1", "z2")
+
+as_tibble(Z) %>%
+  mutate(G = grupo) %>%
+  ggplot(aes(x = z1,
+             y = z2,
+             color = as.factor(G))) +
+  geom_point() +
+  theme_bw()
 
 ## BONUS ####
 ### Coordenadas discriminantes ####
@@ -295,11 +312,11 @@ data_cocos <- read_csv(here("visualización/TPs/TP2_CD/data/cocodrilos.csv"))
 X_cocos <- scale(data_cocos[,1:11])
 especies <- data_cocos[,12]
 
-matrices <- ss.split(X_cocos, especies)
+matrices <- ss.split(X_cocos, especies$especie)
 n <- nrow(X_cocos)
 k <- nrow(unique(especies))
-sigmaw_hat <- matrices[[1]]/(n-k) # Sigma within  
-sigmab_hat <- matrices[[2]]/(n) # Sigma between
+sigmaw_hat <- matrices[[1]]/(n-1) # Sigma within  
+sigmab_hat <- matrices[[2]]/(n-1) # Sigma between
 sigma_hat <- matrices[[3]]/(n-1) # Sigma total
 sigma_hat - cov(X_cocos) # Dan iguales ambas matrices
 
@@ -321,19 +338,13 @@ X_cocos_transf <- X_cocos %*% A_hat[,1:3]
 colnames(X_cocos_transf) <- c("cd1", "cd2", "cd3")
 
 ## b ####
-# Este plot3d es de la librería rgl
-plot3d(X_cocos_transf, 
-       col = especies$especie, 
-       cube=TRUE, 
-       size = 10)
-
-figura <- plot_ly(data.frame(X_cocos_transf),x = ~cd1, y = ~cd2, z = ~cd3, color = ~as.factor(especies$especie))
-figura <- figura %>% add_markers()
-figura <- figura %>% layout(scene = list(xaxis = list(title = 'C1'),
-                                         yaxis = list(title = 'C2'),
-                                         zaxis = list(title = 'C3')))
-
-figura
+# Este plot3d es de la librería plotly
+plot_ly(as_tibble(X_cocos_transf) %>% mutate(especie = especies$especie), 
+        x = ~cd1, y = ~cd2, z = ~cd3, color = ~as.factor(especie)) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = 'C1'),
+                      yaxis = list(title = 'C2'),
+                      zaxis = list(title = 'C3')))
 
 # Al igual que en PCA las varianzas explicadas son los autovalores de B dividido su suma
 eig.B$values[1:3]/sum(eig.B$values)
@@ -347,14 +358,14 @@ A_pca <- eigen(sigma_hat)$vectors
 
 # Los datos transformados con PCA
 X_cocos_transf_PCA <- X_cocos %*% A_pca[,1:3]
+colnames(X_cocos_transf_PCA) <- c("cd1", "cd2", "cd3")
 
-# Este plot3d es de la librería rgl
-plot3d(X_cocos_transf_PCA, 
-       col = especies$especie, 
-       cube=TRUE, 
-       size = 10)
-
-figura
+plot_ly(as_tibble(X_cocos_transf_PCA) %>% mutate(especie = especies$especie), 
+        x = ~cd1, y = ~cd2, z = ~cd3, color = ~as.factor(especie)) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = 'C1'),
+                      yaxis = list(title = 'C2'),
+                      zaxis = list(title = 'C3')))
 
 eigen(sigma_hat)$values[1:3]/sum(eigen(sigma_hat)$values)
 
@@ -373,22 +384,33 @@ CD_Spiousas(data = X, grouping = especies, center = F, scale = F)
 # Centrado
 CD_cocos <- lda(especies~., data = as.data.frame(X_cocos))
 CD_cocos
-CD_Spiousas(data = X, grouping = especies, center = T, scale = T)
+CD_mio <- CD_Spiousas(data = X, grouping = especies, center = T, scale = T)
+
+# Son versiones escaleadas, pero da lo mismo
+# Por ejemplo:
+CD_cocos$scaling[1,1]/CD_mio$rotation[1,1]
+CD_cocos$scaling[2,1]/CD_mio$rotation[2,1]
+CD_cocos$scaling[3,1]/CD_mio$rotation[3,1]
+# O
+CD_cocos$scaling[1,2]/CD_mio$rotation[1,2]
+CD_cocos$scaling[2,2]/CD_mio$rotation[2,2]
+CD_cocos$scaling[3,2]/CD_mio$rotation[3,2]
 
 eig.B$values[1:3]/sum(eig.B$values)
 A_hat[,1:3]
-# DUDA Son como versiones escaleadas, pero da lo mismo
+CD_mio$rotation
 
 # trasnformo los datos y ploteo en 3d
 X_cocos_transf <- X_cocos %*% CD_cocos$scaling
 colnames(X_cocos_transf) <- c("cd1", "cd2", "cd3")
 
-## b ####
-# Este plot3d es de la librería rgl
-plot3d(X_cocos_transf, 
-       col = especies, 
-       cube=TRUE, 
-       size = 10)
+plot_ly(as_tibble(X_cocos_transf) %>% mutate(especie = especies), 
+        x = ~cd1, y = ~cd2, z = ~cd3, color = ~as.factor(especie)) %>% 
+  add_markers() %>% 
+  layout(scene = list(xaxis = list(title = 'C1'),
+                      yaxis = list(title = 'C2'),
+                      zaxis = list(title = 'C3')))
+
 # Hay unos cambios de signo pero la magnitud es la misma
 
 # Ejercicio 2.12 ####
@@ -402,7 +424,7 @@ CD_olmos
 ggord(CD_olmos, category)
 
 CD_olmos_mio <- CD_Spiousas(data = X_olmos, grouping = category, center = T)
-biplot_Spiousas(X = CD_olmos_mio$x, V = CD_olmos_mio$rotatHacion, lambdas = CD_olmos_mio$eigenvalues)
+biplot_Spiousas(X = CD_olmos_mio$x, V = Re(CD_olmos_mio$rotation), lambdas = CD_olmos_mio$eigenvalues)
 # Sin estandarizar las cd están en un plano que contiene a X1 y es perpendicular a
 # las demás DUDA No termino de entender bien por qué
 
@@ -416,11 +438,6 @@ biplot_Spiousas(X = CD_olmos_mio_std$x, V = CD_olmos_mio_std$rotation,
                 lambdas = CD_olmos_mio_std$eigenvalues, group_color = category, method = "cd",
                 ellipse = T)
 
-set.seed(123)
-data <- rbind(mvrnorm(150, mu1, sigma), mvrnorm(50, mu2, sigma), mvrnorm(50, mu1+mu2, sigma))
-grouping <- rbind(as.matrix(rep(1, 150)), as.matrix(rep(2, 50)), as.matrix(rep(3, 50)))
-lda(grouping~., data = as.data.frame(data))
-ggord(lda(grouping~., data = as.data.frame(data)))
 # Cuando estandarizamos se reparte mejor la proyección de las variables en el biplot.
 # Pero la varianza explicada por cada componente es la misma y pareciera que las 
 # coordenadas discriminantes son las mismas.
