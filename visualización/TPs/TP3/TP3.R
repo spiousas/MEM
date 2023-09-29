@@ -3,7 +3,6 @@ pacman::p_load(here, tidyverse, MASS, HSAUR2, plotly, factoextra, fpc, janitor,
 
 # Ejercicio 3.1 ####
 ## a ####
-
 data_planets <- HSAUR2::planets %>% scale(.)
 colMeans(data_planets)
 cov(data_planets)
@@ -170,7 +169,7 @@ fviz_cluster(object = credit_card_clusters, data = data_credit_card, geom = "poi
   theme(legend.position = "none")
 
 ## b ####
-# Ahora ajustamos DBScan con 
+# Ahora ajustamos DBScan 
 set.seed(123)
 credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.25, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
@@ -184,16 +183,16 @@ max(credit_card_dbscan$cluster)
 # El 47.4% de los puntos se considera ruido y hay 3 clusters
 
 set.seed(123)
-credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.35, MinPts = 15)
-sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
-max(credit_card_dbscan$cluster)
-# El 65% de los puntos se considera ruido y hay 5 clusters
-
-set.seed(123)
 credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 2, MinPts = 15)
 sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
 max(credit_card_dbscan$cluster)
 # El 52.5% de los puntos se considera ruido y hay 4 clusters
+
+set.seed(123)
+credit_card_dbscan <- fpc::dbscan(data = data_credit_card, eps = 0.35, MinPts = 15)
+sum(credit_card_dbscan$cluster==0)/nrow(data_credit_card)
+max(credit_card_dbscan$cluster)
+# El 65% de los puntos se considera ruido y hay 5 clusters
 
 credit_card_data_dbscan <- as_tibble(as.matrix(data_credit_card) %*% prcomp(data_credit_card)$rotation[,1:3]) %>%
   bind_cols(credit_card_dbscan$cluster) %>%
@@ -207,7 +206,7 @@ plot_ly(credit_card_data_dbscan, x = ~PC1, y = ~PC2, z = ~PC3, color = ~as.facto
 data_credit_card_redux <- as_tibble(as.matrix(data_credit_card) %*% prcomp(data_credit_card)$rotation[,1:3])
 
 set.seed(123)
-credit_card_dbscan_redux <- fpc::dbscan(data = data_credit_card_redux, eps = 0.45, MinPts = 15)
+credit_card_dbscan_redux <- fpc::dbscan(data = data_credit_card_redux, eps = 0.25, MinPts = 15)
 sum(credit_card_dbscan_redux$cluster==0)/nrow(data_credit_card_redux)
 max(credit_card_dbscan_redux$cluster)
 
@@ -255,7 +254,7 @@ distancias <- as.matrix(distancias_canberra)
 A <- -0.5*distancias^2
 n <- dim(distancias)[1]
 H <- diag(rep(1,n)) - n^{-1} * (rep(1,n)) %*% t(rep(1,n))
-B <- H*A*H
+B <- H %*% A %*% H
 DEL <- eigen(B)$values
 round(eigen(B)$values,3)
 V <- eigen(B)$vectors
@@ -279,7 +278,7 @@ MDS %>% ggplot(aes(x = C1,
   geom_text(aes(label = name)) +
   theme_bw() +
   labs(color = "Grupo:") +
-  scale_color_viridis_d() +
+  scale_fill_brewer(palette = "Paired") +
   theme(legend.position = "top")
 
 # Está bastante bien, voy a probar ahora con 3
@@ -309,7 +308,7 @@ MDS %>% ggplot(aes(x = V1,
   theme_bw() +
   labs(color = "Grupo:") +
   theme(legend.position = "top")
-# Está girado pero da lo mismo.
+# Da lo mismo.
 
 ## d ####
 distancias_euclidea<- dist(X, method="euclidean", diag=T, upper=T)
@@ -329,52 +328,28 @@ fviz_dend(x = hc, k = 7, cex = 0.6) +
 groups <- cutree(hc, k=7) 
 
 ## c ####
-# Repito todo con euclidea
-# Escalado multidimensional clásico siguiendo el script de Pedro
-distancias <- as.matrix(distancias_euclidea)
-A <- -0.5*distancias^2
-n <- dim(distancias)[1]
-H <- diag(rep(1,n)) - n^{-1} * (rep(1,n)) %*% t(rep(1,n))
-B <- H*A*H
-DEL <- eigen(B)$values
-round(eigen(B)$values,3)
-V <- eigen(B)$vectors
+# Repito todo con euclidea y PCA
+PCA <- prcomp(X)
 
-round(B - V%*%diag(DEL)%*%t(V))
-# La descomposición es igual a B (esperable)
-
-V1 <- V[,1:2]
-t(V1) %*% (V1)
-DEL1 <- diag(DEL[1:2])
-Y <- V1%*%sqrt(DEL1)
-colnames(Y) <- c("C1", "C2")
-
-MDS <- as_tibble(Y) %>%
+dataPCA <- as_tibble(X %*% PCA$rotation[,1:2]) %>%
   mutate(name = rownames(distancias),
          grupo = groups)
 
-MDS %>% ggplot(aes(x = C1,
-                   y = C2,
-                   color = factor(grupo))) +
+dataPCA %>% ggplot(aes(x = PC1,
+                       y = PC2,
+                       color = factor(grupo))) +
   geom_text(aes(label = name)) +
   theme_bw() +
   labs(color = "Grupo:") +
   theme(legend.position = "top")
-
 # Con distancia euclidea da mucho peor
 
-# Está bastante bien, voy a probar ahora con 3
-V1 <- V[,1:3]
-t(V1) %*% (V1)
-DEL1 <- diag(DEL[1:3])
-Y <- V1%*%sqrt(DEL1)
-colnames(Y) <- c("C1", "C2", "C3")
-
-MDS <- as_tibble(Y) %>%
+# Ahora en 
+dataPCA <- as_tibble(X %*% PCA$rotation[,1:3]) %>%
   mutate(name = rownames(distancias),
          grupo = groups)
 
-plot_ly(MDS, x = ~C1, y = ~C2, z = ~C3, color = ~as.factor(grupo)) %>% 
+plot_ly(dataPCA, x = ~PC1, y = ~PC2, z = ~PC3, color = ~as.factor(grupo)) %>% 
   add_markers()
 
 # Ejercicio 3.4 ####
@@ -455,7 +430,6 @@ MDS %>% ggplot(aes(x = V1,
   theme_bw() +
   labs(color = "Grupo:") +
   theme(legend.position = "top")
-
 # En dos dimensiones se ve perfectamente bien
 
 # Ejercicio 3.5 ####
@@ -499,4 +473,3 @@ MDS %>% ggplot(aes(x = V1,
   theme_bw() +
   labs(color = "Grupo:") +
   theme(legend.position = "top")
-
