@@ -1,5 +1,5 @@
 pacman::p_load(here, tidyverse, MASS, HSAUR2, plotly, factoextra, fpc, janitor, 
-               StatMatch, factoextra)
+               StatMatch, factoextra, smacof)
 
 # Ejercicio 3.1 ####
 ## a ####
@@ -261,8 +261,6 @@ round(eigen(B)$values,3)
 # la pena agergar una nueva coordenada a tu proyección
 V <- eigen(B)$vectors
 
-
-
 round(B - V%*%diag(DEL)%*%t(V))
 # La descomposición es igual a B (esperable)
 
@@ -313,6 +311,24 @@ MDS %>% ggplot(aes(x = V1,
   labs(color = "Grupo:") +
   theme(legend.position = "top")
 # Da lo mismo.
+
+mds(distancias_canberra)
+
+# Para calcular el stress
+dist_reconstruida <- as.matrix(dist(as.matrix(Y)))
+
+p_ij = dist_reconstruida[upper.tri(dist_reconstruida)]
+d_ij = as.matrix(distancias_canberra)[upper.tri(distancias_canberra)]
+denominator = sum(p_ij^2)
+nominator = sum((d_ij - p_ij)^2)
+normalized_stress = sqrt(nominator/denominator)
+normalized_stress
+
+# Para calcular el strain
+norm(B-Y%*%t(Y), type = "f")^2/norm(B, type = "f")^2
+
+norm(B-Y%*%t(Y), type = "f")^2
+sum(eigen(B)$values[-c(1:3)]^2)
 
 ## d ####
 distancias_euclidea<- dist(X, method="euclidean", diag=T, upper=T)
@@ -389,6 +405,8 @@ dissim <- sqrt(2 - 2*dist_jaccard)
 ## b ####
 MDS <- as_tibble(cmdscale(dissim, k = 2, eig = FALSE, add = FALSE, x.ret = FALSE))  %>%
   mutate(name = data_indumentaria$x1)
+
+mds(dissim)
 
 # Para calcular el stress
 dist_reconstruida <- as.matrix(dist(as.matrix(MDS[,-3])))
