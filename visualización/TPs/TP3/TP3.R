@@ -257,7 +257,11 @@ H <- diag(rep(1,n)) - n^{-1} * (rep(1,n)) %*% t(rep(1,n))
 B <- H %*% A %*% H
 DEL <- eigen(B)$values
 round(eigen(B)$values,3)
+# La magnitud de los autovalores te puede dar una idea de si vale
+# la pena agergar una nueva coordenada a tu proyección
 V <- eigen(B)$vectors
+
+
 
 round(B - V%*%diag(DEL)%*%t(V))
 # La descomposición es igual a B (esperable)

@@ -17,7 +17,7 @@ g_hat_2 <- function(x) {
 }
 
 ## c ####
-nRep <- 1000
+nRep <- 10
 X <- matrix(NA, nRep, 2)
 Y <- matrix(NA, nRep, 1)
 
