@@ -412,7 +412,7 @@ mds(dissim)
 dist_reconstruida <- as.matrix(dist(as.matrix(MDS[,-3])))
 
 p_ij = dist_reconstruida[upper.tri(dist_reconstruida)]
-d_ij = dissim[upper.tri(dissim)]
+d_ij = as.matrix(dissim)[upper.tri(dissim)]
 denominator = sum(p_ij^2)
 nominator = sum((d_ij - p_ij)^2)
 normalized_stress = sqrt(nominator/denominator)
