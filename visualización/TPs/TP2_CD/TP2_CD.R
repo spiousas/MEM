@@ -374,7 +374,8 @@ eigen(sigma_hat)$values[1:3]/sum(eigen(sigma_hat)$values)
 
 ## Repito b y c usando funciones ####
 # Primero coordenadas discriminantes
-especies <- data_cocos[,12]$especie
+especies <- data_cocos[,12]$especie 
+especies <- c(rep(1,22), rep(2,22))
 X <- data_cocos[,1:11]
 # Sin centrar
 CD_cocos <- lda(especies~., data = X)
