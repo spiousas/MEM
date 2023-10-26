@@ -1,0 +1,318 @@
+---
+title: "Taller de Análisis de datos - Problema 0"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "27 de octubre de 2023"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(tidyverse, here, multcompView, performance, MASS, knitr, broom)
+theme_set(theme_bw(base_size = 10))
+```
+
+# Problema 0
+
+Se dan a continuación los tiempos de sobrevida (en unidades de 10 horas) de animales, sometidos a 3 tipos de veneno, y 4 tratamientos antitóxicos. Cada combinación veneno-tratamiento se prueba con 4 animales. Describir la influencia de ambos factores en la sobrevida. ¿Hay algún tratamiento demostrablemente mejor?.
+
+```{=tex}
+\begin{center}
+\begin{tabular}{| c | c | c | c | c | }
+\hline
+& \multicolumn{4}{ |c| }{Tratamientos} \\ \hline
+Veneno & A & B & C & D  \\ \hline
+& 0.31 &    0.82 &  0.43 &  0.45 \\
+I & 0.45 &  1.10 &  0.45 &  0.71 \\
+& 0.46 &    0.88 &  0.63 &  0.66 \\
+& 0.43 &    0.72 &  0.76 &  0.62 \\
+ \hline
+& 0.36 &    0.92 &  0.44 &  0.56 \\
+II & 0.29 & 0.61 &  0.35 &  1.02 \\
+&  0.40 &   0.49 &  0.31 &  0.71\\
+&  0.23 &   1.24 &  0.40 &  0.38\\
+ \hline
+& 0.22 &    0.30 &  0.23 &  0.30 \\
+III & 0.21 &    0.37 &  0.25 &  0.36  \\
+& 0.18 &    0.38 &  0.24 &  0.31 \\
+& 0.23 &    0.29 &  0.22 &  0.33 \\
+ \hline
+\end{tabular}
+\end{center}
+```
+# Resolución
+
+Los datos contienen 48 observaciones con las siguientes variables involucradas:
+
+-   Sobrevida: Tiempo de sobrevida del animal (en unidades de 10 horas)
+-   Tratamiento: Tipo de tratamiento antitóxicos (A, B, C y D)
+-   Veneno: Tipo de veneno (I, II y III)
+
+```{r data_loading, echo=FALSE,  fig.cap = "An amazing plot"}
+data_veneno <- read_csv(here("taller_de_datos/entrega0/data/problema0.csv"),
+                        col_types = cols()) %>%
+  mutate(tratamiento = as.factor(tratamiento),
+         veneno = as.factor(veneno),
+         log_sobrevida = log(sobrevida))
+```
+
+Primero, realizamos algunos gráficos exploratorios para tener una visualización inicial de los datos.
+
+En la figura 1 se muestran boxplots del tiempo de sobrevida por tipo de tratamiento. Allí podemos observar que el tiempo medio de sobrevida en el tratamiento B resulta mayor que en el resto.
+
+```{r boxplot_1, echo=FALSE, fig.align="center", fig.height = 2.5, fig.width = 4, fig.cap= "Boxplot de los tiempos de sobrevida en función del tipo de tratamiento."}
+data_veneno %>% 
+  ggplot(aes(x = tratamiento,
+             y = sobrevida)) +
+  geom_boxplot(outlier.shape = NA, color = "steelblue") +
+  geom_jitter(width = .1) +
+  labs(x = "Tipo de tratamiento",
+       y = "Sobrevida")
+```
+
+Para tener una mejor comprensión, realizamos boxplots del tiempo de sobrevida por tipo de veneno y tratamiento (Figura 2). Podemos ver que para cada tipo de veneno se sigue observando un mayor tiempo medio de sobrevida para el tratamiento B, aunque las magnitudes varían según el veneno.
+
+```{r boxplot_2, echo=FALSE, fig.align="center", fig.height = 3, fig.width = 4, fig.cap= "Boxplot de los tiempos de sobrevida en función del tipo de tratamiento para cada tipo de veneno."}
+data_veneno %>% 
+  ggplot(aes(x = veneno,
+             y = sobrevida,
+             color = tratamiento)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_point(position = position_jitterdodge(jitter.width = .1)) +
+  labs(color = "Tipo de tratamiento",
+       x = "Veneno",
+       y = "Sobrevida") +
+  scale_colour_brewer(palette = "Dark2") +
+  theme(legend.position = "top")
+```
+
+A continuación realizamos un gráfico para analizar la interacción entre el tratamiento y el tipo de veneno (Figura 3), donde se ven representados los valores medios de la variable sobrevida para cada tratamiento en función del tipo de veneno.
+
+```{r interacccion_1, echo=FALSE, fig.align="center", fig.height = 3, fig.width = 4, fig.cap= "Gráfico de interacción entre tratamiento y tipo de veneno. El tipo de veneno está representado en el eje x mientras que el tipo de tratamiento estácodificado por el color de la línea."}
+data_veneno %>%
+  group_by(veneno, tratamiento) %>%
+  summarise(m_sobrevida = mean(sobrevida),
+            .groups = 'drop') %>%
+  ggplot(aes(x = veneno,
+             y = m_sobrevida,
+             color = tratamiento,
+             group = tratamiento)) +
+  geom_point() +
+  geom_line() +
+  labs(color = "Tipo de tratamiento",
+       x = "Veneno",
+       y = "Sobrevida (promedio por veneno)") +  
+  scale_colour_brewer(palette = "Dark2") +
+  theme(legend.position = "top")
+```
+
+Las curvas resultantes no se ven paralelas, por lo que no es posible deducir que no haya ninguna interación entre las variables veneno y tratamiento. Sin embargo, se puede apreciar que el tratamiento B está por encima del resto, siguiendo luego en orden los tratamientos D, C y A, independientemente del tipo de veneno.
+
+A su vez, hicimos el gráfico de interacción al revés, es decir, representando los valores medios de sobrevida por tipo de veneno en función del tratamiento (Figura 4). Allí podemos ver nuevamente que no hay un claro paralelismo e incluso se observa un entrecruzamiento entre las curvas correspondientes a los venenos I y II. De todos modos, se observa que el veneno III es el que más disminuye el tiempo de sobrevida independientemente del tratamiento y el veneno I pareciera ser el que menos lo disminuye en la mayoría de los tratamientos.
+
+```{r interacccion_2, echo=FALSE, fig.align="center", fig.height = 3, fig.width = 4, fig.cap= "Gráfico de interacción entre tratamiento y tipo de veneno. El tipo de tratamiento está representado en el eje x mientras que el tipo de veneno estácodificado por el color de la línea."}
+data_veneno %>%
+  group_by(veneno, tratamiento) %>%
+  summarise(m_sobrevida = mean(sobrevida),
+            .groups = 'drop') %>%
+  ggplot(aes(x = tratamiento,
+             y = m_sobrevida,
+             color = veneno,
+             group = veneno)) +
+  geom_point() +
+  geom_line() +
+  labs(color = "Veneno",
+       x = "Tipo de tratamiento",
+       y = "Sobrevida (promedio por tratamiento)") +    
+  scale_colour_brewer(palette = "Set2") +
+  theme(legend.position = "top")
+```
+
+## Modelo aditivo vs. modelo con interacción
+
+Primero ajustamos el modelo regresión lineal aditivo:
+
+`sobrevida ~ veneno + tratamiento (mod1)`
+
+```{r modelo_aditivo, echo=FALSE}
+m_aditivo <- lm(data = data_veneno, sobrevida ~ veneno + tratamiento)
+```
+
+Para explorar si se verifican los supuestos del modelo, utilizamos la función `check_model()` del paquete *{performance}* y graficamos un qq plot, el vif y la relación de los residuos con el valor predicho (Figura 5).
+
+```{r check_model_aditivo, echo=FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap= "Gráficas de diagnóstico del modelo aditivo."}
+check_model(m_aditivo, check = c("qq", "vif", "linearity", "homogeneity"))
+```
+
+Por una parte, podemos observar cierta estructura en el gráfico de los residuos contra los valores predichos, con lo cual no pareciera cumplirse el supuesto de homoscedasticidad. Además, si miramos el QQ-plot de los residuos encontramos varias observaciones no alineadas lo que indicaría que tampoco se cumple el supuesto de normalidad.
+
+Si ajustamos el modelo de regresión lineal con interacción
+
+`sobrevida ~ veneno + tratamiento + veneno : tratamiento (mod 2)`
+
+```{r modelo_interact, echo=FALSE}
+m_interact <- lm(data = data_veneno, sobrevida ~ veneno * tratamiento)
+```
+
+y realizamos los mismos gráficos (Figura 6). Obtenemos algo similar en relación a los supuestos de normalidad y homoscedasticidad. Además, en el gráfico de los VIF podemos ver que superan el valor de 10, indicando que hay colinealidad entre las variables.
+
+```{r check_model_interact, echo=FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap= "Gráficas de diagnóstico del modelo con interacción."}
+check_model(m_interact, check = c("qq", "vif", "linearity", "homogeneity"))
+```
+
+Realizamos un test ANOVA para comparar el modelo 1 con el modelo 2 y analizar si la interacción resulta significativa. La hipótesis nula consiste en que los coeficientes de la interacción son todos iguales a cero y el p-valor obtenido es 0.112. De esta manera, a partir de este test no habría evidencia suficiente para decir que la interacción es significativa. A continuación podemos ver la tabla del test F:
+
+```{r anova_aditivo_interaccion, echo=FALSE}
+anova(m_aditivo, m_interact) %>% 
+  tidy() %>%
+  kable(caption = "Tabla de anova comparando el modelo aditivo con el modelo con interacción.")
+```
+
+Teniendo en cuenta el análisis previo, optamos por desestimar la interacción ya que no tenemos evidencia clara de que el aporte sea significativo, incorporarla no mejora los supuestos del modelo lineal y consideramos conveniente trabajar con un modelo más sencillo para intepretar.
+
+Para estudiar si alguno de los tratamientos es mejor que el resto vamos a comprar de a pares. Para esto es necesario utilizar alguna estrategia que tenga en cuenta la inflación del error de tipo I debido a las comparaciones múltiples. En este caso utilizamos el test de comparaciones múltiples de medias de Tukey (nivel = 0.05). Los resultados obtenidos se representan como intervalos de confianza en la Figura 7.
+
+```{r tukey_aditivo, echo=FALSE, fig.align="center", fig.height = 5, fig.width = 4, fig.cap= "Intervalos de confianza, corregidos por Tukey, del modelo aditivo."}
+an.m_aditivo <- aov(m_aditivo)
+tukey.m_aditivo <- TukeyHSD(x = an.m_aditivo, "tratamiento", conf.level = 0.95, ordered = T)
+plot(tukey.m_aditivo)
+```
+
+En la Figura 7 vemos que el tratamiento B resulta superior que los tratamientos A y C y no hay evidencia para decir que se distingue del tratamiento D, dado que el 0 pertenece al intervalo de confianza de la comparación d-b. A su vez, observamos que el tartamiento D resulta mejor que el A pero no se puede distinguir del tratamiento C. Y por último, no tenemos evidencia para decir que los tratamientos C y A se diferencian.
+
+## Transformamos los datos
+
+Con el objetivo de mejorar la adecuación de los datos a los supuestos del modelo de regresión lineal, probamos incorporar distintas transformaciones a la variable sobrevida.
+
+Para empezar, ajustamos el modelo:
+
+`log(sobrevida) ~ veneno + tratamiento (mod3)`
+
+```{r modelo_log, echo=FALSE}
+data_veneno <- data_veneno %>%
+  mutate(log_sobrevida = log(sobrevida))
+
+m_aditivo_log <- lm(data = data_veneno, log_sobrevida ~ veneno + tratamiento)
+```
+
+Volvemos a generar las gráficas de diagnóstico del modelo (Figura 8) y no vemos mejoras significativas en relación a los supuestos de homoscedasticidad y normalidad.
+
+```{r check_model_log, echo=FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap= "Gráficas de diagnóstico del modelo con con la sobrevida transformada con log()"}
+check_model(m_aditivo_log, check = c("qq", "vif", "linearity", "homogeneity"))
+``` 
+
+Por lo tanto, optamos por probar con una transformación de la familia Box-Cox:
+
+$$
+\begin{aligned}
+f(x) = \frac{x^{\lambda}-1}{\lambda} , \lambda \neq 0
+\end{aligned}
+$$
+
+Con el comando *boxcox* de R calculamos el valor óptimo para $\lambda$, obteniendo $\lambda=-0.75$. Luego, tomando este valor ajustamos el modelo:
+
+```{r best_lambda, echo=FALSE}
+best_transf <- boxcox(m_aditivo, lambda = seq(-2,2,.001), plotit = FALSE)
+lambda <- best_transf$x[which.max(best_transf$y)]
+```
+
+`f(sobrevida) ~ veneno + tratamiento (mod 4)`
+
+```{r modelo_boxcox, echo=FALSE}
+data_veneno <- data_veneno %>%
+  mutate(boxcox_sobrevida = (sobrevida^lambda-1)/lambda)
+
+m_aditivo_boxcox <- lm(data = data_veneno, boxcox_sobrevida ~ veneno + tratamiento)
+```
+
+A partir del gráficos de los residuos vs. valores predichos y del QQ-plot (Figura 9) podemos ver que mejoran bastante los supuestos de homoscedastidad y de normalidad.
+
+```{r check_model_boxcox, echo=FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap= "Gráficas de diagnóstico del modelo con la sobrevida transformada con la función boxcox (lambda = -0.75)"}
+check_model(m_aditivo_boxcox, check = c("qq", "vif", "linearity", "homogeneity"))
+```
+
+También realizamos gráficos de interacción entre las variables tratamiento y veneno, representando los valores medios de la transformación realizada a la variable sobrevida (Figuras 10 y 11).
+
+```{r interacccion_1_boxcox, echo=FALSE, fig.align="center", fig.height = 3, fig.width = 4, fig.cap = "Boxplot de los tiempos de sobrevida luego de aplicarle la función boxcox (lamdba = -0.75) en función del tipo de tratamiento para cada tipo de veneno. El tipo de veneno está representado en el eje x mientras que el tipo de tratamiento estácodificado por el color de la línea."}
+data_veneno %>%
+  group_by(veneno, tratamiento) %>%
+  summarise(m_sobrevida = mean(boxcox_sobrevida),
+            .groups = 'drop') %>%
+  ggplot(aes(x = veneno,
+             y = m_sobrevida,
+             color = tratamiento,
+             group = tratamiento)) +
+  geom_point() +
+  geom_line() +
+  labs(color = "Tipo de tratamiento",
+       x = "Veneno",
+       y = "f(sobrevida) (boxcox lambda = -0.75)") +  
+  scale_colour_brewer(palette = "Dark2") +
+  theme(legend.position = "top")
+```
+
+Si bien las curvas no resultan paralelas, vemos que mejora un poco esta característica y que el orden de los tratamientos se mantiene independientemente del tipo de veneno. Lo mismo ocurre para cada veneno en función del tratamiento y, además, ya no se observa entrecruzamiento.
+
+```{r interacccion_2_boxcox, echo=FALSE, fig.align="center", fig.height = 3, fig.width = 4, fig.cap= "Boxplot de los tiempos de sobrevida luego de aplicarle la función boxcox (lamdba = -0.75) en función del tipo de tratamiento para cada tipo de veneno. El tipo de tratamiento está representado en el eje x mientras que el tipo de veneno estácodificado por el color de la línea."}
+data_veneno %>%
+  group_by(veneno, tratamiento) %>%
+  summarise(m_sobrevida = mean(boxcox_sobrevida),
+            .groups = 'drop') %>%
+  ggplot(aes(x = tratamiento,
+             y = m_sobrevida,
+             color = veneno,
+             group = veneno)) +
+  geom_point() +
+  geom_line() +
+  labs(color = "Veneno",
+       x = "Tipo de tratamiento",
+       y = paste0("f(sobrevida) (boxcox lambda = ", round(lambda,3), ")")) +    
+  scale_colour_brewer(palette = "Set2") +
+  theme(legend.position = "top")
+```
+
+Analizando el summary del ajuste del modelo 4 (tabla a continuación), observamos que todos los coeficientes resultan significativos. Se puede destacar que el coeficiente correspondiente al veneno III es -1.558, el mayor en valor absoluto, corroborando nuestra observación inicial de que el veneno III es el que mayor impacto tiene en el tiempo de sobrevida. A la vez, el coeficiente correspondiente al tratamiento B tiene un valor de 1.315 y es el mayor de todos los coeficientes de los tratamientos, lo que indica un aporte superior en el tiempo medio sobrevida.
+
+```{r summary_boxcox, echo=FALSE}
+summary(m_aditivo_boxcox) %>% 
+   tidy() %>%
+  mutate(
+    p.value = scales::pvalue(p.value)
+  ) %>%
+  kable(
+    caption = "Estimadores para los coeficientes del modelo con la transformación boxcox (lambda = -0.8).",
+    col.names = c("Predictor", "B", "SE", "t", "p"),
+    digits = c(0, 3, 3, 2, 3)
+  )
+```
+
+A partir de un test ANOVA evaluamos si las variables veneno y tratamiento resultan significativas obteniendo los p-valores 5.161e-14 y 4.901e-10 respectivamente, con lo cual vemos que ambas resultan relevantes para explicar el tiempo de sobrevida.
+
+A su vez, consideramos el modelo con interacción
+
+`f(sobrevida) ~ veneno + tratamiento + veneno : tratamiento`
+
+```{r modelo_boxcox_interact, echo=FALSE}
+m_interact_boxcox <- lm(data = data_veneno, boxcox_sobrevida ~ veneno * tratamiento)
+```
+
+y realizamos un test ANOVA para evaluar si la interacción resulta significativa. Obtuvimos un p-valor igual a 0.486 (ver tabla a continuación), con lo cual no hay evidencia para considerar que es relevante la interacción en este modelo.
+
+```{r anova_boxcox_interact, echo=FALSE}
+anova(m_interact_boxcox, m_aditivo_boxcox) %>%
+  tidy() %>%
+  kable(caption = "Tabla de anova del modelo con la transformación boxcox e interacción.",
+        digits = c(2, 2, 3, 2, 3, 3, 3))
+```
+
+Para concluir, a partir del ajuste del modelo 4 realizamos un test de comparaciones múltiples de medias de Tukey de nivel 0.05 para comparar los tratamientos y analizar si alguno resulta mejor que los demás. Los resultados obtenidos, en forma de intervalos de confianza, están representados en la Figura 12.
+
+Los resultados nos permiten concluir, al igual que con el modelo 1, que el tratamiento B resulta mejor que el A y el C, mientras que no hay tiene evidencia de que se diferencie con el tratamiento D. Por otra parte, en este caso también se concluye que el tratamiento de D resulta superior al A y C. Además el tratamiento C parece ser mejor que el A.
+
+En base a todo el análisis realizado consideramos que el tratamiento B es el más conveniente. Si bien el test de Tukey no nos permite distinguir entre el tratamiento B y D, vemos a partir de los gráficos de interacción y de los coeficientes estimados que el tratamiento B resulta mejor.
+
+```{r tukey_boxcox, echo=FALSE, fig.align="center", fig.height = 5, fig.width = 4, fig.cap= "Intervalos de confianza, corregidos por Tukey, del modelo con la sobrevida tranformada con la función boxcos (lambda = -0.75"}
+an.m_interact <- aov(m_interact)
+
+tukey.m_interact <- TukeyHSD(x = an.m_interact, "tratamiento", conf.level = 0.95, ordered = T)
+plot(tukey.m_interact)
+```

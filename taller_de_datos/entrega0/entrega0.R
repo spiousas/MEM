@@ -121,4 +121,4 @@ summary(m_interact)
 ## Tukey ####
 tukey.m_interact <- TukeyHSD(x = an.m_interact, "tratamiento", conf.level = 0.95, ordered = T)
 tukey.m_interact
-plot(tukey.m_interact
+plot(tukey.m_interact)
