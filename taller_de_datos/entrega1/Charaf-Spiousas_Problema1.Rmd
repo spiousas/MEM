@@ -1,0 +1,140 @@
+---
+title: "Taller de Análisis de datos - Problema 1"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "6 de noviembre de 2023"
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      fig.pos = "H", 
+                      out.extra = "")
+pacman::p_load(tidyverse, here, glmnet)
+theme_set(theme_bw(base_size = 10))
+```
+
+# Problema 1-4
+
+Los siguientes datos corresponden a un trabajo para determinar la composición de un conjunto de vasijas de vidrio de un yacimiento arqueológico. Como el análisis espectrométrico es más barato que el análisis químico, se procuró calibrar el primero para que reemplace al segundo. Con este objetivo se tomó una muestra de $n=180$ vasijas, a las que se realizó una espectrometria de rayos X sobre 1920 frecuencias, y también un análisis de laboratorio para determinar el contenido de 13 compuestos químicos, a saber:
+
+$$Na_2O, \; MgO, \; Al_2O_3, \; SiO_2, \; P_2O_5, \; SO_3, \; Cl, \; K_2O, \; CaO, \; MnO, \; Fe_2O_3, \; BaO \; y \; PbO$$
+
+Cada fila del archivo `Vessel_X` es el espectro de una vasija, limitado a las frecuencias $100$ a $400$, pues las demás tienen valores casi nulos. O sea, para cada $i=1,...,n, x(i,j (j=1,..,301))$ es la energía correspondiente a la frecuencia $j$ (en realidad la frecuencia es j+99, pero podemos dejar eso de lado).
+
+Cada fila del archivo `Vessel_Y` tiene los contenidos de los 13 compuestos en esa vasija. Vamos a comparar distintos métodos para predecir el compuesto 4 ($P_2O_5$).
+
+Para familiarizarse con los datos, grafique en función de la frecuencia las medias y varianzas de X, y también algunos espectros (o sea, $x(i,j)$ en función de $j$ para algunos $i$). Aplique los métodos que le parecen adecuados para este problema, y encuentre el que muestra menor error de predicción.
+
+Para el estimador que mejor funciona:
+
+-   Grafique los coeficientes (pendientes) en función de la frecuencia.
+
+-   Haga el clásico gráfico de residuos vs. ajustados.
+
+-   Si ve algo llamativo (outliers, residuos con estructura) tome las medidas correctivas que le parezcan adecuadas.
+
+# Resolución
+
+## Análisis exploratorio
+
+Lo primero que vamos a hacer es a graficar el contenido de `Vessel_X.txt`, es decir, la energía por banda de frecuencia de cada una de las $150$ vasijas. Esto puede verse en líneas continuas de colores en la Figura 1 junto con el promedio en línea sólida negra. En la figura pareciera indicarse que las diferencias entre vasijas ocurren a determinadas frecuencias (en las que la amplitud es distinta de cero y hay más diferencia entre las mediciones individuales) y, por lo tanto, resulta esperable que la información contenida en esas bandas de frecuencias sea la que más aporte a la determinación del contenido de $P_2O_5$ (aunque bajo condiciones particulares podría no ser el caso).
+
+```{r data_loading, fig.align="center", fig.height = 2.5, fig.width = 4, fig.cap = "An amazing plot"}
+data_x <- read_delim(here("taller_de_datos/entrega1/data/Vessel_X.txt"),
+                     name_repair = "unique",
+                     col_names = FALSE,
+                     col_types = cols())
+
+data_y <- read_delim(here("taller_de_datos/entrega1/data/Vessel_Y.txt"),
+                     name_repair = "unique",
+                     col_names = FALSE,
+                     col_types = cols()) %>%
+  select(X4) %>%
+  rename(Y = X4)
+```
+
+```{r fig_inicial, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "Energía en función de las frecuencias. Cada línea de color representa una vasija mientras que la línea negra representa al promedio de las 150 vasijas."}
+data_x_long <- data_x %>% 
+  mutate(sample = factor(row_number())) %>%
+  pivot_longer(cols = 1:last_col(1)) %>%
+  rename(X = name) %>%
+  mutate(X = parse_number(X) + 99) 
+
+summ_data_x <- data_x_long %>%
+  group_by(X) %>%
+  summarise(m_value = mean(value),
+            sem_value = sd(value)/sqrt(n()))
+
+data_x_long %>%
+  ggplot(aes(x = X, y = value)) +
+  geom_line(aes(color = sample), alpha = .1) +
+  geom_line(data = summ_data_x, aes(x = X, y = m_value), linewidth = 1) +
+  labs(x = "Frecuencia", y = "Energía") +
+  scale_color_viridis_d() +
+  theme_bw() +
+  theme(legend.position = "none")
+```
+
+Para explorar esta ídea un poco más allá podemos ver en la Figura 2 el error estándar de la media en función de la banda de frecuencia. En esta figura vemos cuantificada la intuición que generamos en la Figura 1 de que, efectivamente la variabilidad en las mediciones se concentra en unas pocas bandas de frecuencia.
+
+```{r fig_sem, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "Error estándar en función de las frecuencias."}
+summ_data_x %>%
+  ggplot(aes(x = X, y = sem_value)) +
+  geom_line(linewidth = 1) +
+  labs(x = "Frecuencia", y = "SEM") +
+  theme_bw()
+```
+
+Luego, lo que queremos ver es como se distribuye la cantidad de $P_20_5$ en las muestras, para ver si esto tiene algún patrón. En la Figura 3 podemos ver el histograma y la densidad estimada para esta magnitud. En la misma se ve que no pareciera haber valores atípicos y que la distribución es unimodal y con una cola pesada a la izquierda (hacia valores más bajos). Esta asimetría podría llegar a influir en el supuesto no normalidad de los residuos del modelos a ajustar, más adelante lo evaluaremos.
+
+```{r histograma_y, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "Histograma y estimación de la densidad de la cantidad de P205 en las muestras."}
+data_y %>%
+  ggplot(aes(x = Y)) +
+  geom_histogram(aes(y = after_stat(..density..)), 
+                 fill = "steelblue", alpha = 0.5, bins = 30) +
+  geom_density(color = "steelblue", linewidth = 1.5) +
+  theme_bw() +
+  labs(x = "Contenido de P2O5", y = "Densidad") +
+  theme(legend.position = "none")
+```
+
+Finalmente, y a modo exploratorio, vamos a calcular el coeficiente de correlación entre la energía de cada banda de frecuencia y la cantidad de $P_20_5$. De esta forma queremos seguir indagando sobre qué bandas de frecuencia deberían ser más importantes en el modelo de predicción. En la Figura 4 puede verse el valor absoluto del coeficiente de correlación de Pearson en función de la banda de frecuencia. Retomaremos los resultados de esta figura luego de ajustar un modelo.
+
+```{r correlaciones, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "Energía en función de las frecuencias. Cada línea de color representa una vasija mientras que la línea negra representa al promedio de las 150 vasijas."}
+data_xy <- data_x %>%
+  bind_cols(data_y)
+
+cor_coef <- rep(NA, 301)
+for (i in 1:301) {
+  cor_coef[i] <- cor(data_xy[,i], data_xy$Y)
+}
+
+data_cor  <- tibble(X = unique(data_x_long$X),
+                    r = cor_coef)
+
+data_cor %>%
+  ggplot(aes(x = X, y = abs(r))) +
+  geom_line(linewidth = 1) +
+  labs(x = "Frecuencia", y = "|r|") +
+  theme_bw()
+
+```
+
+## Modeloado utilizanod `glmnet`
+
+### Un modelo básico
+Acá analizar el tema de que cuando hacemos Lasso se quead con las que esperábamos (hacer de nuevo la figura de la correlación pero coloreando las que se queda)
+
+### Separamos una porción de los datos para testeo 
+
+Ver el tema de la estratificación
+
+### Buscando los mejores parámetros $\lambda$ y $\alpha$
+
+Hacerlo con k folds
+
+### El modelos final
+
+Métricas y resultados del modelo final ajustado con todo el train
