@@ -11,7 +11,7 @@ output:
 knitr::opts_chunk$set(echo = FALSE,
                       fig.pos = "H", 
                       out.extra = "")
-pacman::p_load(tidyverse, here, glmnet)
+pacman::p_load(tidyverse, here, glmnet, tidymodels, pls, patchwork, broom, knitr)
 theme_set(theme_bw(base_size = 10))
 ```
 
@@ -122,19 +122,145 @@ data_cor %>%
 
 ```
 
-## Modeloado utilizanod `glmnet`
+## Creación de un modelo predictivo
 
-### Un modelo básico
-Acá analizar el tema de que cuando hacemos Lasso se quead con las que esperábamos (hacer de nuevo la figura de la correlación pero coloreando las que se queda)
+Como lo que queremos hacer es entrenar un modelo predictivo, la métrica que vamos a utilizar para evaluarlo es el error cuadrático medio (MSE^[Del inglés *Mean Squared Error*.]) calculado a partir de una muestra de *testeo*. Para esto vamos a dividir los datos en dos partes, dejando dos tercios de los datos (120 vasijas) en el set de entrenamiento o *training* y un tercio de los datos (60 vasijas) en el set de validación o *testing*. Para evitar que haya una representación desigual de cantidad de $P_20_5$ en las muestras de entrenamiento y validación, vamos a hacer esta división estratíficada^[Como se trata de una variable numérica, la función estratifica la separación a partir de los cuartiles.] utilizando la función `initial_split` del paquete `tidymodels`. 
 
-### Separamos una porción de los datos para testeo 
+Vamos a considerar dos familias de modelos para resolver este problema. Primero exploraremos los modelos lineales con regularización (Ridge, Lasso o Elastic Net) utilizando el paquete `glmnet`. Luego exploraremos modelos basados en regresión de componentes principales (PCR^[Del inglés *Principal Components Regression*.]) utilizando el paquete `pls`.
 
-Ver el tema de la estratificación
+```{r train_test}
+set.seed(1234)
+split <- initial_split(data_xy, strata = Y, prop = 2/3)
+training <- training(split)
+training_x <- training(split) %>% select(-Y)
+training_y <- training(split) %>% select(Y)
+testing <- testing(split)
+testing_x <- testing(split) %>% select(-Y)
+testing_y <- testing(split) %>% select(Y)
+```
 
-### Buscando los mejores parámetros $\lambda$ y $\alpha$
+### Modelos lineales con regularización
 
-Hacerlo con k folds
+El primer modelo que vamos a ajsutar es un modelo lineal con regularización de Lasso ($\alpha=1$ en `glmnet`). Para esto vamos a utilizar el set de datos de entrenamiento, y para encontrar el mejor $\lambda$ utilizaremos como criterio el MSE y una validación cruzada con 10 *folds*.
 
-### El modelos final
+```{r}
+set.seed(123)
+cvfit <- cvfit <- cv.glmnet(as.matrix(training_x), as.matrix(training_y), type.measure = "mse", nfolds = 10, alpha = 1)
+tidied <- tidy(cvfit)
 
-Métricas y resultados del modelo final ajustado con todo el train
+myCoefs <- coef(cvfit, s="lambda.min");
+
+myResults <- tibble(
+  Componente  = myCoefs@Dimnames[[1]][ which(myCoefs != 0 ) ], #intercept included
+  Coeficiente = myCoefs              [ which(myCoefs != 0 ) ]  #intercept included
+)
+```
+
+
+Para la regresión con regularización Lasso, el lambda que minimiza el MSE es `r tidied$lambda[which.min(tidied$estimate)]`, con un valor de MSE de `r tidied$estimate[which.min(tidied$estimate)]`. 
+
+En la Figura XXX podemos ver que la mayoría de las componentes no nulas del modelo corresponden con variables con alta correlación con Y. Esto es meramente exploratorio ya que para la selección de variable también resulta relevante que tan correlacionadas están las variables entre sí.
+
+```{r componentes, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "MSE para un modelos glmnet en función de alpha (de Ridge a Lasso) para el mejor lambda obtenido a partir de cross-validation con 10 folds. El panel b muestra un zoom para valores de alpha de 0.5 a 1"}
+data_cor %>%
+  ggplot(aes(x = X, y = abs(r))) +
+  geom_vline(xintercept = parse_number(myResults[2:37,]$Componente)+99, color = "red", linewidth = 2, alpha = .5)+
+  geom_line(linewidth = 1) +
+  labs(x = "Frecuencia", y = "|r|") +
+  theme_bw()
+
+```
+#### Buscando los mejores parámetros $\lambda$ y $\alpha$
+
+Un posible paso siguiente es el de, además de buscar el mejor $\lambda$, también hacer una búsqueda en una grilla del parámetro $\alpha$. Este parámetro es el responsable de convertir el modelo de Ridge ($\alpha = 0$) a Lasso ($\alpha = 1$) pasando por Elastic Net ($\alpha = 0.5$). Haremos la búsqueda para una grilla de valores intermedios entre $0$ y $1$ con paso de $0.01$.
+
+```{r glmnet, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "MSE para un modelos glmnet en función de alpha (de Ridge a Lasso) para el mejor lambda obtenido a partir de cross-validation con 10 folds. El panel b muestra un zoom para valores de alpha de 0.5 a 1"}
+alphas <- seq(0,1,.01)
+
+errors <- rep(NA, length(alphas))
+SEs <- rep(NA, length(alphas))
+lambdas <- rep(NA, length(alphas))
+nzeros<- rep(NA, length(alphas))
+
+for (i in 1:length(alphas)) {
+  set.seed(123)
+  cvfit <- cv.glmnet(as.matrix(training_x), as.matrix(training_y), type.measure = "mse", nfolds = 10, alpha = alphas[i])
+  tidied <- tidy(cvfit)
+  errors[i] <-tidied$estimate[which.min(tidied$estimate)]
+  SEs[i] <- tidied$std.error[which.min(tidied$estimate)]
+  lambdas[i] <- tidied$lambda[which.min(tidied$estimate)]
+  nzeros[i] <- tidied$nzero[which.min(tidied$estimate)]
+}
+
+results <- tibble(alphas, errors, SEs)
+
+p1 <- results %>%
+  ggplot(aes(x = alphas,
+             y = errors)) +
+  geom_line(linewidth = 1) +
+  labs(x = "Alpha", y = "MSE", subtitle = "MSE en función de alpha") +
+  geom_ribbon(aes(ymin = errors-SEs, ymax = errors+SEs), alpha = .3) +
+  theme_bw()
+
+p2 <- results %>%
+  ggplot(aes(x = alphas,
+             y = errors)) +
+  geom_line(linewidth = 1) +
+  geom_ribbon(aes(ymin = errors-SEs, ymax = errors+SEs), alpha = .3) +
+  labs(x = "Alpha", y = "MSE", subtitle = "Zoom de alpha 0.5 a 1") +
+  xlim(c(0.5, 1)) +
+  ylim(c(0.4, .9)) +
+  theme_bw()
+
+p1 + p2 + plot_annotation(tag_levels = 'a')
+```
+
+Puede verse que el MSE disminuye monotonamente con el $\alpha$, llegando a un mínimo de `r round(min(errors), digits = 3)` para $\alpha=1$. Es decir, la regresión regularización Lasso es la más conveniente. Para este valor de $\alpha$ el mínimo error se obtuvo para un $\lambda$ de `r round(lambdas[which.min(errors)], digits = 2)`, con un número de componentes no nulas igual a `r nzeros[which.min(errors)]`.
+
+## Regresión de componentes principales
+
+Otro enfoque que exploramos para abordar el problema es el de reducción de la dimensión. Consideramos el método PCR que consiste en ajustar un modelo de regresión lineal utilizando como variables predictoras un sobconjunto de las componentes obtenidas a partir del análisis de componentes principales (PCA^[Del inglés *Principal Components Analysis*.]). De esta manera, se reduce la cantidad de variables predictoras del modelo.
+
+Para implementar este método utilizamos la función `pcr` de la librería `pls`. Esta función calcula las componentes principales y ajusta el modelo de regresión lineal con la cantidad de componentes que se desee. Para elegir la cantidad de componentes usamos *Cross-Validation* sobre la muestra de entrenamiento, separando en $10$ folds y buscando el número que minimice el error de predicción. En la figura XX se muestra un gráfico con los resultados del MSE obtenido por CV en función de la cantidad de componentes.
+
+```{r PCR, warning = FALSE}
+#pcr
+set.seed(1234)
+modelo_pcr <- pcr(formula= Y ~ .,data = training, scale. = TRUE, validation = "CV")
+modelo_pcr_CV <- MSEP(modelo_pcr, estimate= "CV")
+cv_min_pcr <- min(modelo_pcr_CV$val)
+```
+
+```{r PCR_plot, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "Energía en función de las frecuencias. Cada línea de color representa una vasija mientras que la línea negra representa al promedio de las 150 vasijas."}
+
+modelo_PCR <- tibble(componentes = 1:length(modelo_pcr_CV$val),
+                     MSE = modelo_pcr_CV$val[1:length(modelo_pcr_CV$val)])
+                                             
+p1 <- modelo_PCR  %>% ggplot(aes(x = componentes,
+                                 y = MSE)) +
+  geom_line(linewidth = 1) +
+  geom_vline(xintercept = which.min(modelo_PCR$MSE), color = "red", linetype = "dashed") +
+  labs(x = "Número de componentes", y = "MSE", subtitle = "Todas las componentes")+
+  theme(plot.subtitle=element_text(hjust=0.5))
+
+p2 <- modelo_PCR  %>% ggplot(aes(x = componentes,
+                                 y = MSE)) +
+  geom_line(linewidth = 1) +
+  xlim(c(60, 90)) +
+  ylim(c(.3, .4)) +
+  geom_vline(xintercept = which.min(modelo_PCR$MSE), color = "red", linetype = "dashed") +
+  labs(x = "Número de componentes", y = "MSE", subtitle = "Zoom de 60 a 90 componentes") +
+  theme(plot.subtitle=element_text(hjust=0.5))
+
+p1 + p2 + plot_annotation(tag_levels = 'a')
+  
+```
+
+El óptimo se encuentra en `r which.min(modelo_PCR$MSE)` componentes y el valor obtenido para el error de predicción por CV sobre la muestra de entrenamiento es `r round(modelo_PCR$MSE[which.min(modelo_PCR$MSE)], digits = 3)`.
+
+## Comparación de la performance de los modelos predictivos
+
+## Métricas con el set de testeo
+
+# Conclusiones
+

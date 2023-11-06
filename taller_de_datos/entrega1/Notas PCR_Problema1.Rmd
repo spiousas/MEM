@@ -1,0 +1,59 @@
+---
+title: "Notas sobre PCR"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "2023-11-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Método PCR
+
+Otro enfoque que exploramos para abordar el problema es el de reducción de la dimensión. Consideramos el método PCR (Principal Components Regressión) que consiste en ajustar un modelo de regresión lineal utilizando como variables predictoras un sobconjunto de las componentes obtenidas a partir de PCA (Principal Component Analysis). De esta manera, se reduce la cantidad de predictoras del modelo.
+
+Para implementar este método utilizamos la función *pcr* de la librería *pls*. Esta función calcula las componentes principales y ajusta el modelo de regresión lineal con la cantidad de componentes que se desee. Para elegir la cantidad de componentes usamos Cross-Validation sobre la muestra de entrenamiento, separando en 10 folds y buscando el número que minimice el error de predicción. En la figura XX se muestra un gráfico con los resultados del MSE obtenido por CV en función de la cantidad de componentes.
+
+```{r include=FALSE}
+library(pls)
+library(here)
+```
+
+
+```{r echo=FALSE, warning = FALSE}
+vessel_X <- read.table(here("taller_de_datos/entrega1/data/Vessel_X.txt"),sep = ",")
+vessel_Y <- read.table(here("taller_de_datos/entrega1/data/Vessel_Y.txt"),sep = ",")
+Y4 <- vessel_Y[,4]
+datos<-cbind(Y4,vessel_X)
+
+#separo train y test (esto seguro se borre)
+set.seed(1234)
+train<-sample(rep(c(TRUE,TRUE,FALSE),nrow(vessel_X)/3),replace=FALSE)
+test<-(!train)
+
+training<-datos[train,]
+testing<-datos[test,]
+
+#pcr
+set.seed(1234)
+modelo_pcr <- pcr(formula= Y4 ~ .,data=data.frame(training),scale. = TRUE,validation = "CV")
+modelo_pcr_CV <- MSEP(modelo_pcr,estimate= "CV")
+#plot(modelo_pcr_CV)
+print(which.min(modelo_pcr_CV$val))
+print(modelo_pcr_CV$val[which.min(modelo_pcr_CV$val)])
+#modelo_pcr_CV$val
+cv_min_pcr<-min(modelo_pcr_CV$val)
+#cv_min_pcr #MSE min
+
+par(mfrow = c(1,2))
+plot(modelo_pcr_CV$val, main = "MSE vs nº de componentes", type = "l",
+     ylab = "MSE",
+     col = "blue", xlab = "Componentes")
+plot(modelo_pcr_CV$val, main = "Zoom", type = "l", ylab = "MSE",
+     xlab = "Componentes", col = "blue", ylim = c(0,2))
+
+
+```
+
+El óptimo se encuentra en `r which.min(modelo_PCR$MSE)` componentes y el valor obtenido para el error de predicción por CV sobre la muestra de entrenamiento es `r modelo_PCR$MSE[which.min(modelo_PCR$MSE)]`.
