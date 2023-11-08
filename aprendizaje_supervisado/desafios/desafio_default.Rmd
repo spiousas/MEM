@@ -1,0 +1,35 @@
+---
+title: "Finanzas"
+author: "Jesica Charaf, Gonzalo Berasaluce e Ignacio Spiousas"
+date: "2023-10-27"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+pacman::p_load(here, tidyverse, ISLR)
+```
+
+## R Markdown
+
+
+
+```{r column_creation}
+Default_mod <- 
+  Default %>%
+  as_tibble() %>%
+  mutate(missclaf_cost = if_else(default == "No", balance*.15, balance))
+Default_mod
+```
+
+```{r}
+loss <- rep(NA, length(min(Default_mod$balance):max(Default_mod$balance)))
+for (threshold in min(Default_mod$balance):max(Default_mod$balance)) {
+  loss[threshold] <- Default_mod %>% 
+    mutate(class = if_else(balance<threshold, "No", "Yes"),
+           loss = if_else(class == default, 0, missclaf_cost)) %>%
+    summarise(loss = sum(loss)) %>%
+    pull(loss)
+}
+```
+
