@@ -87,7 +87,7 @@ summ_data_x %>%
   theme_bw()
 ```
 
-Luego, lo que queremos ver es cómo se distribuye la cantidad de $SiO_2$ en las muestras para ver si esto tiene algún patrón. En la Figura \ref{fig:histograma} podemos ver el histograma y la densidad estimada para esta magnitud. En la misma se observa que no pareciera haber valores atípicos y que la distribución es unimodal con una cola pesada a la izquierda (hacia valores más bajos). Esta asimetría podría llegar a influir en el supuesto de normalidad de los errores del modelo a ajustar, más adelante lo evaluaremos.
+Luego, nos interesa ver cómo se distribuye la cantidad de $SiO_2$ en las muestras para ver si esto tiene algún patrón. En la figura \ref{fig:histograma} podemos ver el histograma y la densidad estimada para esta magnitud. En la misma se observa que no pareciera haber valores atípicos y que la distribución es unimodal con una cola pesada a la izquierda (hacia valores más bajos). Esta asimetría podría llegar a influir en el supuesto de normalidad de los errores del modelo a ajustar, más adelante lo evaluaremos.
 
 ```{r histograma_y, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:histograma}Histograma y estimación de la densidad de la cantidad de $SiO_2$ en las muestras."}
 data_y %>%
@@ -102,7 +102,7 @@ data_y %>%
 
 Finalmente, y a modo exploratorio, vamos a calcular el coeficiente de correlación entre la amplitud de cada banda de frecuencia y la cantidad de $SiO_2$. De esta forma queremos seguir indagando sobre qué bandas de frecuencia deberían ser más importantes en el modelo de predicción. En la figura \ref{fig:correlaciones} puede verse el valor absoluto del coeficiente de correlación de Pearson en función de la banda de frecuencia. Retomaremos los resultados de esta figura luego de ajustar un modelo.
 
-```{r correlaciones, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:correlaciones} Módulo del coeficiente de correlación de Pearson entre la amplitud de cada frecuencia y la catidad de $SiO_2$."}
+```{r correlaciones, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:correlaciones} Módulo del coeficiente de correlación de Pearson entre la amplitud de cada frecuencia y la cantidad de $SiO_2$."}
 data_xy <- data_x %>%
   bind_cols(data_y)
 
@@ -159,7 +159,7 @@ myResults <- tibble(
 
 Para la regresión con regularización Lasso el $\lambda$ que minimiza el MSE es `r tidied$lambda[which.min(tidied$estimate)]`, con un valor de MSE de `r tidied$estimate[which.min(tidied$estimate)]`. 
 
-En la figura \ref{fig:coefcorrel} podemos ver que la mayoría de los coeficientes no nulos del modelo se corresponden con variables con alta correlación con Y. Esto es meramente exploratorio ya que para la selección de variables también resulta relevante qué tan correlacionadas están las variables entre sí.
+En la figura \ref{fig:coefcorrel} podemos ver que una buena parte de los coeficientes no nulos del modelo se corresponden con variables con alta correlación con Y. Esto es meramente exploratorio ya que para la selección de variables también resulta relevante qué tan correlacionadas están las variables entre sí.
 
 ```{r componentes, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:coefcorrel}Módulo del coeficiente de correlación de Pearson entre la amplitud de cada frecuencia y la cantidad de $SiO_2$. En forma de banda vertical roja aparecen las frecuencias para las que el coeficiente ajustado por el modelo con regularización Lasso es no nulo."}
 data_cor %>%
@@ -170,7 +170,7 @@ data_cor %>%
   theme_bw()
 
 ```
-#### Buscando los mejores parámetros $\lambda$ y $\alpha$
+#### Buscando los mejores parámetros $\lambda$ y $\alpha$:
 
 Para seguir, además de buscar el mejor $\lambda$, realizaremos una búsqueda considerando una grilla para el parámetro $\alpha$. Este parámetro es el responsable de convertir el modelo de Ridge ($\alpha = 0$) a Lasso ($\alpha = 1$) pasando por Elastic Net (con valores de $\alpha$ intermedios). Haremos la búsqueda para una grilla de valores entre $0$ y $1$ con paso de $0.01$.
 
@@ -215,7 +215,7 @@ p2 <- results %>%
 p1 + p2 + plot_annotation(tag_levels = 'a')
 ```
 
-En la figura \ref{fig:MSEalpha} representamos, en función del $\alpha$, el valor de MSE correspondiente al $\lambda$ óptimo obtenido por Cross-Validation con 10 folds. Puede verse que el MSE disminuye monótonamente con el $\alpha$, llegando a un mínimo de `r round(min(errors), digits = 3)` para $\alpha=1$. Es decir, la regresión con regularización Lasso es la más conveniente. Para este valor de $\alpha$, el mínimo error se obtuvo para un $\lambda$ de `r round(lambdas[which.min(errors)], digits = 2)` con un número de componentes no nulas igual a `r nzeros[which.min(errors)]`.
+En la figura \ref{fig:MSEalpha} representamos, en función del $\alpha$, el valor del MSE correspondiente al $\lambda$ óptimo obtenido por Cross-Validation con 10 folds. Puede verse que el MSE disminuye monótonamente con el $\alpha$, llegando a un mínimo de `r round(min(errors), digits = 3)` para $\alpha=1$. Es decir, la regresión con regularización Lasso es la más conveniente. Para este valor de $\alpha$, el mínimo error se obtuvo para un $\lambda$ de `r round(lambdas[which.min(errors)], digits = 2)` con un número de coeficientes no nulos igual a `r nzeros[which.min(errors)]`.
 
 ### Regresión de componentes principales
 
@@ -260,19 +260,19 @@ El óptimo se encuentra en `r which.min(modelo_pcr_tbl$MSE)` componentes y el va
 
 ## Elección del modelo predictivo
 
-A partir del análisis realizado, vemos que el método de PCR ajustado con `r which.min(modelo_pcr_tbl$MSE)` componentes es el que muestra menor MSE con un valor de `r round(modelo_pcr_tbl$MSE[which.min(modelo_pcr_tbl$MSE)], digits = 3)`, en comparacién con el óptimo obtenido para los métodos de regularización que nos dió `r round(min(errors), digits = 3)`. De esta manera, consideramos que lo más conveniente es utilizar el modelo ajustado utilizando PCR.
+A partir del análisis realizado, vemos que el método de PCR ajustado con `r which.min(modelo_pcr_tbl$MSE)` componentes es el que muestra menor MSE con un valor de `r round(modelo_pcr_tbl$MSE[which.min(modelo_pcr_tbl$MSE)], digits = 3)`, en comparación con el óptimo obtenido para los métodos de regularización que nos dió `r round(min(errors), digits = 3)`. De esta manera, consideramos que lo más conveniente es utilizar el modelo ajustado utilizando PCR.
 
 ```{r}
-y_p <- predict(modelo_pcr, newdata = testing_x, ncomp=31)
+y_p <- predict(modelo_pcr, newdata = testing_x, ncomp=75)
 RSS <- (testing_y - y_p)^2
 error_pcr <- mean(RSS$Y)
 ```
 
-Para evaluar el modelo elegido, estimaremos el error de predicción sobre el set que reservamos para testeo (`r nrow(testing)` observaciones). El resultado obtenido es `r round(error_pcr, digits=3)`.
+Para evaluar el modelo elegido, estimamos el error de predicción sobre el set que reservamos para testeo (`r nrow(testing)` observaciones) y el resultado obtenido es `r round(error_pcr, digits=3)`.
 
-A continuación, ajustamos el modelo obtenido con PCR utilizando la muestra de entrenamiento completa. En la figura \ref{fig:coeficientesPCR} podemos ver como varían los coeficientes del modelo ajustado reconstruidos para las variables originales (las bandas de frecuencia).
+A continuación, ajustamos el modelo obtenido con PCR utilizando la muestra de entrenamiento completa. En la figura \ref{fig:coeficientesPCR} podemos ver cómo varían los coeficientes del modelo ajustado reconstruidos para las variables originales (las bandas de frecuencia). Acá se puede apreciar que, si bien no hay una relación directa, en las zonas de frecuencias donde hay mayor variabilidad para la amplitud (figura 2) encontramos coeficientes con valores que se destacan en valor absoluto.
 
-```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:coeficientesPCR}Coeficientes del modelo de PCR para cada banad de frecuencia."}
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:coeficientesPCR}Coeficientes del modelo de PCR para cada banda de frecuencia."}
 modelo_pcr_final <- pcr(formula= Y ~ .,data = training, scale. = TRUE, ncomp = which.min(modelo_pcr_tbl$MSE))
 coefs <- as.matrix(coef(modelo_pcr_final))
 
@@ -287,9 +287,9 @@ coeficientes_PCR %>% ggplot(aes(x = coeficiente,
   labs(x = "Frecuencia", y = "Coeficiente")
 ```
 
-Una visualización interesante para diagnosticar los supuestos del modelo es graficar lo residuos vs. los valores ajustados (\ref{fig:residuos}). Si bien en la figura los residuos para valores ajustados más pequeños son más chicos, esta diferencia es pequeña y no se ve ninguna desviación sistemática de los residuos (como, por ejemplo, que la variabilidad fuera altamente dependiente de los valores ajustados).
+Una visualización interesante para diagnosticar los supuestos del modelo es graficar los residuos vs. los valores ajustados (figura \ref{fig:residuos}). Si bien en la figura se observa que los residuos para valores ajustados más pequeños son menores, esta diferencia es pequeña y no se ve ninguna estructura clara para los residuos a nivel general (como, por ejemplo, que la variabilidad fuera altamente dependiente de los valores ajustados).
 
-```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:residuos}Valores ajustados vs. residuos para el modelo PCR."}
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:residuos}Residuos vs. valores ajustados para el modelo PCR."}
 residuos_PCR <- tibble(ajustados = modelo_pcr_final$fitted.values[,,which.min(modelo_pcr_tbl$MSE)],
                        residuos = modelo_pcr_final$residuals[,,which.min(modelo_pcr_tbl$MSE)])
 
@@ -300,9 +300,9 @@ residuos_PCR %>% ggplot(aes(x = ajustados,
   labs(x = "Valores ajustados", y = "Residuos")
 ```
 
-Por último, vamos a observar el qq-plot del modelo ajustado (figura \ref{fig:qqplot}). Al igual que en la relación de los residuos con los valores ajustados, no se ve ninguna desviación sistemática en el qq-plot. 
+Por último, vamos a observar el QQ-plot de los residuos del modelo ajustado (figura \ref{fig:qqplot}). Al igual que en la figura anterior, no se ve ninguna desviación sistemática ya que en general las observaciones se encuentran bastante alineadas.
 
-```{r qqplot, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:qqplot}Qq-plot para el modelo PCR."}
+```{r qqplot, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:qqplot}QQ-plot para el modelo PCR."}
 
 ggplot(residuos_PCR, aes(sample = residuos)) +
   stat_qq() +
@@ -312,4 +312,4 @@ ggplot(residuos_PCR, aes(sample = residuos)) +
 
 ## Conclusión
 
-A modo de cierre, proponemos al modelo de PCR (utilizando `r which.min(modelo_pcr_tbl$MSE)` componentes) como el mejor candidato para predecir el contenido de $SiO_2$ a partir de los resultados de un análisis espectrográfico. Esta decisión se basa en que, en base a nuestro análisis, fue el que presentó un valor de MSE mínimo. Además, el análisis de los residuos no evidenció ninguna desviación sistemática de los supuestos de modelo.
+A modo de cierre, proponemos al modelo de PCR (utilizando `r which.min(modelo_pcr_tbl$MSE)` componentes) como el mejor candidato para predecir el contenido de $SiO_2$ a partir de los resultados de un análisis espectrográfico. Esta decisión se basa en que, según nuestro análisis, es el que presenta el menor valor de MSE. Además, el análisis de los residuos no evidenció ninguna desviación sistemática de los supuestos de modelo.
