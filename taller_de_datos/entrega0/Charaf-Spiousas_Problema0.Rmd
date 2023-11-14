@@ -61,7 +61,7 @@ data_veneno <- read_csv(here("taller_de_datos/entrega0/data/problema0.csv"),
 
 Primero, realizamos algunos gráficos exploratorios para tener una visualización inicial de los datos.
 
-En la figura \ref{fig:exploratoria} se muestran del tiempo de sobrevida por tipo de veneno y tratamiento. Los puntos translucidos corresponden a los datos individuales mientras que el punto lleno corresponde a la media muestral. Allí podemos observar que el tiempo medio de sobrevida en el tratamiento B resulta, en general, mayor que en el resto. Sin embargo, los tiempos de sobrevida de todos los tratamientos parecen depender fuertemente del tipo de veneno.
+En la figura \ref{fig:exploratoria} se muestran el tiempo de sobrevida por tipo de veneno y tratamiento. Los puntos translucidos corresponden a los datos individuales mientras que el punto lleno corresponde a la media muestral. Allí podemos observar que el tiempo medio de sobrevida en el tratamiento B resulta, en general, mayor que en el resto. Sin embargo, los tiempos de sobrevida de todos los tratamientos parecen depender fuertemente del tipo de veneno.
 
 ```{r exploratoria, echo=FALSE, fig.align="center", fig.height = 4, fig.width = 5, fig.cap= "\\label{fig:exploratoria}Tiempos de sobrevida en función del tipo de tratamiento para cada tipo de veneno. En puntos translucidos se muestran los puntos individuales y en puntos llenos las medias muestrales."}
 data_veneno %>% 
@@ -97,9 +97,8 @@ data_veneno %>%
   theme(legend.position = "top")
 ```
 
-Las curvas resultantes no se ven paralelas, por lo que no es posible deducir que no haya ninguna interación entre las variables veneno y tratamiento. Sin embargo, se puede apreciar que el tratamiento B está por encima del resto, siguiendo luego en orden los tratamientos D, C y A, independientemente del tipo de veneno.
+Las curvas resultantes no se ven paralelas, por lo que no es posible deducir que no haya ninguna interación entre las variables veneno y tratamiento. Sin embargo, se puede apreciar que el tratamiento B está por encima del resto, siguiendo luego en orden los tratamientos D, C y A, independientemente del tipo de veneno. A su vez, se observa que el veneno III es el que más disminuye el tiempo de sobrevida independientemente del tratamiento y el veneno I pareciera ser el que menos lo disminuye en la mayoría de los tratamientos.
 
-En la figura \ref{fig:interaccion} también podemos ver nuevamente que no hay un claro paralelismo e incluso se observa un entrecruzamiento entre las curvas correspondientes a los venenos I y II. De todos modos, se observa que el veneno III es el que más disminuye el tiempo de sobrevida independientemente del tratamiento y el veneno I pareciera ser el que menos lo disminuye en la mayoría de los tratamientos.
 
 ## Modelo aditivo vs. modelo con interacción
 
