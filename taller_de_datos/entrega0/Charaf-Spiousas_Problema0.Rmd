@@ -150,7 +150,7 @@ tukey.m_aditivo <- TukeyHSD(x = an.m_aditivo, "tratamiento", conf.level = 0.95, 
 plot(tukey.m_aditivo)
 ```
 
-En la figura 7 vemos que el tratamiento B resulta superior que los tratamientos A y C y no hay evidencia para decir que se distingue del tratamiento D, dado que el 0 pertenece al intervalo de confianza de la comparación b-d. A su vez, observamos que el tratamiento D resulta mejor que el A pero no se puede distinguir del tratamiento C. Y por último, no tenemos evidencia para decir que los tratamientos C y A se diferencian.
+En la figura \ref{fig:tukey_aditivo} vemos que el tratamiento B resulta superior que los tratamientos A y C y no hay evidencia para decir que se distingue del tratamiento D, dado que el 0 pertenece al intervalo de confianza de la comparación b-d. A su vez, observamos que el tratamiento D resulta mejor que el A pero no se puede distinguir del tratamiento C. Y por último, no tenemos evidencia para decir que los tratamientos C y A se diferencian.
 
 ## Transformamos los datos
 

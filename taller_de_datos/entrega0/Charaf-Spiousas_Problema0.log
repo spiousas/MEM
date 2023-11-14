@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.3)  14 NOV 2023 19:46
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.11.3)  14 NOV 2023 19:54
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -548,33 +548,33 @@ File: Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf Graphic f
 <use Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf  used on input line 302.
 (pdftex.def)             Requested size: 361.34912pt x 361.34912pt.
-<Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf, id=97, 578.16pt x 433.62pt>
+<Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf, id=98, 578.16pt x 433.62pt>
 File: Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf  used on input line 333.
+Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf  used on input line 334.
 (pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
 [5 <./Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf, id=112, 578.16pt x 433.62pt>
+<Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf, id=113, 578.16pt x 433.62pt>
 File: Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf  used on input line 361.
+Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf  used on input line 362.
 (pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
 [6{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc} <./Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf, id=133, 289.08pt x 216.81pt>
+<Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf, id=134, 289.08pt x 216.81pt>
 File: Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf  used on input line 375.
+Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf  used on input line 376.
 (pdftex.def)             Requested size: 289.09251pt x 216.81938pt.
 [7 <./Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf>]
-Overfull \hbox (1.11961pt too wide) in paragraph at lines 480--480
+Overfull \hbox (1.11961pt too wide) in paragraph at lines 481--481
  []|\T1/lmr/m/n/10 NA|
  []
 
 [8 <./Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf, id=162, 361.35pt x 361.35pt>
+<Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf, id=163, 361.35pt x 361.35pt>
 File: Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf  used on input line 503.
+Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf  used on input line 504.
 (pdftex.def)             Requested size: 361.34912pt x 361.34912pt.
 [9 <./Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf>] (./Charaf-Spiousas_Problema0.aux)
  ***********
@@ -596,10 +596,10 @@ Here is how much of TeX's memory you used:
  14 hyphenation exceptions out of 8191
  63i,8n,67p,530b,539s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on Charaf-Spiousas_Problema0.pdf (9 pages, 272032 bytes).
+Output written on Charaf-Spiousas_Problema0.pdf (9 pages, 272085 bytes).
 PDF statistics:
- 231 PDF objects out of 1000 (max. 8388607)
- 180 compressed objects within 2 object streams
+ 232 PDF objects out of 1000 (max. 8388607)
+ 181 compressed objects within 2 object streams
  30 named destinations out of 1000 (max. 500000)
  78 words of extra memory for PDF output out of 10000 (max. 10000000)
 
