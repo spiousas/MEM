@@ -268,8 +268,6 @@ RSS <- (testing_y - y_p)^2
 error_pcr <- mean(RSS$Y)
 ```
 
-Para evaluar el modelo elegido, estimamos el error de predicción sobre el set que reservamos para testeo (`r nrow(testing)` observaciones) y el resultado obtenido es `r round(error_pcr, digits=3)`.
-
 A continuación, ajustamos el modelo obtenido con PCR utilizando la muestra de entrenamiento completa. En la figura \ref{fig:coeficientesPCR} podemos ver cómo varían los coeficientes del modelo ajustado reconstruidos para las variables originales (las bandas de frecuencia). Acá se puede apreciar que, si bien no hay una relación directa, en las zonas de frecuencias donde hay mayor variabilidad para la amplitud (figura 2) encontramos coeficientes con valores que se destacan en valor absoluto.
 
 ```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 6, fig.cap = "\\label{fig:coeficientesPCR}Coeficientes del modelo de PCR para cada banda de frecuencia."}
@@ -286,6 +284,8 @@ coeficientes_PCR %>% ggplot(aes(x = coeficiente,
   geom_point() +
   labs(x = "Frecuencia", y = "Coeficiente")
 ```
+
+Para evaluar el modelo elegido, estimamos el error de predicción sobre el set que reservamos para testeo (`r nrow(testing)` observaciones) y el resultado obtenido es `r round(error_pcr, digits=3)`.
 
 Una visualización interesante para diagnosticar los supuestos del modelo es graficar los residuos vs. los valores ajustados (figura \ref{fig:residuos}). Si bien en la figura se observa que los residuos para valores ajustados más pequeños son menores, esta diferencia es pequeña y no se ve ninguna estructura clara para los residuos a nivel general (como, por ejemplo, que la variabilidad fuera altamente dependiente de los valores ajustados).
 
