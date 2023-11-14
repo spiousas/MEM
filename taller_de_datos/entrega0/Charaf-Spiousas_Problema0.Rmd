@@ -264,7 +264,7 @@ Para concluir, a partir del ajuste del modelo 4 realizamos un test de comparacio
 
 Los resultados nos permiten concluir, al igual que con el modelo 1, que el tratamiento B resulta mejor que el A y el C, mientras que no hay evidencia de que se diferencie con el tratamiento D. Por otra parte, en este caso también se concluye que el tratamiento de D resulta superior al A y C. Además el tratamiento C parece ser mejor que el A.
 
-Si bien el test de Tukey de nivel $\alpha = .05$ no nos permite distinguir entre el tratamiento B y D, consideramos que si tuviéramos que elegir un tratamiento sería el B.
+Si bien el test de Tukey de nivel $\alpha=0.05$ no nos permite distinguir entre el tratamiento B y D, en base a todo el análisis realizado consideramos que el tratamiento B es el más conveniente.
 
 ```{r tukey_boxcox, echo=FALSE, fig.align="center", fig.height = 5, fig.width = 5, fig.cap= "\\label{fig:tukey_boxcox}Intervalos de confianza, corregidos por Tukey, del modelo con la sobrevida tranformada con la función boxcox ($\\lambda = -0.75$)"}
 an.m_aditivo_boxcox <- aov(m_aditivo_boxcox)
