@@ -61,7 +61,7 @@ data_veneno <- read_csv(here("taller_de_datos/entrega0/data/problema0.csv"),
 
 Primero, realizamos algunos gráficos exploratorios para tener una visualización inicial de los datos.
 
-En la figura \ref{fig:exploratoria} se muestran el tiempo de sobrevida por tipo de veneno y tratamiento. Los puntos translucidos corresponden a los datos individuales mientras que el punto lleno corresponde a la media muestral. Allí podemos observar que el tiempo medio de sobrevida en el tratamiento B resulta, en general, mayor que en el resto. Sin embargo, los tiempos de sobrevida de todos los tratamientos parecen depender fuertemente del tipo de veneno.
+En la figura \ref{fig:exploratoria} se muestra el tiempo de sobrevida por tipo de veneno y tratamiento. Los puntos translucidos corresponden a los datos individuales mientras que el punto lleno corresponde a la media muestral. Allí podemos observar que el tiempo medio de sobrevida en el tratamiento B resulta, en general, mayor que en el resto. Sin embargo, los tiempos de sobrevida de todos los tratamientos parecen depender fuertemente del tipo de veneno.
 
 ```{r exploratoria, echo=FALSE, fig.align="center", fig.height = 4, fig.width = 5, fig.cap= "\\label{fig:exploratoria}Tiempos de sobrevida en función del tipo de tratamiento para cada tipo de veneno. En puntos translucidos se muestran los puntos individuales y en puntos llenos las medias muestrales."}
 data_veneno %>% 
