@@ -1,0 +1,105 @@
+---
+title: "Taller de Análisis de datos - Problema de clasificación 0"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "24 de noviembre de 2023"
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      fig.pos = "H", 
+                      out.extra = "")
+pacman::p_load(tidyverse, here, glmnet, tidymodels, pls, patchwork, broom, knitr)
+theme_set(theme_bw(base_size = 10))
+```
+
+# Problema de clasificación 0
+
+ El archivo Distrofia-info contiene una descripción de la Distrofia Muscular de Duchenne (DMD), para cuyo diagnóstico se realizó un estudio cuyos resultados están en el archivo Distrofia-Data. 
+	La primera fila es:
+
+`38   1     1    1 1007 22 6 0 079 52.0 83.5 10.9 176`
+
+Las primeras 5 columnas no sirven. “22” es la edad, “6” el mes, “0” no sirve, “079” el año, y las últimas cuatro son CK, H, PK y LD.
+El objetivo es proponer una regla para  detectar la DMD usando las cuatro variables  observadas (enzimas), y estimar su  error de clasificación. Se plantean algunas preguntas:
+
+a) CK y H son más baratas de medir que PK y LD. ¿Cuánto aumenta el error si se prescinde de estas últimas?
+	
+b) ¿Tiene sentido incluir la edad entre los predictores?
+	
+c) La sensibilidad y la especificidad son respectivamente las probabilidades de identificar correctamente a sujetos enfermos y sanos. ¿Cómo elegir el balance entre ambas?
+	
+d) Se sabe que la probabilidad de que una mujer sea portadora es 1/3200. ¿Tiene alguna utilidad ese dato?
+
+# Resolución
+
+## Análisis exploratorio
+
+```{r, warning=FALSE}
+DMD_normales <- read_delim(here("taller_de_datos/entrega2/data/Distrofia-Data_normales.txt"),
+                           col_names = F,
+                           col_types = cols()) %>%
+  select(c("X6", "X7", "X9", "X10", "X11", "X12", "X13")) %>%
+  rename("edad" = "X6",
+         "mes" = "X7",
+         "anio" = "X9",
+         "CK" = "X10",
+         "H" = "X11",
+         "PK" = "X12",
+         "LD" = "X13") %>%
+  mutate(anio = parse_number(anio),
+         LD = parse_number(LD),
+         portadora = "No")
+
+DMD_portadoras <- read_delim(here("taller_de_datos/entrega2/data/Distrofia-Data_portadoras.txt"),
+                             col_names = F,
+                             col_types = cols()) %>%
+  select(c("X6", "X7", "X9", "X10", "X11", "X12", "X13")) %>%
+  rename("edad" = "X6",
+         "mes" = "X7",
+         "anio" = "X9",
+         "CK" = "X10",
+         "H" = "X11",
+         "PK" = "X12",
+         "LD" = "X13") %>%
+  mutate(anio = parse_number(anio),
+         portadora = "Si")
+
+DMD_total <- DMD_normales %>%
+  bind_rows(DMD_portadoras) %>% 
+  mutate(across(everything(),  ~ case_when(.x >=0 ~ .x))) %>%
+  mutate(portadora = as.factor(portadora)) %>%
+  group_by(portadora) %>%
+  mutate(PK = replace_na(PK, mean(PK, na.rm = T)),
+         LD = replace_na(LD, mean(LD, na.rm = T)))
+
+DMD_model <- DMD_total %>%
+  select(-c("edad", "mes", "anio"))
+```
+
+Una vez limpiados los datos tenemos 4 columnas que indican los valores detectados de ciertos marcadores (CK, K, PK y LD) y una columna con los valores "Sí" o "No" que indica si la persona es portadora o no.
+
+En la figura \ref{fig:explo1} podemos ver la medición de cada marcador dependiendo si la persona es o no portadora. A simple vista podemos ver que, en promedio (barra gris), la medición de los cuatro marcadores es superior cuando la persona es portadora. Sin embargo, pareciera que **H** es el que pareciera separar menos eficientemente ambos grupo.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap = "\\label{fig:explo1}Residuos vs. valores ajustados para el modelo PCR."}
+DMD_model %>%
+  pivot_longer(CK:LD,
+               values_to = "value",
+               names_to = "Marcador") %>%
+  ggplot(aes(x = portadora,
+             y = value,
+             color = portadora)) +
+  labs(x = "Portadora",
+       y = "Contenido del marcador",
+       color = NULL) +
+  stat_summary(geom = "bar", alpha = 0, color = "gray50", width = .4) +
+  geom_jitter(width = .2, alpha = .5) +
+  facet_wrap(~Marcador, scale = "free_y", labeller = label_both) +
+  theme(strip.background =element_blank(),
+        legend.position = "bottom")
+``` 
+
+El objetivo del presente trabajo es entrenar un modelo que, en principio, a partir de las cuatro mediciones de marcadores prediga correctamente si la persona es portadora. Para esto vamos a evaluar un número de modelos de clasificación: Regresión logística, K vecinos vercanos, Naive Bayes y Random Forest. Luego de evaluar cuál modelo es más conveniente para el problema y ajustar sus hiperparámetros y parámetros evaluaremos su capacidad de predicción en el set de *testeo*.
+
