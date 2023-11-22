@@ -83,7 +83,7 @@ Una vez limpiados los datos tenemos 4 columnas que indican los valores detectado
 
 En la figura \ref{fig:explo1} podemos ver la medición de cada marcador dependiendo si la persona es o no portadora. A simple vista podemos ver que, en promedio (barra gris), la medición de los cuatro marcadores es superior cuando la persona es portadora. Sin embargo, pareciera que **H** es el que pareciera separar menos eficientemente ambos grupo.
 
-```{r, warning = FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap = "\\label{fig:explo1}Residuos vs. valores ajustados para el modelo PCR."}
+```{r, warning = FALSE, fig.align="center", fig.height = 6, fig.width = 8, fig.cap = "\\label{fig:explo1}Dependencia de la medición de cada marcador con la condición de portadora de la persona. Los puntos indican los datos individuales mientras que la barra gris indica el promedio para cada categoría."}
 DMD_model %>%
   pivot_longer(CK:LD,
                values_to = "value",
@@ -94,7 +94,7 @@ DMD_model %>%
   labs(x = "Portadora",
        y = "Contenido del marcador",
        color = NULL) +
-  stat_summary(geom = "bar", alpha = 0, color = "gray50", width = .4) +
+  stat_summary(geom = "bar", fun = mean, alpha = 0, color = "gray50", width = .4) +
   geom_jitter(width = .2, alpha = .5) +
   facet_wrap(~Marcador, scale = "free_y", labeller = label_both) +
   theme(strip.background =element_blank(),
