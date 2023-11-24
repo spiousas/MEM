@@ -1,0 +1,474 @@
+---
+title: "Taller de Análisis de datos - Problema de clasificación 0"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "24 de noviembre de 2023"
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      fig.pos = "H", 
+                      out.extra = "")
+pacman::p_load(tidyverse, here, glmnet, tidymodels, pls, patchwork, broom, knitr, caret, pROC)
+theme_set(theme_bw(base_size = 10))
+
+doParallel::registerDoParallel()
+```
+
+# Problema de clasificación 0
+
+El archivo Distrofia-info contiene una descripción de la Distrofia
+Muscular de Duchenne (DMD), para cuyo diagnóstico se realizó un estudio
+cuyos resultados están en el archivo Distrofia-Data. La primera fila es:
+
+`38   1     1    1 1007 22 6 0 079 52.0 83.5 10.9 176`
+
+Las primeras 5 columnas no sirven. "22" es la edad, "6" el mes, "0" no
+sirve, "079" el año, y las últimas cuatro son CK, H, PK y LD. El
+objetivo es proponer una regla para detectar la DMD usando las cuatro
+variables observadas (enzimas), y estimar su error de clasificación. Se
+plantean algunas preguntas:
+
+a)  CK y H son más baratas de medir que PK y LD. ¿Cuánto aumenta el
+    error si se prescinde de estas últimas?
+
+b)  ¿Tiene sentido incluir la edad entre los predictores?
+
+c)  La sensibilidad y la especificidad son respectivamente las
+    probabilidades de identificar correctamente a sujetos enfermos y
+    sanos. ¿Cómo elegir el balance entre ambas?
+
+d)  Se sabe que la probabilidad de que una mujer sea portadora es
+    1/3200. ¿Tiene alguna utilidad ese dato?
+
+# Resolución
+
+## Análisis exploratorio
+
+```{r, warning=FALSE}
+DMD_normales <- read_delim(here("taller_de_datos/entrega2/data/Distrofia-Data_normales.txt"),
+                           col_names = F,
+                           col_types = cols()) %>%
+  dplyr::select(c("X6", "X7", "X9", "X10", "X11", "X12", "X13")) %>%
+  rename("edad" = "X6",
+         "mes" = "X7",
+         "anio" = "X9",
+         "CK" = "X10",
+         "H" = "X11",
+         "PK" = "X12",
+         "LD" = "X13") %>%
+  mutate(anio = parse_number(anio),
+         LD = parse_number(LD),
+         portadora = "No")
+
+DMD_portadoras <- read_delim(here("taller_de_datos/entrega2/data/Distrofia-Data_portadoras.txt"),
+                             col_names = F,
+                             col_types = cols()) %>%
+  dplyr::select(c("X6", "X7", "X9", "X10", "X11", "X12", "X13")) %>%
+  rename("edad" = "X6",
+         "mes" = "X7",
+         "anio" = "X9",
+         "CK" = "X10",
+         "H" = "X11",
+         "PK" = "X12",
+         "LD" = "X13") %>%
+  mutate(anio = parse_number(anio),
+         portadora = "Si")
+
+DMD_total <- DMD_normales %>%
+  bind_rows(DMD_portadoras) %>% 
+  mutate(across(everything(),  ~ case_when(.x >=0 ~ .x))) %>%
+  mutate(portadora = as.factor(portadora)) %>%
+  group_by(portadora) %>%
+  mutate(PK = replace_na(PK, mean(PK, na.rm = T)),
+         LD = replace_na(LD, mean(LD, na.rm = T)))
+
+DMD_model <- DMD_total %>%
+  dplyr::select(-c("edad", "mes", "anio"))
+```
+
+El conjunto de datos contiene 209 observaciones dentro de las cuales 134
+corresponden a la clase no portadora y 75 a las clase portadora. Las
+variables involucradas son:
+
+-   Edad
+-   Mes
+-   Año
+-   CK
+-   H
+-   PK
+-   LD
+
+Para empezar, inspeccionamos los datos y detectamos observaciones con
+valores faltantes registrados como "-9999" dentro de las variables PK y
+LD. Estos valores fueron reemplazados por el promedio de los valores
+registrados en cada variable por grupo.
+
+En la figura \ref{fig:edades} realizamos boxplots de las edades según cada
+clase y podemos ver que aparentemente no hay representatividad de edades
+más grandes en la muestra no portadora, lo cual parece estar vinculado a cómo se
+tomó la muestra y no necesariamente a que haya una relación directa
+entre la edad y la pertenencia a alguna de las clases. Esta heterogeneidad 
+podría enmascarar el efecto de los marcadores en el diagnóstico por la edad y es 
+por este motivo que no incluiremos esta variable como predictora.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:edades}Boxplots de las edades según la condición de portadora junto con las observaciones individuales."}
+DMD_total %>%
+  ggplot(aes(x = portadora,
+             y = edad,
+             color = portadora)) +
+  labs(x = "Portadora",
+       y = "Edades",
+       color = NULL) +
+  geom_boxplot(alpha = 0, color = "gray50", width = .4) +
+  geom_jitter(width = .2, alpha = .5) +
+  ylim(c(0, 70)) +
+  theme(strip.background =element_blank(),
+        legend.position = "none")
+```
+
+Una vez limpiados los datos, consideramos las 4 columnas que indican los
+valores detectados de ciertos marcadores (CK, H, PK y LD) y una columna
+con los valores "Sí" o "No" que indica si la persona es portadora o no.
+
+En la figura \ref{fig:explo1} se observa la medición de cada marcador
+dependiendo si la persona es o no portadora. A simple vista podemos ver
+que, en promedio (barra gris), la medición de los cuatro marcadores es
+superior cuando la persona es portadora. Sin embargo, pareciera que
+**H** es el que separa menos eficientemente ambos grupos.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 4, fig.width = 6, fig.cap = "\\label{fig:explo1}Dependencia de la medición de cada marcador con la condición de portadora de la persona. Los puntos indican los datos individuales mientras que la barra gris indica el promedio para cada categoría."}
+DMD_model %>%
+  pivot_longer(CK:LD,
+               values_to = "value",
+               names_to = "Marcador") %>%
+  ggplot(aes(x = portadora,
+             y = value,
+             color = portadora)) +
+  labs(x = "Portadora",
+       y = "Contenido del marcador",
+       color = NULL) +
+  stat_summary(geom = "bar", fun = mean, alpha = 0, color = "gray50", width = .4) +
+  geom_jitter(width = .2, alpha = .5) +
+  facet_wrap(~Marcador, scale = "free_y", labeller = label_both) +
+  theme(strip.background =element_blank(),
+        legend.position = "bottom")
+```
+
+El objetivo del presente trabajo consiste en entrenar un modelo que, en
+principio, a partir de las cuatro mediciones de marcadores prediga si la
+persona es portadora o no. Para esto vamos a evaluar un número de
+modelos de clasificación: Regresión logística, K vecinos vercanos y
+Random Forest. Luego de elegir qué modelo es el más conveniente para el
+problema y ajustar sus hiperparámetros y parámetros evaluaremos su
+capacidad de predicción en un set de *testeo*.
+
+## Elección del método de clasificación
+
+Para analizar los distintos métodos de clasificación, separamos la
+muestra en un set de entrenamiento (dos tercios de los datos) y un set
+de testeo (un tercio de los datos) de forma estratificada según la
+clase, utilizando la función `initial_split` de *{rsample}*.
+
+```{r}
+# Dividimos el dataset y generamos los folds
+set.seed(1234)
+split <- initial_split(DMD_model, 
+                       strata = portadora, 
+                       prop = 2/3)
+training <- training(split)
+testing <- testing(split)
+
+set.seed(123)
+folds <- vfold_cv(training, 
+                  v = 10,
+                  strata = portadora)
+```
+
+La métrica a utilizar para evaluar el modelo depende del caso en
+particular de estudio y del tipo de error que consideremos que es más
+grave cometer o se priorice evitar. En nuestro caso vamos a considerar
+la medida *F1 score* teniendo en cuenta que provee un balance entre *recall* y
+*precision*.
+
+### K vecinos cercanos
+
+El primer modelo que vamos a ajustar es el de K vecinos cercanos. Para
+esto consideramos una grilla de valores de $k$ (cantidad de vecinos) entre
+1 y 20. Para evaluar cuál es la cantidad de vecinos más conveniente
+realizamos validación cruzada separando la muestra de entrenamiento en
+10 folds estratificando según la clase. Estos *folds* son generados
+utilizando la función `vfold_cv` del paquete *{rsample}*.
+
+Para implementar este modelo utilizaremos las funcionalidades del paquete *{tidymodels}*.
+
+```{r, warning=FALSE}
+DMD_rec <- recipe(portadora ~ ., data = training)
+
+knn_spec <- nearest_neighbor(mode = "classification",
+                             engine = "kknn",
+                             neighbors = tune(),
+                             weight_func = NULL,
+                             dist_power = NULL)
+
+tune_wf_knn <- workflow() %>%
+  add_recipe(DMD_rec) %>%
+  add_model(knn_spec) 
+
+knn_grid <- grid_regular(
+  neighbors(range = c(1,20)),
+  levels = 20
+)
+
+tune_res_knn <- tune_grid(
+  tune_wf_knn,
+  resamples = folds,
+  metrics = metric_set(accuracy, roc_auc, f_meas),
+  grid = knn_grid
+)
+
+best_f_knn <- tune_res_knn %>% 
+  collect_metrics() %>%
+  dplyr::filter(.metric == "f_meas") %>%
+  arrange(desc(mean)) %>% 
+  slice_head(n=1)
+```
+
+De esta manera, para cada valor de $k$, calculamos el promedio de los F1 obtenidos en cada
+fold y seleccionamos el valor de $k$ que maximice dicho promedio. Con este
+criterio, el valor de $k$ obtenido es `r round(best_f_knn %>% pull(neighbors))` con 
+un valor de F1 de `r round(best_f_knn %>% pull(mean), digits = 3)`. En la
+figura \ref{fig:knn} podemos ver los valores promedios de los F1 en función de la
+cantidad de vecinos utilizados.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 4, fig.cap = "\\label{fig:knn}Dependencia de F1 con la cantidad de vecinos para el modelo de vecinos cercanos."}
+tune_res_knn %>% 
+  collect_metrics() %>%
+  filter(.metric == "f_meas") %>%
+  dplyr::select(mean, neighbors) %>%
+  ggplot(aes(x = neighbors,
+             y = mean)) +
+  labs(x = "# vecinos",
+       y = "F1") + 
+  geom_line(alpha = .5, linewidth = 1.5) +
+  geom_point(show.legend = F) 
+```
+
+### Regresión logística
+
+Para continuar, otro enfoque que exploramos es el de regresión logísica
+considerando una familia de modelos lineales generalizados con
+regularización Lasso.
+
+En este caso, tomamos una grilla de 50 valores de $\lambda$
+equiespaciados en escala logarítmica entre $10^{-3}$ y $10^0$ y, a la
+vez, consideramos distintos valores de umbral de clasificación *p* entre
+0.2 y 0.8 con paso 0.1.
+
+```{r, warning=FALSE}
+lambdas <- 10 ^ seq(-1, -3, length = 50)
+ps <- seq(0.2,0.8,0.1)
+pred_glm_lasso <- function(p, lambda, folds) {
+  error_cv <- rep(0,10)
+  f1_cv <- rep(0,10)
+  for (i in 1:10) {
+    fold <-folds$splits[[i]]
+    data_train <- analysis(fold) %>% mutate(portadora = if_else(portadora == "Si", 1, 0))
+    data_val <- assessment(fold) %>% mutate(portadora = if_else(portadora == "Si", 1, 0))
+    weights <- if_else(data_train[,5]==1, 1-134/209, 1-75/209)
+    ajuste <- glmnet(as.matrix(data_train[,1:4]), 
+                     as.matrix(data_train[,5]), 
+                     lambda = lambda, 
+                     family = "binomial",
+                     weights = weights)
+    prob <- predict(ajuste, newx=as.matrix(data_val[,1:4]), s=lambda,type = 'response')
+    pred <- ifelse( prob > p, 1, 0)
+    conf <- confusionMatrix(as.factor(pred),as.factor(data_val$portadora))
+    f1_cv[i] <-conf$table[1,1]/(conf$table[1,1]+1/2*(conf$table[2,1]+conf$table[1,2]))
+  }
+  return(mean(f1_cv))
+}
+
+f1_clas <- tibble(p = numeric(), lambda = numeric(), f1 = numeric())
+for (j in 1:length(ps)) {
+  for (l in 1:length(lambdas)) {
+    metricas_p <-pred_glm_lasso(ps[j],lambdas[l], folds)
+    f1_clas <- f1_clas %>% add_row(tibble(p = ps[j], lambda = lambdas[l], f1 = metricas_p))
+  }
+}
+```
+
+Al igual que antes, realizamos validación cruzada tomando 10 folds y
+evaluando para cada valor de $\lambda$ y de *p* los resultados del F1
+obtenido a partir del ajuste del modelo lineal generalizado
+correspondiente asignándole pesos
+$1-\frac{\# \, casos \, de \, la \,clase }{\# \, casos \, totales}$ a
+las observaciones correspondientes a cada clase.
+
+El valor máximo obtenido para el F1 es `r round(max(f1_clas$f1)[1], digits=3)` y se alcanza para un umbral de
+$p=$ `r round(f1_clas$p[which.max(f1_clas$f1)[1]], digits = 3)` y un
+$\lambda=$ `r round(f1_clas$lambda[which.max(f1_clas$f1)[1]], digits = 6)`.
+
+### Random forest
+
+Como última alternativa vamos a considerar un modelo basado en árboles a partir de la técnica de random forest. En este caso también
+utilizaremos validación cruzada para hallar la combinación de parámetros
+que maximice F1. Los parámetros que sobre los cuales vamos a optimizar son: 
+
+- el número de variables que se consideran en cada split del árbol aleatorio, que puede
+tomar valores enteros de 1 a 4 (`mtry`), y 
+- el número máximo muestras en
+cada hoja, que puede tomar valores enteros mayores a 1 (`min_n`). 
+
+De este modo, calcularemos el promedio de los F1 que se obtienen a partir del ajuste de random forest en los distintos folds para cada combinación de `mtry` y `min_n` sobre una
+grilla que considera valores enteros y rangos $1 \leq$`mtry`$\leq 4$ y
+$1 \leq$`min_n`$\leq 40$.
+
+Para implementar este modelo, y al igual que en el caso de K vecinos
+cercanos, utilizaremos las funcionalidades del paquete *{tidymodels}*.
+
+```{r}
+rf_spec <- rand_forest(
+  mtry = tune(),
+  trees = 1000,
+  min_n = tune(),
+  ) %>%
+  set_mode("classification")
+
+rf_grid <- grid_regular(
+  mtry(range = c(1,4)),
+  min_n(range = c(1,40)),
+  levels = 40
+)
+
+tune_wf_rf <- workflow() %>%
+  add_recipe(DMD_rec) %>%
+  add_model(rf_spec) 
+
+tune_res_rf <- tune_grid(
+  tune_wf_rf,
+  resamples = folds,
+  metrics = metric_set(accuracy, roc_auc, f_meas),
+  grid = rf_grid
+)
+
+best_f_rf <- tune_res_rf %>% collect_metrics() %>%
+  dplyr::filter(.metric == "f_meas") %>%
+  arrange(desc(mean)) %>% 
+  slice_head(n=1)
+```
+
+
+```{r, warning = FALSE, fig.align="center", fig.height = 4, fig.width = 8, fig.cap = "\\label{fig:random}Dependencia del F1 obtenido por validación cruzada con los parámetros de random forest."}
+tune_res_rf %>% 
+  collect_metrics() %>%
+  filter(.metric == "f_meas")%>%
+  dplyr::select(mean, min_n, mtry) %>%
+  ggplot(aes(x = min_n,
+             y = mean,
+             color = as.factor(mtry))) +
+  geom_line(alpha = .5, linewidth = 1.5) +
+  geom_point(show.legend = F) +
+  facet_wrap(~mtry, labeller = label_both) +
+  labs(x = "min_n",
+       y = "F1") + 
+  theme(legend.position = "null",
+        strip.background =element_blank())
+```
+
+En la figura \ref{fig:random} se pueden ver los resultados del F1 en función de los parámetros de la grilla. Si bien no pareciera haber una clara
+dependencia con `min_n`, sí observamos una relación con `mtry` donde se obtienen valores de F1 más
+altos para `mtry` igual a 1 y que decrecen para valores más grandes. El
+valor máximo obtenido para el F1 es
+`r round(best_f_rf %>% pull(mean), digits = 3)` y se alcanza para `mtry`
+igual a `r round(best_f_rf %>% pull(mtry))` y `min_n` igual a
+`r round(best_f_rf %>% pull(min_n))`.
+
+## Evaluación del modelo elegido en los datos de *testeo*
+
+En nuestro caso, los mejores modelos de cada tipo tuvieron un desempeño similar. Es por eso que seleccionaremos el modelo que consideramos más simple e interpretable, es decir, GLM con regularización LASSO y parámetros $p=$ `r round(f1_clas$p[which.max(f1_clas$f1)[1]], digits = 3)` y 
+$\lambda=$ `r round(f1_clas$lambda[which.max(f1_clas$f1)[1]], digits = 6)`.
+
+A continuación, vamos a ajustar el modelo seleccionado con todos los datos de entrenamiento y evaluar su performance sobre los datos de testeo. La matriz de confusión que se obtiene es la siguiente:
+
+```{r}
+testing_num <- testing %>%
+  mutate(portadora = if_else(portadora == "Si", 1, 0))
+
+training_num <- training %>%
+  mutate(portadora = if_else(portadora == "Si", 1, 0))
+
+weights <- if_else(training_num[,5]==1, 1-134/209, 1-75/209)
+
+ajuste_final <- glmnet(as.matrix(training_num[,1:4]), 
+                       as.matrix(training_num[,5]), 
+                       lambda = f1_clas$lambda[which.max(f1_clas$f1)[1]], 
+                       family = "binomial",
+                       weights = weights)
+prob <- predict(ajuste_final, newx=as.matrix(testing_num[,1:4]), s=f1_clas$lambda[which.max(f1_clas$f1)[1]],type = 'response')
+pred_test <- ifelse( prob > f1_clas$p[which.max(f1_clas$f1)[1]], 1, 0)
+conf <- confusionMatrix(as.factor(pred_test),as.factor(testing_num$portadora))
+
+f1_test <-conf$table[1,1]/(conf$table[1,1]+1/2*(conf$table[2,1]+conf$table[1,2]))
+
+conf$table %>% kable()
+```
+
+A partir de esta matriz, el valor de F1 correspondiente es de `r round(f1_test, digits=3)`. A su vez, estimamos el error de clasificación y el resultado obtenido es xxx.
+
+```{r, warning = FALSE, results='hide', message=FALSE, fig.align="center", fig.height = 4, fig.width = 4, fig.cap = "\\label{fig:roc}Curva ROC del modelo seleccionado con los datos de testeo."}
+ROC <- roc(testing_num %>% pull(portadora), prob, plot = TRUE, legacy.axes = TRUE,
+           percent = FALSE, xlab = "1 - Especificidad",
+           ylab = "Sensibilidad", col = "#377eb8", lwd = 2,
+           print.auc = TRUE)
+```
+
+Para analizar el balance entre sensibilidad y especificidad del método elegido, graficamos la curva ROC asociada (figura \ref{fig:roc}) y calculamos el AUC cuyo valor es `r round(as.numeric(ROC$auc), digits=3)`. Como el valor obtenido del AUC es cercano a 1, podemos decir que el mecanismo de clasificación seleccionado tiene un buen desempeño para distinguir entre las clases.
+
+### Análisis del modelo GLM usando únicamente las covariables CK y H
+
+Como en el problema se indica que CK y H son más baratas de medir que PK y LD, vamos a estudiar el modelo de regresión logística con regularización LASSO considerando únicamente como variables predictoras a CK y H.
+
+```{r, warning=FALSE}
+lambdas <- 10 ^ seq(-1, -3, length = 50)
+ps <- seq(0.2,0.8,0.1)
+pred_glm_lasso_2vars <- function(p, lambda, folds) {
+  error_cv <- rep(0,10)
+  f1_cv <- rep(0,10)
+  for (i in 1:10) {
+    fold <-folds$splits[[i]]
+    data_train <- analysis(fold) %>% mutate(portadora = if_else(portadora == "Si", 1, 0))
+    data_val <- assessment(fold) %>% mutate(portadora = if_else(portadora == "Si", 1, 0))
+    weights <- if_else(data_train[,5]==1, 1-134/209, 1-75/209)
+    ajuste <- glmnet(as.matrix(data_train[,1:2]), 
+                     as.matrix(data_train[,5]), 
+                     lambda = lambda, 
+                     family = "binomial",
+                     weights = weights)
+    prob <- predict(ajuste, newx=as.matrix(data_val[,1:2]), s=lambda,type = 'response')
+    pred <- ifelse( prob > p, 1, 0)
+    conf <- confusionMatrix(as.factor(pred),as.factor(data_val$portadora))
+    f1_cv[i] <-conf$table[1,1]/(conf$table[1,1]+1/2*(conf$table[2,1]+conf$table[1,2]))
+  }
+  return(mean(f1_cv))
+}
+
+f1_clas_2vars <- tibble(p = numeric(), lambda = numeric(), f1 = numeric())
+for (j in 1:length(ps)) {
+  for (l in 1:length(lambdas)) {
+    metricas_p <-pred_glm_lasso_2vars(ps[j],lambdas[l], folds)
+    f1_clas_2vars <- f1_clas %>% add_row(tibble(p = ps[j], lambda = lambdas[l], f1 = metricas_p))
+  }
+}
+```
+
+Para eso, primero volvemos a explorar cuáles son los parámetros que maximizan el promedio del F1 barriendo una grilla de valores de $\lambda$ y p y utilizando el método de validación cruzada, al igual que lo realizado cuando teníamos las cuatro variables predictoras. El valor máximo de F1 es `r round(max(f1_clas_2vars$f1)[1], digits=3)` y se alcanza para $p=$ `r round(f1_clas_2vars$p[which.max(f1_clas_2vars$f1)[1]], digits = 3)` y $\lambda=$ `r round(f1_clas_2vars$lambda[which.max(f1_clas_2vars$f1)[1]], digits = 6)`.
+
+Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el error de clasificación obteniendo un resultado de xxx. CONCLUIR SI AUMENTA MUCHO O POCO VEEER
+
+## Conclusiones

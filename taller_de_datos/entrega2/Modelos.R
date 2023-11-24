@@ -59,8 +59,8 @@ folds <- vfold_cv(training,
                   strata = portadora)
 
 # GLM ####
-lambdas <- 10 ^ seq(0, -3, length = 100)
-ps <- seq(0.01,0.99,0.01)
+lambdas <- 10 ^ seq(-1, -3, length = 50)
+ps <- seq(0.2,0.8,0.1)
 pred_glm_lasso <- function(p, lambda, folds) {
   error_cv <- rep(0,10)
   f1_cv <- rep(0,10)
@@ -68,28 +68,40 @@ pred_glm_lasso <- function(p, lambda, folds) {
     fold <-folds$splits[[i]]
     data_train <- analysis(fold)
     data_val <- assessment(fold)
-    ajuste <- glmnet(as.matrix(data_train[,1:4]), as.matrix(data_train[,5]), lambda = lambda ,family = "binomial")
-    prob <- predict( ajuste, newx=as.matrix(data_val[,1:4]), s=lambda,type = 'response')
+    weights <- if_else(data_train[,5]==1, 1-134/209, 1-75/209)
+    ajuste <- glmnet(as.matrix(data_train[,1:4]), 
+                     as.matrix(data_train[,5]), 
+                     lambda = lambda, 
+                     family = "binomial",
+                     weights = weights)
+    prob <- predict(ajuste, newx=as.matrix(data_val[,1:4]), s=lambda,type = 'response')
     pred <- ifelse( prob > p, 1, 0)
-    error_cv[i] <- mean(pred != data_val$portadora)
     conf <- confusionMatrix(as.factor(pred),as.factor(data_val$portadora))
     f1_cv[i] <-conf$table[1,1]/(conf$table[1,1]+1/2*(conf$table[2,1]+conf$table[1,2]))
   }
-  return(c(mean(error_cv),mean(f1_cv)))
+  return(mean(f1_cv))
 }
 
-error_clas <- matrix(0,nrow=length(ps),ncol=length(lambdas))
-f1_clas <- matrix(NA,nrow=length(ps),ncol=length(lambdas))
+f1_clas <- tibble(p = numeric(), lambda = numeric(), f1 = numeric())
 for (j in 1:length(ps)) {
   for (l in 1:length(lambdas)) {
     metricas_p <-pred_glm_lasso(ps[j],lambdas[l], folds)
-    error_clas[j,l] <- metricas_p[1]
-    f1_clas[j,l] <- metricas_p[2]
+    f1_clas <- f1_clas %>% add_row(tibble(p = ps[j], lambda = lambdas[l], f1 = metricas_p))
   }
 }
 
+f1_clas %>%
+  ggplot(aes(x = p,
+             y = lambda,
+             fill = f1)) +
+  geom_tile() +
+  coord_trans(y ='log')
+  
+    
 max(f1_clas)
 which(f1_clas==max(f1_clas),arr.ind = TRUE)
+
+
 
 # KNN ####
 DMD_rec <- recipe(portadora ~ ., data = training)
@@ -109,7 +121,6 @@ knn_grid <- grid_regular(
   levels = 20
 )
 
-doParallel::registerDoParallel()
 tune_res_knn <- tune_grid(
   tune_wf_knn,
   resamples = folds,
