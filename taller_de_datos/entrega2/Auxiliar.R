@@ -47,7 +47,7 @@ summary(DMD_total)
 
 # Crear Random Forest ####
 DMD_model <- DMD_total %>%
-  select(-c("edad", "mes", "anio"))
+  dplyr::select(-c("edad", "mes", "anio"))
 
 ## Split en train y test ####
 set.seed(123)
@@ -67,42 +67,34 @@ rf_spec <- rand_forest(
   min_n = tune()
   ) %>%
   set_mode("classification")
-  
-nb_spec <- naive_Bayes(smoothness = tune())
 
-glm_spec <- logistic_reg(engine = "glmnet", penalty = tune(), mixture = tune())
+glm_spec <- logistic_reg(engine = "glmnet", 
+                         penalty = tune(), 
+                         mixture = tune())
+
+knn_spec <- nearest_neighbor(mode = "classification",
+                             engine = "kknn",
+                             neighbors = tune(),
+                             weight_func = NULL,
+                             dist_power = NULL
+)
 
 dmd_models <-
   workflow_set(
     preproc = list(formula = portadora ~ .),
     models = list(
-      rf = rf_spec,
-      nb = nb_spec, 
-      xgb = xgb_spec,
-      glm = glm_spec
-    ),
-    
+      rf = rf_spec, 
+      glm = glm_spec,
+      knn = knn_spec
+    )
   )
 
-dmd_models_res <-
-  dmd_models %>% 
-  workflow_map(
-    "tune_grid",
-    resamples = DMD_fold,
-    metrics = metric_set(accuracy, roc_auc, f_meas)
-  )
-
-autoplot(dmd_models_res)
-
-rank_results(dmd_models_res, rank_metric = "f_meas")
-
-tune_wf <- workflow_set() %>%
+tune_wf <- workflow() %>%
   add_recipe(DMD_rec) %>%
-  add_model(rf_spec) %>%
-  add_model(xgb_spec) 
+  add_model(rf_spec) 
 
 ## Train ####  
-set.seed(234)
+set.seed(222)
 DMD_fold <- vfold_cv(DMD_train, strata = portadora)
 DMD_fold
 
@@ -119,11 +111,30 @@ tune_res %>% collect_metrics()
 
 tune_res %>% select_best("accuracy")
 
+set.seed(428)
+dmd_models_res <-
+  dmd_models %>% 
+  workflow_map(
+    "tune_grid",
+    resamples = DMD_fold,
+    metrics = metric_set(accuracy, roc_auc, f_meas),
+    grid = 100
+  )
+
+autoplot(dmd_models_res)
+
+dmd_models_res %>% collect_metrics() 
+
+rank_results(dmd_models_res, rank_metric = "f_meas") %>%
+  filter(.metric == "f_meas")
+
+dmd_models_res %>% select_best("accuracy")
+
 ## Visualizaciones ####  
 tune_res %>% 
   collect_metrics() %>%
   filter(.metric == "accuracy") %>%
-  select(mean, min_n, mtry) %>%
+  dplyr::select(mean, min_n, mtry) %>%
   pivot_longer(min_n:mtry,
                values_to = "value",
                names_to = "parameter") %>%
@@ -135,9 +146,9 @@ tune_res %>%
   theme_minimal()
     
 rf_grid <- grid_regular(
-  mtry(range = c(1,4)),
-  min_n(range = c(10,30)),
-  levels = 10
+  mtry(range = c(1,1)),
+  min_n(range = c(1,40)),
+  levels = 40
 )
 
 ## Entrenar con una grilla regular ####
@@ -153,6 +164,7 @@ regular_res <- tune_grid(
 regular_res %>% collect_metrics() 
 
 regular_res %>% select_best("f_meas")
+
 
 regular_res %>% 
   collect_metrics() %>%
