@@ -219,7 +219,7 @@ En la figura \ref{fig:MSEalpha} representamos, en función del $\alpha$, el valo
 
 ### Regresión de componentes principales
 
-Otro enfoque que exploramos para abordar el problema es el de reducción de la dimensión. Consideramos el método PCR que consiste en ajustar un modelo de regresión lineal utilizando como variables predictoras un sobconjunto de las componentes obtenidas a partir del análisis de componentes principales (PCA^[Del inglés *Principal Components Analysis*.]). De esta manera, se reduce la cantidad de variables predictoras del modelo.
+Otro enfoque que exploramos para abordar el problema es el de reducción de la dimensión. Consideramos el método PCR que consiste en ajustar un modelo de regresión lineal utilizando como variables predictoras un subconjunto de las componentes obtenidas a partir del análisis de componentes principales (PCA^[Del inglés *Principal Components Analysis*.]). De esta manera, se reduce la cantidad de variables predictoras del modelo.
 
 Para implementar este método utilizamos la función `pcr` de la librería `pls`. Esta función calcula las componentes principales y ajusta el modelo de regresión lineal con la cantidad de componentes que se desee. Para elegir la cantidad de componentes usamos validación cruzada sobre la muestra de entrenamiento, separando en $10$ folds y buscando el número que minimice el error de predicción. En la figura \ref{fig:MSEPCR} se muestra un gráfico con los resultados del MSE obtenido por validación cruzada en función de la cantidad de componentes.
 

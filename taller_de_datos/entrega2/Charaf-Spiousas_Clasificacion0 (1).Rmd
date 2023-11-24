@@ -415,14 +415,18 @@ pred_test <- ifelse( prob > f1_clas$p[which.max(f1_clas$f1)[1]], 1, 0)
 conf <- confusionMatrix(as.factor(pred_test),as.factor(testing_num$portadora))
 
 f1_test <-conf$table[1,1]/(conf$table[1,1]+1/2*(conf$table[2,1]+conf$table[1,2]))
+error_test <- 1-(conf$table[1,1]+conf$table[2,2])/sum(conf$table)
 
 conf$table %>% kable()
 ```
 
-A partir de esta matriz, el valor de F1 correspondiente es de `r round(f1_test, digits=3)`. A su vez, estimamos el error de clasificación y el resultado obtenido es xxx.
+A partir de esta matriz, el valor de F1 correspondiente es de `r round(f1_test, digits=3)`. A su vez, estimamos el error de clasificación y el resultado obtenido es `r round(error_test, digits=3)`.
 
 ```{r, warning = FALSE, results='hide', message=FALSE, fig.align="center", fig.height = 4, fig.width = 4, fig.cap = "\\label{fig:roc}Curva ROC del modelo seleccionado con los datos de testeo."}
-ROC <- roc(testing_num %>% pull(portadora), prob, plot = TRUE, legacy.axes = TRUE,
+ROC <- roc(testing_num %>% pull(portadora), 
+           prob, 
+           plot = TRUE, 
+           legacy.axes = TRUE,
            percent = FALSE, xlab = "1 - Especificidad",
            ylab = "Sensibilidad", col = "#377eb8", lwd = 2,
            print.auc = TRUE)
@@ -462,13 +466,29 @@ f1_clas_2vars <- tibble(p = numeric(), lambda = numeric(), f1 = numeric())
 for (j in 1:length(ps)) {
   for (l in 1:length(lambdas)) {
     metricas_p <-pred_glm_lasso_2vars(ps[j],lambdas[l], folds)
-    f1_clas_2vars <- f1_clas %>% add_row(tibble(p = ps[j], lambda = lambdas[l], f1 = metricas_p))
+    f1_clas_2vars <- f1_clas_2vars %>% add_row(tibble(p = ps[j], lambda = lambdas[l], f1 = metricas_p))
   }
 }
+
+weights <- if_else(training_num[,5]==1, 1-134/209, 1-75/209)
+
+ajuste_final_2vars <- glmnet(as.matrix(training_num[,1:2]), 
+                             as.matrix(training_num[,5]), 
+                             lambda = f1_clas$lambda[which.max(f1_clas_2vars$f1)[1]], 
+                             family = "binomial",
+                             weights = weights)
+prob <- predict(ajuste_final_2vars, newx=as.matrix(testing_num[,1:2]), s=f1_clas_2vars$lambda[which.max(f1_clas_2vars$f1)[1]],type = 'response')
+pred_test <- ifelse( prob > f1_clas_2vars$p[which.max(f1_clas_2vars$f1)[1]], 1, 0)
+conf_2vars <- confusionMatrix(as.factor(pred_test),as.factor(testing_num$portadora))
+
+f1_test_2vars <- conf_2vars$table[1,1]/(conf_2vars$table[1,1]+1/2*(conf_2vars$table[2,1]+conf_2vars$table[1,2]))
+error_test_2vars <- 1-(conf_2vars$table[1,1]+conf_2vars$table[2,2])/sum(conf_2vars$table)
+
+conf_2vars$table %>% kable()
 ```
 
 Para eso, primero volvemos a explorar cuáles son los parámetros que maximizan el promedio del F1 barriendo una grilla de valores de $\lambda$ y p y utilizando el método de validación cruzada, al igual que lo realizado cuando teníamos las cuatro variables predictoras. El valor máximo de F1 es `r round(max(f1_clas_2vars$f1)[1], digits=3)` y se alcanza para $p=$ `r round(f1_clas_2vars$p[which.max(f1_clas_2vars$f1)[1]], digits = 3)` y $\lambda=$ `r round(f1_clas_2vars$lambda[which.max(f1_clas_2vars$f1)[1]], digits = 6)`.
 
-Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el error de clasificación obteniendo un resultado de xxx. CONCLUIR SI AUMENTA MUCHO O POCO VEEER
+Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el F1 obteniendo un resultado de `r round(max(f1_test_2vars, digits=3)` El valor del error de clasificación para los datos de testeo con dos variables es `r round(error_test_2vars, digits=3)`.
 
 ## Conclusiones
