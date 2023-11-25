@@ -1,0 +1,47 @@
+---
+title: "Taller de Análisis de datos - Problema de clasificación 1"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "12 de diciembre de 2023"
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      fig.pos = "H", 
+                      out.extra = "")
+pacman::p_load(tidyverse, here, glmnet, tidymodels, pls, patchwork, broom, knitr, caret, pROC, janitor)
+theme_set(theme_bw(base_size = 10))
+
+doParallel::registerDoParallel()
+```
+
+# Problema de clasificación 1
+
+Estos datos son los resultados de análisis químicos de vinos provenientes de la misma región de Italia pero de 3 distintos cultivos. Cada una de las 178 filas contiene el número del cultivo seguido por los valores de 13 mediciones.
+
+Aplique los métodos de clasificación que le parezcan convenientes y compare sus performances.
+
+Los datos están en http://archive.ics.uci.edu/ml/datasets/Wine
+
+# Resolución
+
+## Análisis exploratorio
+
+```{r, warning=FALSE}
+vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
+                  col_names = c("Cultivo", "Alcohol", "Malic acid", "Ash", "Alcalinity of ash",
+                                "Magnesium", "Total phenols", "Flavanoids", "Nonflavanoid phenols",
+                                "Proanthocyanins", "Color intensity", "Hue", "OD280/OD315 of diluted wines",
+                                "Proline"),
+                  col_types = cols()) %>%
+  clean_names()
+```
+
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:XXX}XXX."}
+```
+

@@ -106,11 +106,11 @@ variables involucradas son:
 
 Para empezar, inspeccionamos los datos y detectamos observaciones con
 valores faltantes registrados como "-9999" dentro de las variables PK y
-LD. Estos valores fueron reemplazados por el promedio de los valores
-registrados en cada variable por grupo.
+LD. Estos valores fueron reemplazados por el promedio por clase de los valores
+registrados en cada variable.
 
-En la figura \ref{fig:edades} realizamos boxplots de las edades según cada
-clase y podemos ver que aparentemente no hay representatividad de edades
+En la figura \ref{fig:edades} pueden verse los boxplots de las edades según cada
+clase y podemos ver que, aparentemente, no hay representatividad de edades
 más grandes en la muestra no portadora, lo cual parece estar vinculado a cómo se
 tomó la muestra y no necesariamente a que haya una relación directa
 entre la edad y la pertenencia a alguna de las clases. Esta heterogeneidad 
@@ -140,7 +140,7 @@ En la figura \ref{fig:explo1} se observa la medición de cada marcador
 dependiendo de si la persona es o no portadora. A simple vista podemos ver
 que, en promedio (barra gris), la medición de los cuatro marcadores es
 superior cuando la persona es portadora. Sin embargo, pareciera que
-**H** es el que separa menos eficientemente ambos grupos.
+H es el que separa menos eficientemente ambos grupos.
 
 ```{r, warning = FALSE, fig.align="center", fig.height = 4, fig.width = 6, fig.cap = "\\label{fig:explo1}Dependencia de la medición de cada marcador con la condición de portadora de la persona. Los puntos indican los datos individuales mientras que la barra gris indica el promedio para cada categoría."}
 DMD_model %>%
@@ -160,13 +160,13 @@ DMD_model %>%
         legend.position = "bottom")
 ```
 
-El objetivo del presente trabajo consiste en entrenar un modelo que, en
-principio, a partir de las cuatro mediciones de marcadores prediga si la
-persona es portadora o no. Para esto vamos a evaluar un número de
+El objetivo del presente trabajo consiste en entrenar un modelo que prediga si la
+persona es portadora o no a partir de las cuatro mediciones de marcadores. 
+Para esto vamos a evaluar un número de
 modelos de clasificación: Regresión logística, K vecinos vercanos y
 Random Forest. Luego de elegir qué modelo es el más conveniente para el
 problema y ajustar sus hiperparámetros y parámetros evaluaremos su
-capacidad de predicción en un set de *testeo*.
+capacidad de predicción en un set de testeo.
 
 ## Elección del método de clasificación
 
@@ -267,8 +267,9 @@ regularización Lasso.
 
 En este caso, tomamos una grilla de 50 valores de $\lambda$
 equiespaciados en escala logarítmica entre $10^{-3}$ y $10^0$ y, a la
-vez, consideramos distintos valores de umbral de clasificación *p* entre
-0.2 y 0.8 con paso 0.1.
+vez, consideramos distintos valores de umbral de clasificación $p$ entre
+0.2 y 0.8^[Resulta razonable que el óptimo no esté en valores muy chicos ni muy grandes.] 
+con paso 0.1.
 
 ```{r, warning=FALSE}
 lambdas <- 10 ^ seq(-1, -3, length = 50)
@@ -304,7 +305,7 @@ for (j in 1:length(ps)) {
 ```
 
 Al igual que antes, realizamos validación cruzada tomando 10 folds y
-evaluando para cada valor de $\lambda$ y de *p* los resultados del F1
+evaluando para cada valor de $\lambda$ y de $p$ los resultados del F1
 obtenido a partir del ajuste del modelo lineal generalizado
 correspondiente asignándole pesos
 $1-\frac{\# \, casos \, de \, la \,clase }{\# \, casos \, totales}$ a
@@ -316,9 +317,8 @@ $\lambda=$ `r round(f1_clas$lambda[which.max(f1_clas$f1)[1]], digits = 6)`.
 
 ### Random forest
 
-Como última alternativa vamos a considerar un modelo basado en árboles a partir de la técnica de random forest. En este caso también
-utilizaremos validación cruzada para hallar la combinación de parámetros
-que maximice F1. Los parámetros que sobre los cuales vamos a optimizar son: 
+Como última alternativa vamos a considerar un modelo basado en árboles a partir de la técnica de random forest. En este caso también utilizaremos validación cruzada para hallar la combinación de parámetros
+que maximice F1. Los hiperparámetros que sobre los cuales vamos a optimizar son: 
 
 - el número de variables que se consideran en cada split del árbol aleatorio, que puede
 tomar valores enteros de 1 a 4 (`mtry`), y 
@@ -433,7 +433,6 @@ ROC <- roc(testing_num %>% pull(portadora),
 
 Para analizar el balance entre sensibilidad y especificidad del método elegido, graficamos la curva ROC asociada (figura \ref{fig:roc}) y calculamos el AUC cuyo valor es `r round(as.numeric(ROC$auc), digits=3)`. Como el valor obtenido del AUC es cercano a 1, podemos decir que el mecanismo de clasificación seleccionado tiene un buen desempeño para distinguir entre las clases.
 
-
 ### Análisis del modelo GLM usando únicamente las covariables CK y H
 
 Como en el problema se indica que CK y H son más baratas de medir que PK y LD, vamos a estudiar el modelo de regresión logística con regularización LASSO considerando únicamente como variables predictoras a CK y H.
@@ -469,7 +468,11 @@ for (j in 1:length(ps)) {
     f1_clas_2vars <- f1_clas_2vars %>% add_row(tibble(p = ps[j], lambda = lambdas[l], f1 = metricas_p))
   }
 }
+```
 
+Para eso, primero volvemos a explorar cuáles son los parámetros que maximizan el promedio del F1 barriendo una grilla de valores de $\lambda$ y p y utilizando el método de validación cruzada, al igual que lo realizado cuando teníamos las cuatro variables predictoras. El valor máximo de F1 es `r round(max(f1_clas_2vars$f1)[1], digits=3)` y se alcanza para $p=$ `r round(f1_clas_2vars$p[which.max(f1_clas_2vars$f1)[1]], digits = 3)` y $\lambda=$ `r round(f1_clas_2vars$lambda[which.max(f1_clas_2vars$f1)[1]], digits = 6)`.
+
+```{r}
 weights <- if_else(training_num[,5]==1, 1-134/209, 1-75/209)
   
 ajuste_final_2vars <- glmnet(as.matrix(training_num[,1:2]),
@@ -483,13 +486,15 @@ conf_2vars <- confusionMatrix(as.factor(pred_test),as.factor(testing_num$portado
 
 f1_test_2vars <- conf_2vars$table[1,1]/(conf_2vars$table[1,1]+1/2*(conf_2vars$table[2,1]+conf_2vars$table[1,2]))
 error_test_2vars <- 1-(conf_2vars$table[1,1]+conf_2vars$table[2,2])/sum(conf_2vars$table)
-
-conf_2vars$table %>% kable()
 ```
 
-Para eso, primero volvemos a explorar cuáles son los parámetros que maximizan el promedio del F1 barriendo una grilla de valores de $\lambda$ y p y utilizando el método de validación cruzada, al igual que lo realizado cuando teníamos las cuatro variables predictoras. El valor máximo de F1 es `r round(max(f1_clas_2vars$f1)[1], digits=3)` y se alcanza para $p=$ `r round(f1_clas_2vars$p[which.max(f1_clas_2vars$f1)[1]], digits = 3)` y $\lambda=$ `r round(f1_clas_2vars$lambda[which.max(f1_clas_2vars$f1)[1]], digits = 6)`.
+Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el F1 obteniendo un resultado de `r round(f1_test_2vars, digits=3)` El valor del error de clasificación para los datos de testeo con dos variables es `r round(error_test_2vars, digits=3)`. La matriz de confusión de este nuevo modelo es:
 
-Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el F1 obteniendo un resultado de `r round(f1_test_2vars, digits=3)` El valor del error de clasificación para los datos de testeo con dos variables es `r round(error_test_2vars, digits=3)`.
+```{r}
+conf_2vars$table %>% 
+  kable()
+```
+
 
 ## Conclusiones
 
