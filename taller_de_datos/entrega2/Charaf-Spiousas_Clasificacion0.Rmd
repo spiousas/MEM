@@ -282,8 +282,8 @@ pred_glm_lasso <- function(p, lambda, folds) {
   f1_cv <- rep(0,10)
   for (i in 1:10) {
     fold <-folds$splits[[i]]
-    data_train <- analysis(fold) %>% mutate(portadora = if_else(portadora == "1", 1, 0))
-    data_val <- assessment(fold) %>% mutate(portadora = if_else(portadora == "1", 1, 0))
+    data_train <- analysis(fold) %>% mutate(portadora = if_else(portadora == "0", 1, 0))
+    data_val <- assessment(fold) %>% mutate(portadora = if_else(portadora == "0", 1, 0))
     weights <- if_else(data_train[,5]==1, 1-134/209, 1-75/209)
     ajuste <- glmnet(as.matrix(data_train[,1:4]), 
                      as.matrix(data_train[,5]), 
@@ -293,7 +293,6 @@ pred_glm_lasso <- function(p, lambda, folds) {
     prob <- predict(ajuste, newx=as.matrix(data_val[,1:4]), s=lambda,type = 'response')
     pred <- ifelse( prob > p, 1, 0)
     conf <- confusionMatrix(as.factor(pred),as.factor(data_val$portadora))
-    print(conf)
     f1_cv[i] <-conf$table[2,2]/(conf$table[2,2]+1/2*(conf$table[2,1]+conf$table[1,2]))
   }
   return(mean(f1_cv))
@@ -401,10 +400,10 @@ A continuación, vamos a ajustar el modelo seleccionado con todos los datos de e
 
 ```{r}
 testing_num <- testing %>%
-  mutate(portadora = if_else(portadora == "1", 1, 0))
+  mutate(portadora = if_else(portadora == "0", 1, 0))
 
 training_num <- training %>%
-  mutate(portadora = if_else(portadora == "1", 1, 0))
+  mutate(portadora = if_else(portadora == "0", 1, 0))
 
 weights <- if_else(training_num[,5]==1, 1-134/209, 1-75/209)
 
@@ -449,8 +448,8 @@ pred_glm_lasso_2vars <- function(p, lambda, folds) {
   f1_cv <- rep(0,10)
   for (i in 1:10) {
     fold <-folds$splits[[i]]
-    data_train <- analysis(fold) %>% mutate(portadora = if_else(portadora == "1", 1, 0))
-    data_val <- assessment(fold) %>% mutate(portadora = if_else(portadora == "1", 1, 0))
+    data_train <- analysis(fold) %>% mutate(portadora = if_else(portadora == "0", 1, 0))
+    data_val <- assessment(fold) %>% mutate(portadora = if_else(portadora == "0", 1, 0))
     weights <- if_else(data_train[,5]==1, 1-134/209, 1-75/209)
     ajuste <- glmnet(as.matrix(data_train[,1:2]),
                      as.matrix(data_train[,5]),
