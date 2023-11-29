@@ -93,7 +93,7 @@ DMD_model <- DMD_total %>%
 ```
 
 El conjunto de datos contiene 209 observaciones dentro de las cuales 134
-corresponden a la clase no portadora y 75 a las clase portadora. Las
+corresponden a la clase no portadora y 75 a la clase portadora. Las
 variables involucradas son:
 
 -   Edad
@@ -110,7 +110,7 @@ LD. Estos valores fueron reemplazados por el promedio por clase de los valores
 registrados en cada variable.
 
 En la figura \ref{fig:edades} pueden verse los boxplots de las edades según cada
-clase y podemos ver que, aparentemente, no hay representatividad de edades
+clase y podemos observar que, aparentemente, no hay representatividad de edades
 más grandes en la muestra no portadora, lo cual parece estar vinculado a cómo se
 tomó la muestra y no necesariamente a que haya una relación directa
 entre la edad y la pertenencia a alguna de las clases. Esta heterogeneidad 
@@ -321,7 +321,7 @@ $\lambda=$ `r round(f1_clas$lambda[which.max(f1_clas$f1)[1]], digits = 6)`.
 ### Random forest
 
 Como última alternativa vamos a considerar un modelo basado en árboles a partir de la técnica de random forest. En este caso también utilizaremos validación cruzada para hallar la combinación de parámetros
-que maximice F1. Los hiperparámetros que sobre los cuales vamos a optimizar son: 
+que maximice F1. Los hiperparámetros sobre los cuales vamos a optimizar son: 
 
 - el número de variables que se consideran en cada split del árbol aleatorio, que puede
 tomar valores enteros de 1 a 4 (`mtry`), y 
@@ -418,8 +418,19 @@ conf <- confusionMatrix(as.factor(pred_test),as.factor(testing_num$portadora))
 
 f1_test <-conf$table[2,2]/(conf$table[2,2]+1/2*(conf$table[2,1]+conf$table[1,2]))
 error_test <- 1-(conf$table[1,1]+conf$table[2,2])/sum(conf$table)
+```
+```{=tex}
+\begin{center}
+\begin{tabular}{| c | c | c  c | }
+\hline
+& & \multicolumn{2}{ c| }{Verdaderos} \\ \hline
+& & 0 & 1\\ \hline
+Predichos & 0 & conf$table[1,1] & conf$table[1,2] \\
+& 1 & conf$table[2,1] & conf$table[2,2] \\
+ \hline
+\end{tabular}
+\end{center}
 
-conf$table %>% kable()
 ```
 
 A partir de esta matriz, el valor de F1 correspondiente es de `r round(f1_test, digits=3)`. A su vez, estimamos el error de clasificación y el resultado obtenido es `r round(error_test, digits=3)`.
@@ -491,14 +502,21 @@ f1_test_2vars <- conf_2vars$table[2,2]/(conf_2vars$table[2,2]+1/2*(conf_2vars$ta
 error_test_2vars <- 1-(conf_2vars$table[1,1]+conf_2vars$table[2,2])/sum(conf_2vars$table)
 ```
 
-Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el F1 obteniendo un resultado de `r round(f1_test_2vars, digits=3)` El valor del error de clasificación para los datos de testeo con dos variables es `r round(error_test_2vars, digits=3)`. La matriz de confusión de este nuevo modelo es:
+Luego, ajustamos el modelo con los parámetros óptimos con toda la muestra de entrenamiento y evaluamos sobre la muestra de testeo el F1 obteniendo un resultado de `r round(f1_test_2vars, digits=3)`. El valor del error de clasificación para los datos de testeo con dos variables es `r round(error_test_2vars, digits=3)`. La matriz de confusión de este nuevo modelo es:
 
-```{r}
-conf_2vars$table %>% 
-  kable()
+```{=tex}
+\begin{center}
+\begin{tabular}{| c | c | c  c | }
+\hline
+& & \multicolumn{2}{ c| }{Verdaderos} \\ \hline
+& & 0 & 1\\ \hline
+Predichos & 0 & conf_2vars$table[1,1] & conf_2vars$table[1,2] \\
+& 1 & conf_2vars$table[2,1] & conf_2vars$table[2,2] \\
+ \hline
+\end{tabular}
+\end{center}
+
 ```
-
-
 ## Conclusiones
 
 En el trabajo exploramos distintos métodos para detectar la DMD y, en base al análisis realizado, optamos por el modelo GLM con regularización Lasso. Para tomar esta decisión nos basamos en que la métrica evaluada dio considerablemente bien y el desempeño obtenido es similar al resto de los métodos y nos permite tener una mayor interpretabilidad.
