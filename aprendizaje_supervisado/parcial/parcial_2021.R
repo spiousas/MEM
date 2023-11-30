@@ -99,7 +99,7 @@ tibble(Ks, err) %>%
 
 # Problema 3 ####
 ## a ####
-set.seed(12)
+set.seed(123)
 split <- initial_split(data = OJ, prop = 800/nrow(OJ), strata = Purchase)
 training_OJ <- training(split)
 testing_OJ <- testing(split)
@@ -109,11 +109,11 @@ tree_purchase <- tree(Purchase ~ ., data = training_OJ)
 
 summary(tree_purchase)
 # Tiene 7 nodos terminales
-# El error de entrenamiento es 0.165
+# El error de entrenamiento es 0.1715
 
 ## c ####
 tree_purchase
-# Si loyarCH es menor que 0.48285 y loyalCH es menor que 0.05 entonces purchase se clasifica como MM
+# Si loyarCH es menor que 0.5036 y loyalCH es menor que 0.27 entonces purchase se clasifica como MM
 # Lo segundo que aparece es la deviance (pagina 353 del ISLR) que es una suma en las clases
 # por el p de cada clase -2 * (488 * log(0.61076) + 311 * log(1-0.61076))
 
@@ -140,8 +140,10 @@ tibble(size = tree_purchase_cv$size, deviance = tree_purchase_cv$dev) %>%
 # Da la mínima deviance para size = 6  
 
 ## g ####
-tree_purchase_pruned <- prune.tree(tree_purchase, best = tree_purchase_cv$size[which.min(tree_purchase_cv$dev)] )
+tree_purchase_pruned <- prune.tree(tree_purchase, 
+                                   best = tree_purchase_cv$size[which.min(tree_purchase_cv$dev)] )
 tree_purchase_pruned
+summary(tree_purchase_pruned)
 
 plot(tree_purchase_pruned)
 text(tree_purchase_pruned, pretty = 0)
