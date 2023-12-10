@@ -14,7 +14,7 @@ editor_options:
 knitr::opts_chunk$set(echo = FALSE,
                       fig.pos = "H", 
                       out.extra = "")
-pacman::p_load(tidyverse, here, glmnet, tidymodels, pls, patchwork, broom, knitr, caret, pROC, janitor)
+pacman::p_load(tidyverse, here, FNN, pls, patchwork, broom, knitr, GGally, janitor, rsample, randomForest)
 theme_set(theme_bw(base_size = 10))
 
 doParallel::registerDoParallel()
@@ -42,6 +42,168 @@ vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
   clean_names()
 ```
 
-```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:XXX}XXX."}
+Lo primero que vamos a ver es como se distribuyen las clases, es decir, cuántos datos pertenecientes a cada cultivo tenemos (figura \ref{fig:clases}).
+
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:clases}Cantidad de datos pertenecientes a cada clase (cultivo) en el dataset a utilizar."}
+vinos %>%
+  ggplot(aes(x = cultivo)) +
+  geom_bar(fill = "steelblue") +
+  labs(x = "Cultivo",
+       y = "Cuenta")
+    
 ```
 
+Podemos ver que no contamos con grandes desbalances de clase.
+
+NOTA: Acá poner un poco más de exploración de la relación de los cultivos con las variables.
+
+## Elección del método de clasificación
+
+Para analizar los distintos métodos de clasificación, separamos la
+muestra en un set de entrenamiento (dos tercios de los datos) y un set
+de testeo (un tercio de los datos) de forma estratificada según el
+cultivo, utilizando la función `initial_split` de *{rsample}*.
+
+```{r}
+# Dividimos el dataset y generamos los folds
+set.seed(1234)
+split <- initial_split(vinos, 
+                       strata = cultivo, 
+                       prop = 2/3)
+training <- training(split)
+testing <- testing(split)
+
+set.seed(123)
+v_cv <- 10
+```
+
+La métrica que vamos a utilizar para el modelo es el *accuracy* ya que los datos
+no presentan desbalances de clases marcados ni creemos que haya algunos de los errores 
+(tipo I y tipo II) que debamos favorecer por sobre el otro.
+
+### K vecinos cercanos
+
+El primer modelo que vamos a ajustar es el de K vecinos cercanos. Para
+esto consideramos una grilla de valores de $k$ (cantidad de vecinos) entre
+1 y 20. Para evaluar cuál es la cantidad de vecinos más conveniente
+realizamos validación cruzada separando la muestra de entrenamiento en
+10 folds estratificando según la clase. Estos *folds* son generados
+utilizando la función `vfold_cv` del paquete *{rsample}*.
+
+Para utilizar el modelo de KNN primero vamos a escalear los datos.
+
+```{r, warning=FALSE}
+scale2 <- function(x, na.rm = FALSE) (x - mean(x, na.rm = na.rm)) / sd(x, na.rm)
+
+training_sc <- training %>%
+  select(-cultivo) %>%
+  mutate(across(everything(), scale2)) %>%
+  bind_cols(training %>% select(cultivo))
+
+set.seed(123)
+v_cv <- 10
+folds_sc <- vfold_cv(training_sc, 
+                     v = v_cv,
+                     strata = cultivo)
+```
+
+```{r, warning=FALSE, fig.height = 3, fig.width = 5, fig.align="center", fig.cap = "\\label{fig:KNN}Accuracy en función de la cantidad de vecinos cercanos."}
+Ks <- 1:20
+metricas_knn <- tibble(K = numeric(),
+                   Accuracy = numeric())
+
+for (k in Ks) { # Loop en k
+  err <- c()
+  for (j in 1:v_cv) { # Cross-validation
+    
+    # Los folds
+    fold  <- folds_sc$splits[[j]]
+    train <- analysis(fold)
+    test  <- assessment(fold)
+    
+    pred <- knn(train = train, 
+                test = test, 
+                cl = train %>% pull(cultivo), 
+                k = k, 
+                prob = TRUE)
+    
+    err <- append(err, mean(pred == test %>% pull(cultivo)))
+  }
+  
+  metricas_knn <- metricas_knn %>% bind_rows(tibble(K = k, Accuracy = mean(err)))
+}
+
+metricas_knn %>%
+  ggplot(aes(x = K,
+             y = Accuracy)) +
+  geom_point(size = 2) +
+  scale_color_brewer(palette = "Dark2", name = "Semilla") +
+  labs(title = "Accuracy en función de la cantidad de vecinos cercanos (K)") +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  theme_bw()
+```
+
+Como puede verse en la figura \ref{fig:KNN}, el máximo de Accuracy para los modelos de KNN es de `r round(max(metricas_knn$Accuracy), digits = 2)` para `r which.max(metricas_knn$Accuracy)` vecinos.
+
+### Random Forest
+
+la siguiente alternativa que vamos a considerar es un modelo basado en ensambles
+de árboles conocido como Random Forest. En este caso también utilizaremos validación 
+cruzada para hallar la combinación de parámetros que maximice la Accuracy. Los 
+hiperparámetros a optimizar en un modelo de Random Forest son: el número de variables 
+que se consideran en cada split del árbol aleatorio (`mtry`); y el número mínimo 
+de observaciones requeridas para que una hoja se bifurque (`min_n`). 
+
+Vamos a calcular el Accuracy para una grilla de 160 filas, con $1 \leq$`mtry`$\leq 10$ y
+$5 \leq$`min_n`$\leq 20$. Al igual que en KNN, utilizaremos los datos estandarizados
+(aunque en este caso no debería afectar a los resultados).
+
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:RF}Accuracy en función de mtry y minn ara Random Forest."}
+Ks <- 1:20
+metricas_rf <- tibble(mtry = numeric(),
+                   min_n = numeric(),
+                   Accuracy = numeric())
+
+rf_grid <- expand_grid(
+  mtry = seq(1,10),
+  min_n = seq(5,20))
+
+for (i in 1:nrow(rf_grid)) { # Loop en k
+  acc <- c()
+  for (j in 1:v_cv) { # Cross-validation
+    
+    # Los folds
+    fold  <- folds_sc$splits[[j]]
+    train <- analysis(fold)
+    test  <- assessment(fold)
+    
+    # Entreno con training
+    rf <- randomForest(as_factor(cultivo) ~ ., 
+                       data     = train, 
+                       mtry     = rf_grid[i,] %>% pull(mtry),
+                       maxnodes = rf_grid[i,] %>% pull(min_n),
+                       ntree    = 500)
+    
+    # Predigo con testing
+    yhat_rf <- predict(rf, 
+                       newdata = test)
+    
+    acc <- append(acc, mean(yhat_rf == test %>% pull(cultivo)))
+  }
+  
+  metricas_rf <- metricas_rf %>% bind_rows(tibble(mtry = rf_grid[i,] %>% pull(mtry), 
+                                            min_n = rf_grid[i,] %>% pull(min_n), 
+                                            Accuracy = mean(acc)))
+}
+
+metricas_rf %>%
+  ggplot(aes(x = min_n,
+             y = Accuracy,
+             color = as.factor(mtry))) +
+  geom_point(size = 2) +
+  labs(title = "Accuracy en función de mtry y min_n") +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  theme(legend.position = "bottom") 
+```
+
+Como puede verse en la figura \ref{fig:RF}, la máxima accuracy vale `r round(max(metricas_rf$Accuracy), digits = 3)` para m_try igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y min_n igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)`.

@@ -92,12 +92,13 @@ set.seed(123)
 bagging_carseats <- randomForest(Sales ~ .,
                                  data = training_Carseats,
                                  mtry = ncol(training_Carseats) - 1,
-                                 importance = TRUE)
+                                 importance = TRUE,
+                                 ntrees = 1000)
 yhat.bag <- predict(bagging_carseats, newdata = testing_Carseats)
 
 MSE_test_bagging <- mean((yhat.bag - testing_Carseats %>% pull(Sales))^2)
 MSE_test_bagging
-ok
+
 vip::vi(bagging_carseats) %>%
   ggplot(aes(x = Importance,
              y = forcats::fct_reorder(Variable, Importance))) +
@@ -119,6 +120,7 @@ metricas_rf <- tibble(ntree = numeric(),
 
 for(i in 1:length(mtrys)){
   # Entreno con training
+  set.seed(123)
   rf <- randomForest(Sales ~ .,
                      data = training_Carseats,
                      mtry = mtrys[i], 
@@ -140,3 +142,4 @@ metricas_rf %>%
   labs(x = "Mtry", y = "MSE de testeo") +
   scale_color_brewer(palette = "Paired") +
   theme_bw() 
+

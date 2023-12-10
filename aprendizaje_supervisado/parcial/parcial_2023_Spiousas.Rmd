@@ -1,0 +1,222 @@
+---
+title: "Examen - Herramientas aprendizaje supervisado"
+output: html_document
+date: "2023-12-02"
+author: Ignacio Spiousas (DNI 30450787)
+---
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(results='hold')
+#knitr::opts_chunk$set(include=FALSE)
+```
+
+## Ejercicio 1
+
+Para este ejercicio usaremos el data set **Carseats** de la libreria ISLR2.
+
+```{r librerias_ejercicio_1, echo=FALSE}
+rm(list = ls())
+pacman::p_load(ISLR2, tree, tidyverse, rsample, here, GGally)
+semilla <- 220883
+```
+
+a.  Separe el data set en una muestra de entrenamiento y otra de testeo. Para la primera seleccione 300 observaciones al azar.
+
+Acá hay varias alternativas para separar entre train y test. En particular yo voy a usar la función `initial_split()` del paquete *{rsample}*. La ventaja que le veo, a pesar de que lleva un paso extra acceder al split, es que me permite estratificar la muestra de train y test.
+
+```{r ej1-itema}
+set.seed(semilla)
+Carseats['ShelveLoc'] = ifelse(Carseats$ShelveLoc == 'Bad', 0, ifelse(Carseats$ShelveLoc == 'Medium', 1, 2))
+
+split <- initial_split(data = Carseats, 
+                       prop = 301/nrow(Carseats), 
+                       strata = Sales) # El split
+train <- training(split) # Recupero train
+test <- testing(split) # Recupero test
+```
+
+b.  Ajuste un árbol para predecir Sales en función de todas las variables. Pruneelo para que tenga 5 nodos terminales. Grafique el arbol e interprete.
+
+```{r ej1-itemb}
+set.seed(semilla)
+tree_carseats <- tree(formula = Sales ~ ., data = train)
+
+tree_carseats_pruned <- prune.tree(tree_carseats, best = 5) # El árbol pruneado con 5 nodos terminales
+
+plot(tree_carseats_pruned)
+text(tree_carseats_pruned, pretty = 0)
+```
+
+Para este set de entrenamiento, esta semilla y esta cantidad de nodos, las variables más importantes para determinar la cantidad de unidades vendidas parecieran ser el precio y la ubicación del producto en la góndola. Por ejemplo, si la localización del producto es mayor a 1.5 (o sea, vale 2 y es "Good"), y el precio es menor a 109.5 dólares, el modelo predice unas ventas en cada locación de 12310 unidades, mientras que si para la misma localiación de góndola, el precio es mayor a 109.5 dólares, el modelo predice unas ventas de 9023 unidades. Con el resto de las ramas del árbol se puede hacer un razonamiento similar.
+
+c.  Cual es la cantidad de nodos terminales que sugiere validación cruzada de 10 cruces?
+
+```{r ej1-itemc}
+set.seed(semilla)
+tree_carseats_cv <- cv.tree(tree_carseats, K = 10) # Cross-validation con 10 folds
+
+tibble(size = tree_carseats_cv$size, deviance = tree_carseats_cv$dev) %>%
+  ggplot(aes(x = size,
+             y = deviance)) +
+  geom_point(size = 2) +
+  geom_line(alpha = .5, linewidth = 2) +
+  labs(x = "Size", y = "Deviance", title = "Deviance en función del tamaño de árbol (CV)") +
+  theme_bw()
+
+
+best_size <- tree_carseats_cv$size[which.min(tree_carseats_cv$dev)]
+cat(paste0("La cantidad de nodos terminales que sugiere cross-validation es de ", best_size))
+```
+
+En este caso, la cantidad de nodos terminales que sugiere validación cruzada de 10 cruces es **20 nodos terminales**, es decir, el árbol sin prunear.
+
+d.  Calcule el MSE de testeo y de entrenamiento para el arbol sin prunear y el arbol con 5 nodos terminales. ¿Cuál de los dos arboles prefiere?
+
+```{r, ej1-itemd}
+set.seed(semilla)
+
+MSE_train <- mean((predict(tree_carseats, newdata = train) - train %>% pull(Sales))^2)
+MSE_test <- mean((predict(tree_carseats, newdata = test) - test %>% pull(Sales))^2)
+
+MSE_train_pruned <- mean((predict(tree_carseats_pruned, newdata = train) - train %>% pull(Sales))^2)
+MSE_test_pruned <- mean((predict(tree_carseats_pruned, newdata = test) - test %>% pull(Sales))^2)
+
+cat(paste0("El MSE de train del árbol completo es: ", round(MSE_train, digits = 3), "\n"))
+cat(paste0("El MSE de test del árbol completo es: ", round(MSE_test, digits = 3), "\n"))
+cat(paste0("El MSE de train del árbol pruneado es: ", round(MSE_train_pruned, digits = 3), "\n"))
+cat(paste0("El MSE de test del árbol pruneado es: ", round(MSE_test_pruned, digits = 3), "\n"))
+```
+
+Tanto los errores de test como de train son menores para el árbol completo. Como el MSE de test es menor prefiero el árbol completo para hacer predicciones de datos nuevos.
+
+e.  Explique como funciona bagging de árboles. Utilizando 500 arboles sin prunear prediga el valor de la primer observación de su conjunto de testeo. Para este item solo puede usar las funciones : **tree()**, **predict()** y **sample()**.
+
+Bagging es un método de ensamble que se presenta como solución para la alta varianza asociada a los métodos de árboles de decisión. La propuesta es relativamente simple y consiste en ajustar `ntrees` árboles, cada uno con una muestra diferente de los datos de entrenamiento, evitando de esta forma sobreajustar a los mismos. Este muestra de los datos de entrenamiento se contruye tomando N datos (siendo N el tamaño del set de entrenamiento) con reposición. Finalmente, la predicción final del ensamble de árboles para un nuevo dato será el promedio de las predicciones de los `ntrees` árboles si se trata de un modelo de regresión, o la clase mayoritaria de los `ntrees` árboles si se trata de un modelo de clasificación.
+
+El siguiente código ejemplifica el procedimiento descrito arriba para 500 árboles y para predecir la primera fila del set de test.
+
+```{r ej1-iteme}
+set.seed(semilla)
+
+ntrees <- 500 # Cantidad de árboles
+test_row <- test %>% slice_head(n = 1) # Me quedo con la primera fila del set de test (por comodidad)
+predic_test_row <- rep(NA, ntrees) # Armo un vector para guardar las predicciones de cada árbol
+
+# El loop sobre los 500 árboles con muestras aleatorias de train
+for (tree_i in 1:ntrees) {
+  train_i <- train[sample(nrow(train), replace = T),] # Tomo N muestras con reposición
+  tree_carseats_i <- tree(formula = Sales ~ ., data = train_i) # Entreno con la muestra i
+  predic_test_row[tree_i] <- predict(tree_carseats_i, newdata = test_row) # Predigo para la primera fila de test y guardo la predicción
+}
+
+cat(paste0("La predicción de bagging para la primera fila del set de testeo es de ", round(mean(predic_test_row), digits = 2), "\n")) # Acá es importante que calculo el promedio de las 500 predicciones
+
+cat(paste0("Por otro lado, a predicción del árbol completo para la primera fila del set de testeo es de ", round(predict(tree_carseats, newdata = test[1,]), digits = 2))) # Para ver que esté dando un valor razonable
+```
+
+## Ejercicio 2
+
+Para este ejercicio consideramos el data set **diabetes** que pueden descargar del campus. Estos corresponden a distintas variables médicas y si el paciente presenta diabetes (1) o no (0).
+
+a.  Ajuste una regresión logística y muestre el resumen del modelo ajustado. Diría que la edad incrementa las chances de tener diabetes o no? Justifique su respuesta.
+
+```{r ej2-itema}
+rm(list = ls())
+
+diabetes <- read_csv(here("aprendizaje_supervisado/parcial/data/diabetes.csv"))
+
+m1_diabetes <- glm(data = diabetes, diabetes ~ ., family = "binomial")
+summary(m1_diabetes)
+```
+
+Como el parámetro de age es positivo, esto significa que las log odds se incrementan con la edad, es decir que **las chances (u odds) de tener diabetes (según este modelo) aumentan al aumentar la edad**.
+
+b.  En la busqueda de un modelo mas sencillo, elija un subconjunto de las variables explicativas. Explique el criterio que utiliza y describa su funcionamiento brevemente.
+
+Voy a quedarme con las dos variables más correlacionadas con diabetes para predecir. De la gráfica exploratoria (abajo) puede verse que estas son *glucose* y *age*. A continuación en el código se comenta el procedimiento computacional.
+
+```{r ej2-itemb}
+# Hago un gráfico exploratorio
+ggpairs(diabetes) + theme_minimal()
+
+# Me voy a quedar con las dos variabels que más correlacionan con diabetes
+# Primero calculo la correlación
+cor <- cor(diabetes %>% select(-diabetes), diabetes %>% select(diabetes))
+# Después las convierto a un tibble y me quedo con las dos variables más correlacionadas
+cor_tbl <- as_tibble(cor) %>% mutate(variable = rownames(cor))
+vars_to_select <- cor_tbl %>%
+  arrange(desc(diabetes)) %>%
+  slice_head(n = 2) %>%
+  pull(variable)
+
+# Voy a ajustar el modelos para verificar estar eligiendo bien las variables.
+m2_diabetes <- glm(data = diabetes %>% select(all_of(c(vars_to_select, "diabetes"))), diabetes ~ ., family = "binomial")
+summary(m2_diabetes)
+```
+
+c.  Si la probabilidad de tener diabes es mayor a $0.25$ la persona se considera en riesgo. Con el ultimo modelo ajustado clasifique las individuos que se encuentran en el archivo **diabetes_riesgo.csv** entre riesgo o no riesgo.
+
+```{r ej2-itemc}
+diabetes_riesgo <- read_csv(here("aprendizaje_supervisado/parcial/data/diabetes_riesgo.csv"))
+
+# Predigo con el último modelo ajustado
+preds <- predict(m2_diabetes, newdata = diabetes_riesgo, type = "response")
+
+# Agrego una columna con la predicción de la probabilidad y otra con la etiqueta de clasificación
+diabetes_riesgo %>%
+  mutate(prediccion = preds,
+         riesgo = if_else(prediccion >.25, "Sí", "No")) %>%
+  knitr::kable()
+```
+
+En la última tabla puede verse tanto la probabilidad predicha como si ese individuo se considera en riesgo.
+
+d.  Como se llama el modelo que ajusta el siguiente codigo comentado? Interprete el gráfico que produce.
+
+Estos modelos se llaman modelos aditivos generalizados y permiten utilizar un tipo de ajuste diferente para cada variable. En este caso modelamos la relación con glucosa como lineal y con la edad como una *smoothing spline*.
+
+En la gráfica podemos ver que las log odds de tener diabetes crecen linealmente con la glucosa (la relación lineal la impusimos en el modelo) mientras que la relación de los log odds con age es creciente hasta los ~50 años y luego decreciente.
+
+```{r echo = TRUE, include= TRUE}
+library(splines)
+library(gam)
+fit2 <- gam(diabetes ~  glucose + s(age,4) , data = diabetes, family = binomial)
+par(mfrow=c(1,2))
+plot(fit2)
+```
+
+## Ejercicio 3
+
+a.  El servicio meteorogologico nacional tiene un sistema de alerta temprana para tormentas de alto riesgo para la población. Cual de las siguientes metodologías de clasifiación en tormenta de alto riesgo y no tormenta de alto riesgo le parece mas apropiada que use ? Jusitificque su respuesta. (Se considera la clase positiva a pronosticar tormenta de alto riesgo).
+
+En este caso lo que más me importa es predecir la mayor cantidad de verdaderos positivos entre los casos realmente positivos (*Actual positives*). Es decir, las veces que hay tormenta me importa pegarla lo más posible, aún teniendo más falsos positivos. Es por ese que elegiría el método con mayor recall, es decir, el método C.
+
+```{r , echo=FALSE}
+knitr::kable(data.frame( metodo = c('A', 'B', 'C'), accuracy = c('99%', '95%', '95%'), precision = c('85%', '99%', '90%'),  recall = c('80%', '90%', '97%')))
+```
+
+b.  Se ajustó un modelo de regresión lineal por cuadrados mínimos, Ridge y Lasso. En la siguiente tabla se encuentran los coeficientes estimados para $x_1$, $x_2$ $x_3$ en cada uno de los métodos pero en un descuido se perdieron las etiquetas que indican la metodología que uso. Ayude a decifrar a que metodología pertenece cada uno? Justifique sus respuesta.
+
+En primer caso se trata claramente de un modelo con regularización Lasso, ya que, de lo métodos propuestos, es el único que (por la forma en que penaliza) lleva a parámetros a cero (en este caso beta2).
+
+En el segundo caso tenemos los coeficientes más grandes, por eso podemos decir que se trata de la regresión sin regularización (Oridnary Least Squares, OLS).
+
+En el tercer caso tenemos coeficientes más chicos que en el segundo caso pero que no llegan a cero, y es por eso que podemos decir que se trata de un modelo con regularización de Ridge.
+
+```{r echo = FALSE}
+knitr::kable(data.frame( ajuste = c('Lasso', 'OLS', 'Ridge'), beta1 = c(1.5 , 1.7, 1.55) , beta2 = c(0, -0.25, -0.1),  beta3 = c(-1.5, -1, -0.7)))
+```
+
+c.  Se ajusto un vecinos mas cercanos y se sospecha que el modelo está sobreajustando los datos. Cuál de las siguientes opciones elige? Justifique.
+    1.  Hacer el ajuste utilizando un menor número de vecinos.
+    2.  Hacer el ajuste con un mayor número de vecinos.
+    3.  Estandarizar las variables explicativas ya que vecinos cercanos trabaja con distancias.
+    4.  Ninguna de las anteriores.
+    
+Haría 2, ya que al aumentar el número de vecinos reduzco la flexibilidad del modelo, disminuyendo su varianza aunque con el costo de aumentar su sesgo. Esto podría permitirme evitar el sobreajuste.
+
+Por otro lado, si tengo datos en escalas muy diferentes también podría estar "sobreajustando" en alguna de las dimensiones, ya que los vecinos los encointraría todos en una dirección preferencial.
+
+**En conclusión, lo primero que haría es 2 pero considero que no es una mala idea, además, estandarizar los datos antes de ajustar el modelo.**

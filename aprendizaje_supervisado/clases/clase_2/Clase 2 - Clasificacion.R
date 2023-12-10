@@ -89,14 +89,14 @@ p1 + p2
 
 p3 = ggplot(vals, aes( x = balance, y = income)) + 
   geom_tile(aes(fill = logistic), alpha = .4) +
-  ggtitle('Probabilida de default') +
+  ggtitle('Probabilidad de default') +
   theme_bw() +
   theme(legend.position = "bottom")
 
 p4 = ggplot(vals, aes( x = balance, y = income)) + 
   geom_tile(aes(fill = logistic), alpha = .4) +
   geom_point(data = Default, aes(x = balance, y = income, fill = default), pch = 21, alpha = 1, size = 1.5) +
-  ggtitle('Probabilida de default') +
+  ggtitle('Probabilidad de default') +
   theme_bw() +
   theme(legend.position = "bottom")
 p3+p4

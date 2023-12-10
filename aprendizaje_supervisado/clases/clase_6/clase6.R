@@ -68,6 +68,7 @@ p_escalon
 
 # Ajustamos con splines
 fit_spline <- lm(wage ~ bs(age, knots = c(25, 40, 60)), data = Wage) # bs es la base de splines
+attr(bs(Wage$age, df = 6), "knots") # En base splines los df son K+4 (con el intercept)
 pred_bs <- predict(fit, newdata = tibble(age = edades), se = T) # se = TRUE da desvio estandar en cada punto.
 
 pred_bs_tbl <- tibble(age = edades, 
@@ -90,6 +91,7 @@ p_spline
   
 # Ajustamos con smoothing splines. Podemos elegir por df o pedir validacion cruzada loocv
 fit_natural_spline <- lm(wage ~ ns(age, df = 6), data = Wage) # ns es natural spline
+attr(ns(Wage$age, df = 6), "knots") # Para los ns df son K+2 (con el intercept)
 pred_ns <- predict(fit, newdata = list(age = edades), se = T) 
 
 pred_ns_tbl <- tibble(age = edades, 
@@ -106,9 +108,14 @@ p_nspline
 # Ajuste gam
 gam1 <- lm(wage ~ ns(year, 4) + ns(age, 5) + education, data = Wage)
 summary(gam1)
+gam.m2 <- gam(wage ~ s(year, 4) + age + education,
+              data = Wage)
 gam.m3 <- gam(wage ~ s(year, 4) + ns(age, 5) + education,
               data = Wage)
 summary(gam.m3)
+
+# Puedo hacer una anova para comparar dos GAMs
+anova(gam.m2, gam.m3)
 
 # Logistic regression with gam
 gam.lr <- gam( I(wage > 250) ~ year + s(age, df = 5) + education, family = binomial, data = Wage)

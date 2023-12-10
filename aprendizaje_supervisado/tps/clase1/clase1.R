@@ -110,13 +110,15 @@ simulacion_k <- function(K, Nrep){
   set.seed(123)
   for (i in 1:Nrep) {
     x_train <- tibble( x = runif(n_train, x_min, x_max) )
-    y_train = f_gen(x_train$x) +rnorm(n_train, sd = sigma)
-    pred_rep[i,] = knn.reg(x_train, test = tibble(x = x_test), y = y_train, k = K)$pred
+    y_train <- f_gen(x_train$x) + rnorm(n_train, sd = sigma)
+    
+    pred_rep[i,] <- knn.reg(x_train, test = tibble(x = x_test), y = y_train, k = K)$pred
   }
   
   k_test_mse   <- rep(NA, n_test)
   k_test_var   <- rep(NA, n_test)
   k_test_sesgo <- rep(NA, n_test)
+
   for (j in 1:n_test) {
     k_test_mse[j]   <- mean((y_test[j] - pred_rep[,j])^2)
     k_test_sesgo[j] <- (mean(pred_rep[,j]) - f_gen(x_test)[j])^2
@@ -129,12 +131,12 @@ simulacion_k <- function(K, Nrep){
 
 kvecs <- 1:20
 
-sq_bias <- rep(0, length(Ks))
-var     <- rep(0, length(Ks))
-mse     <- rep(0, length(Ks))
+sq_bias <- rep(0, length(kvecs))
+var     <- rep(0, length(kvecs))
+mse     <- rep(0, length(kvecs))
 
 for (k in kvecs) {
-  resultados <- simulacion_k(k,1000)
+  resultados <- simulacion_k(k, 1000)
   mse[k]     <- resultados[1]
   sq_bias[k] <- resultados[2]
   var[k]     <- resultados[3]
