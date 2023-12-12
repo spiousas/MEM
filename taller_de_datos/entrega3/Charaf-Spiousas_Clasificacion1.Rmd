@@ -33,7 +33,7 @@ Los datos están en http://archive.ics.uci.edu/ml/datasets/Wine
 ## Análisis exploratorio
 
 ```{r, warning=FALSE}
-vinos <- read_csv("wine.data",
+vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
                   col_names = c("Cultivo", "Alcohol", "Malic acid", "Ash", "Alcalinity of ash",
                                 "Magnesium", "Total phenols", "Flavanoids", "Nonflavanoid phenols",
                                 "Proanthocyanins", "Color intensity", "Hue", "OD280/OD315 of diluted wines",
@@ -77,16 +77,11 @@ split <- initial_split(vinos,
 training <- training(split)
 testing <- testing(split)
 
-X_train <- training %>% select(-cultivo)
-Y_train <- training %>% select(cultivo)
-
-X_test <- testing %>% select(-cultivo)
-Y_test <- testing %>% select(cultivo)
-
-X_train_scaled = scale(X_train)
-X_test_scaled = scale(X_test, 
-                      center = attr(X_train_scaled, "scaled:center"), 
-                      scale = attr(X_train_scaled, "scaled:scale"))
+# Los folds de CV
+v_cv <- 10
+folds<- vfold_cv(training, 
+                 v = v_cv,
+                 strata = cultivo)
 ```
 
 La métrica que vamos a utilizar para evaluar el modelo es el *accuracy* ya que los datos
@@ -104,17 +99,7 @@ utilizando la función `vfold_cv` del paquete *{rsample}*.
 
 Para utilizar el modelo de KNN primero vamos a escalar los datos.
 
-```{r, warning=FALSE}
-scale2 <- function(x, na.rm = FALSE) (x - mean(x, na.rm = na.rm)) / sd(x, na.rm)
-
-set.seed(123)
-v_cv <- 10
-folds_sc <- vfold_cv(training, 
-                     v = v_cv,
-                     strata = cultivo)
-```
-
-```{r, warning=FALSE, fig.height = 3, fig.width = 5, fig.align="center", fig.cap = "\\label{fig:KNN}Accuracy en función de la cantidad de vecinos cercanos."}
+```{r}
 Ks <- 1:20
 metricas_knn <- tibble(K = numeric(),
                    Accuracy = numeric())
@@ -124,7 +109,7 @@ for (k in Ks) { # Loop en k
   for (j in 1:v_cv) { # Cross-validation
     
     # Los folds
-    fold  <- folds_sc$splits[[j]]
+    fold  <- folds$splits[[j]]
     train <- analysis(fold)
     test  <- assessment(fold)
     
@@ -151,7 +136,9 @@ for (k in Ks) { # Loop en k
   
   metricas_knn <- metricas_knn %>% bind_rows(tibble(K = k, Accuracy = mean(err)))
 }
+```
 
+```{r, warning=FALSE, fig.height = 3, fig.width = 5, fig.align="center", fig.cap = "\\label{fig:KNN}Accuracy en función de la cantidad de vecinos cercanos."}
 metricas_knn %>%
   ggplot(aes(x = K,
              y = Accuracy)) +
@@ -177,7 +164,7 @@ Vamos a calcular el Accuracy para una grilla de 160 filas, con $1 \leq$`mtry`$\l
 $5 \leq$`min_n`$\leq 20$. Al igual que en KNN, utilizaremos los datos estandarizados
 (aunque en este caso no debería afectar a los resultados).
 
-```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:RF}Accuracy en función de mtry y minn para Random Forest."}
+```{r}
 Ks <- 1:20
 metricas_rf <- tibble(mtry = numeric(),
                    min_n = numeric(),
@@ -192,10 +179,10 @@ for (i in 1:nrow(rf_grid)) { # Loop en k
   for (j in 1:v_cv) { # Cross-validation
     
     # Los folds
-    fold  <- folds_sc$splits[[j]]
+    fold  <- folds$splits[[j]]
     train <- analysis(fold)
     test  <- assessment(fold)
-    
+
     # Entreno con training
     rf <- randomForest(as_factor(cultivo) ~ ., 
                        data     = train, 
@@ -214,7 +201,9 @@ for (i in 1:nrow(rf_grid)) { # Loop en k
                                             min_n = rf_grid[i,] %>% pull(min_n), 
                                             Accuracy = mean(acc)))
 }
+```
 
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:RF}Accuracy en función de mtry y minn para Random Forest."}
 metricas_rf %>%
   ggplot(aes(x = min_n,
              y = Accuracy,
@@ -234,30 +223,49 @@ El último enfoque que vamos a considerar es el de regresión logística para mo
 Para esto, armamos una grilla de valores de $\lambda$ tomando 100 valores entre $10^{-3}$ y $10^0$. Para cada valor de $\lambda$, evaluamos el Accuracy realizando validación cruzada de la misma forma que en los otros métodos.
 
 ```{r, warning=FALSE}
-lambdas<-10 ^ seq(0, -3, length = 100)
-metricas<-rep(NA,length(lambdas))
+lambdas <- 10 ^ seq(0, -3, length = 50)
+metricas_glm <- tibble(lambda = numeric(),
+                      Accuracy = numeric())
+
 for (l in 1:length(lambdas)){
   acc <- rep(0,10)
+  
   for (j in 1:v_cv) { # Cross-validation
     # Los folds
-    fold  <- folds_sc$splits[[j]]
+    fold  <- folds$splits[[j]]
     train <- analysis(fold)
     test  <- assessment(fold)
-    fit = glmnet(as.matrix(train[,-14]),as.matrix(train[,14]) , family = "multinomial", 
-                 type.multinomial = "grouped")
-    pred<-predict(fit, newx=as.matrix(test[,-14]), s=lambdas[l], type = 'class')
+    
+    fit <- glmnet(x = as.matrix(train %>% select(-cultivo)), 
+                  y = as.matrix(train %>% select(cultivo)), 
+                  family = "multinomial", 
+                  type.multinomial = "grouped",
+                  lambda = lambdas[l])
+    pred <- predict(fit, 
+                    newx = as.matrix(test %>% select(-cultivo)), 
+                    s = lambdas[l], 
+                    type = 'class')
     acc[j] <- mean(pred == test %>% pull(cultivo))
   }
-  metricas[l]<-mean(acc)
+  
+  metricas_glm <- metricas_glm %>% bind_rows(tibble(lambda = lambdas[l], 
+                                                    Accuracy = mean(acc)))
+  
 }
 ```
 
 ```{r, warning=FALSE, fig.height = 3, fig.width = 5, fig.align="center", fig.cap = "\\label{fig:glm}Accuracy en función del valor de lambda."}
-plot(lambdas,metricas,xlab="Lambda", ylab="Accuracy", type="b")
-
+metricas_glm %>%
+  ggplot(aes(x = lambda,
+             y = Accuracy)) +
+  geom_point(size = 2) +
+  labs(title = "Regresión logística multinomial") +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  scale_x_continuous(trans='log10') +
+  theme(legend.position = "bottom") 
 ```
 
-En la figura xx observamos los resultados del Accuracy en función de $\lambda$ y vemos que el máximo se alcanza en $\lambda$ igual a `r round(lambdas[which.max(metricas)], digits = 2)` con un valor de `r round(max(metricas), digits = 2)`.
+En la figura \ref{fig:glm} observamos los resultados del Accuracy en función de $\lambda$ y vemos que el máximo se alcanza en $\lambda$ igual a `r round(lambdas[which.max(metricas_glm$Accuracy)], digits = 3)` con un valor de `r round(max(metricas_glm$Accuracy), digits = 3)`.
 
 ## Evaluación del modelo elegido
 
