@@ -14,7 +14,7 @@ editor_options:
 knitr::opts_chunk$set(echo = FALSE,
                       fig.pos = "H", 
                       out.extra = "")
-pacman::p_load(tidyverse, here, FNN, pls, patchwork, broom, knitr, GGally, janitor, rsample, randomForest)
+pacman::p_load(tidyverse, here, FNN, pls, patchwork, broom, knitr, GGally, janitor, rsample, randomForest,glmnet)
 theme_set(theme_bw(base_size = 10))
 
 doParallel::registerDoParallel()
@@ -33,7 +33,7 @@ Los datos están en http://archive.ics.uci.edu/ml/datasets/Wine
 ## Análisis exploratorio
 
 ```{r, warning=FALSE}
-vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
+vinos <- read_csv("wine.data",
                   col_names = c("Cultivo", "Alcohol", "Malic acid", "Ash", "Alcalinity of ash",
                                 "Magnesium", "Total phenols", "Flavanoids", "Nonflavanoid phenols",
                                 "Proanthocyanins", "Color intensity", "Hue", "OD280/OD315 of diluted wines",
@@ -42,7 +42,9 @@ vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
   clean_names()
 ```
 
-Lo primero que vamos a ver es como se distribuyen las clases, es decir, cuántos datos pertenecientes a cada cultivo tenemos (figura \ref{fig:clases}).
+Los datos contienen 178 observaciones donde la primera variable indica el tipo de cultivo (1, 2 o 3) y las siguientes 13 variables corresponden a mediciones de: Alcohol, Malicacid, Ash, Alcalinity_of_ash, Magnesium, Total_phenols, Flavanoids, Nonflavanoid_phenols, Proanthocyanins, Color_intensity, Hue, 0D280_0D315_of_diluted_wines y Proline.
+
+Lo primero que vamos a ver es cómo se distribuyen las clases, es decir, cuántos datos pertenecientes a cada cultivo tenemos (figura \ref{fig:clases}).
 
 ```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:clases}Cantidad de datos pertenecientes a cada clase (cultivo) en el dataset a utilizar."}
 vinos %>%
@@ -53,11 +55,13 @@ vinos %>%
     
 ```
 
-Podemos ver que no contamos con grandes desbalances de clase.
+Podemos ver que no contamos con grandes desbalances de clase. Se tienen 59 observaciones correspondientes al cultivo 1, 71 del cultivo 2 y 48 del cultivo 3.
 
 NOTA: Acá poner un poco más de exploración de la relación de los cultivos con las variables.
 
-## Elección del método de clasificación
+## Comparación de métodos de clasificación
+
+El objetivo del trabajo consiste en explorar diferentes métodos de clasificación para determinar el tipo de cultivo y comparar sus desempeños. Para eso, vamos a considerar los enfoques de K vecinos cercanos, Random Forest y Regresión logística para modelos multinomiales.
 
 Para analizar los distintos métodos de clasificación, separamos la
 muestra en un set de entrenamiento (dos tercios de los datos) y un set
@@ -73,12 +77,20 @@ split <- initial_split(vinos,
 training <- training(split)
 testing <- testing(split)
 
-set.seed(123)
-v_cv <- 10
+X_train <- training %>% select(-cultivo)
+Y_train <- training %>% select(cultivo)
+
+X_test <- testing %>% select(-cultivo)
+Y_test <- testing %>% select(cultivo)
+
+X_train_scaled = scale(X_train)
+X_test_scaled = scale(X_test, 
+                      center = attr(X_train_scaled, "scaled:center"), 
+                      scale = attr(X_train_scaled, "scaled:scale"))
 ```
 
-La métrica que vamos a utilizar para el modelo es el *accuracy* ya que los datos
-no presentan desbalances de clases marcados ni creemos que haya algunos de los errores 
+La métrica que vamos a utilizar para evaluar el modelo es el *accuracy* ya que los datos
+no presentan desbalances de clases marcados ni creemos que haya alguno de los errores 
 (tipo I y tipo II) que debamos favorecer por sobre el otro.
 
 ### K vecinos cercanos
@@ -90,19 +102,14 @@ realizamos validación cruzada separando la muestra de entrenamiento en
 10 folds estratificando según la clase. Estos *folds* son generados
 utilizando la función `vfold_cv` del paquete *{rsample}*.
 
-Para utilizar el modelo de KNN primero vamos a escalear los datos.
+Para utilizar el modelo de KNN primero vamos a escalar los datos.
 
 ```{r, warning=FALSE}
 scale2 <- function(x, na.rm = FALSE) (x - mean(x, na.rm = na.rm)) / sd(x, na.rm)
 
-training_sc <- training %>%
-  select(-cultivo) %>%
-  mutate(across(everything(), scale2)) %>%
-  bind_cols(training %>% select(cultivo))
-
 set.seed(123)
 v_cv <- 10
-folds_sc <- vfold_cv(training_sc, 
+folds_sc <- vfold_cv(training, 
                      v = v_cv,
                      strata = cultivo)
 ```
@@ -121,13 +128,25 @@ for (k in Ks) { # Loop en k
     train <- analysis(fold)
     test  <- assessment(fold)
     
-    pred <- knn(train = train, 
-                test = test, 
-                cl = train %>% pull(cultivo), 
+    X_train <- train %>% select(-cultivo)
+    Y_train <- train %>% select(cultivo)
+    
+    X_test <- test %>% select(-cultivo)
+    Y_test <- test %>% select(cultivo)
+    
+    X_train_scaled <- scale(X_train)
+    X_test_scaled  <- as_tibble(scale(X_test, 
+                                      center = attr(X_train_scaled, "scaled:center"), 
+                                      scale = attr(X_train_scaled, "scaled:scale")))
+    X_train_scaled <- as_tibble(X_train_scaled)
+    
+    pred <- knn(train = X_train_scaled, 
+                test = X_test_scaled, 
+                cl = Y_train %>% pull(cultivo), 
                 k = k, 
                 prob = TRUE)
     
-    err <- append(err, mean(pred == test %>% pull(cultivo)))
+    err <- append(err, mean(pred == Y_test %>% pull(cultivo)))
   }
   
   metricas_knn <- metricas_knn %>% bind_rows(tibble(K = k, Accuracy = mean(err)))
@@ -138,7 +157,7 @@ metricas_knn %>%
              y = Accuracy)) +
   geom_point(size = 2) +
   scale_color_brewer(palette = "Dark2", name = "Semilla") +
-  labs(title = "Accuracy en función de la cantidad de vecinos cercanos (K)") +
+  labs(title = "Vecinos cercanos") +
   geom_line(linewidth = 2, alpha = 0.5) +
   theme_bw()
 ```
@@ -147,9 +166,9 @@ Como puede verse en la figura \ref{fig:KNN}, el máximo de Accuracy para los mod
 
 ### Random Forest
 
-la siguiente alternativa que vamos a considerar es un modelo basado en ensambles
+La siguiente alternativa que vamos a considerar es un modelo basado en ensambles
 de árboles conocido como Random Forest. En este caso también utilizaremos validación 
-cruzada para hallar la combinación de parámetros que maximice la Accuracy. Los 
+cruzada para hallar la combinación de parámetros que maximice el Accuracy. Los 
 hiperparámetros a optimizar en un modelo de Random Forest son: el número de variables 
 que se consideran en cada split del árbol aleatorio (`mtry`); y el número mínimo 
 de observaciones requeridas para que una hoja se bifurque (`min_n`). 
@@ -158,7 +177,7 @@ Vamos a calcular el Accuracy para una grilla de 160 filas, con $1 \leq$`mtry`$\l
 $5 \leq$`min_n`$\leq 20$. Al igual que en KNN, utilizaremos los datos estandarizados
 (aunque en este caso no debería afectar a los resultados).
 
-```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:RF}Accuracy en función de mtry y minn ara Random Forest."}
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:RF}Accuracy en función de mtry y minn para Random Forest."}
 Ks <- 1:20
 metricas_rf <- tibble(mtry = numeric(),
                    min_n = numeric(),
@@ -201,9 +220,44 @@ metricas_rf %>%
              y = Accuracy,
              color = as.factor(mtry))) +
   geom_point(size = 2) +
-  labs(title = "Accuracy en función de mtry y min_n") +
+  labs(title = "Random forest") +
   geom_line(linewidth = 2, alpha = 0.5) +
   theme(legend.position = "bottom") 
 ```
 
-Como puede verse en la figura \ref{fig:RF}, la máxima accuracy vale `r round(max(metricas_rf$Accuracy), digits = 3)` para m_try igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y min_n igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)`.
+Como puede verse en la figura \ref{fig:RF}, el máximo valor de accuracy vale `r round(max(metricas_rf$Accuracy), digits = 3)` para m_try igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y min_n igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)`.
+
+### Regresión logística
+
+El último enfoque que vamos a considerar es el de regresión logística para modelos multinomiales. Ajustaremos una familia de modelos con regularización Lasso utilizando el paquete glmnet. 
+
+Para esto, armamos una grilla de valores de $\lambda$ tomando 100 valores entre $10^{-3}$ y $10^0$. Para cada valor de $\lambda$, evaluamos el Accuracy realizando validación cruzada de la misma forma que en los otros métodos.
+
+```{r, warning=FALSE}
+lambdas<-10 ^ seq(0, -3, length = 100)
+metricas<-rep(NA,length(lambdas))
+for (l in 1:length(lambdas)){
+  acc <- rep(0,10)
+  for (j in 1:v_cv) { # Cross-validation
+    # Los folds
+    fold  <- folds_sc$splits[[j]]
+    train <- analysis(fold)
+    test  <- assessment(fold)
+    fit = glmnet(as.matrix(train[,-14]),as.matrix(train[,14]) , family = "multinomial", 
+                 type.multinomial = "grouped")
+    pred<-predict(fit, newx=as.matrix(test[,-14]), s=lambdas[l], type = 'class')
+    acc[j] <- mean(pred == test %>% pull(cultivo))
+  }
+  metricas[l]<-mean(acc)
+}
+```
+
+```{r, warning=FALSE, fig.height = 3, fig.width = 5, fig.align="center", fig.cap = "\\label{fig:glm}Accuracy en función del valor de lambda."}
+plot(lambdas,metricas,xlab="Lambda", ylab="Accuracy", type="b")
+
+```
+
+En la figura xx observamos los resultados del Accuracy en función de $\lambda$ y vemos que el máximo se alcanza en $\lambda$ igual a `r round(lambdas[which.max(metricas)], digits = 2)` con un valor de `r round(max(metricas), digits = 2)`.
+
+## Evaluación del modelo elegido
+
