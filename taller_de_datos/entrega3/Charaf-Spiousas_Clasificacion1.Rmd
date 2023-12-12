@@ -14,7 +14,7 @@ editor_options:
 knitr::opts_chunk$set(echo = FALSE,
                       fig.pos = "H", 
                       out.extra = "")
-pacman::p_load(tidyverse, here, FNN, pls, patchwork, broom, knitr, GGally, janitor, rsample, randomForest,glmnet)
+pacman::p_load(tidyverse, here, FNN, pls, patchwork, broom, knitr, GGally, janitor, rsample, randomForest,glmnet, neuralnet)
 theme_set(theme_bw(base_size = 10))
 
 doParallel::registerDoParallel()
@@ -266,6 +266,88 @@ metricas_glm %>%
 ```
 
 En la figura \ref{fig:glm} observamos los resultados del Accuracy en función de $\lambda$ y vemos que el máximo se alcanza en $\lambda$ igual a `r round(lambdas[which.max(metricas_glm$Accuracy)], digits = 3)` con un valor de `r round(max(metricas_glm$Accuracy), digits = 3)`.
+
+### Redes neuronales
+
+Finalmente vamos a considerar un modelo de redes neuronales para preecir el cultivo. Por simplicidad el modelo contiene una sola capa intermedia y por medio de validación cruzada vamos a determinar cuántas neuronas tiene esta capa.
+
+```{r}
+Ns <- 1:10
+metricas_dnn <- tibble(n = numeric(),
+                       Accuracy = numeric())
+
+for (n in Ns) { # Loop en n
+  acc <- c()
+  for (j in 1:v_cv) { # Cross-validation
+    
+    # Los folds
+    fold  <- folds$splits[[j]]
+    train <- analysis(fold) %>% mutate(cultivo = as.factor(cultivo))
+    test  <- assessment(fold) %>% mutate(cultivo = as.factor(cultivo))
+    
+    X_train <- train %>% select(-cultivo)
+    Y_train <- train %>% select(cultivo)
+    
+    X_test <- test %>% select(-cultivo)
+    Y_test <- test %>% select(cultivo)
+    
+    X_train_scaled <- scale(X_train)
+    test_scaled <- as_tibble(scale(X_test, 
+                                   center = attr(X_train_scaled, "scaled:center"), 
+                                   scale = attr(X_train_scaled, "scaled:scale"))) %>%
+      bind_cols(Y_test)
+    train_scaled <- as_tibble(X_train_scaled) %>%
+      bind_cols(Y_train)
+    
+    model = neuralnet(
+      cultivo ~ .,
+      data = train_scaled,
+      hidden = c(Ns[n]),
+      linear.output = FALSE
+    )
+    
+    pred <- predict(model, test_scaled)
+    labels <- c("1", "2", "3")
+    check <- as.numeric(test_scaled$cultivo) == max.col(pred)
+    
+    acc <- append(acc, (sum(check)/nrow(test_scaled)))
+  }
+  
+  metricas_dnn <- metricas_dnn %>% bind_rows(tibble(n = Ns[n], Accuracy = mean(acc)))
+}
+```
+
+```{r, warning=FALSE, fig.height = 3, fig.width = 5, fig.align="center", fig.cap = "\\label{fig:DNN}Accuracy en función de la cantidad de neuronas en la capa intermedia."}
+metricas_dnn %>%
+  ggplot(aes(x = n,
+             y = Accuracy)) +
+  geom_point(size = 2) +
+  scale_color_brewer(palette = "Dark2", name = "Semilla") +
+  labs(title = "Redes neuronales", x = "Cantidad de neuronas en la capa intermedia") +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  theme_bw()
+```
+
+En la figura \ref{fig:DNN} observamos los resultados del Accuracy en función de la cantidad de neuronas de la capa intermedia y vemos que el máximo se alcanza en`r metricas_dnn$n[which.max(metricas_dnn$Accuracy)]` con un valor de `r round(max(metricas_dnn$Accuracy), digits = 3)`.
+
+En la figura \ref{fig:DNN_esquema} podemos ver una representación del modelo que elegimos mediante validación cruzada.
+
+```{r, warning=FALSE, fig.height = 6, fig.width = 10, fig.align="center", fig.cap = "\\label{fig:DNN_esquema}Representación esquemática de la red neuronal ajustada a partir de la selección de parámetros con validación cruzada."}
+X_train <- training %>% select(-cultivo)
+Y_train <- training %>% select(cultivo)
+    
+train_scaled <- scale(X_train) %>%
+      bind_cols(Y_train)
+    
+model = neuralnet(
+      cultivo ~ .,
+      data = train_scaled,
+      hidden = c(metricas_dnn$n[which.max(metricas_dnn$Accuracy)]),
+      linear.output = FALSE
+    )
+
+plot(model, rep = "best")
+```
 
 ## Evaluación del modelo elegido
 
