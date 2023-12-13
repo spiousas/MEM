@@ -42,7 +42,7 @@ vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
   clean_names()
 ```
 
-Los datos contienen 178 observaciones donde la primera variable indica el tipo de cultivo (1, 2 o 3) y las siguientes 13 variables corresponden a mediciones de: Alcohol, Malicacid, Ash, Alcalinity_of_ash, Magnesium, Total_phenols, Flavanoids, Nonflavanoid_phenols, Proanthocyanins, Color_intensity, Hue, 0D280_0D315_of_diluted_wines y Proline.
+Los datos contienen 178 observaciones donde la primera variable indica el tipo de cultivo (1, 2 o 3) y las siguientes 13 variables corresponden a mediciones de: Alcohol, *Malicacid*, *Ash*, *Alcalinity_of_ash*, *Magnesium*, *Total_phenols*, *Flavanoids*, *Nonflavanoid_phenols*, *Proanthocyanins*, *Color_intensity*, *Hue*, *0D280_0D315_of_diluted_wines* y *Proline*.
 
 Lo primero que vamos a ver es cómo se distribuyen las clases, es decir, cuántos datos pertenecientes a cada cultivo tenemos (figura \ref{fig:clases}).
 
@@ -57,11 +57,33 @@ vinos %>%
 
 Podemos ver que no contamos con grandes desbalances de clase. Se tienen 59 observaciones correspondientes al cultivo 1, 71 del cultivo 2 y 48 del cultivo 3.
 
-NOTA: Acá poner un poco más de exploración de la relación de los cultivos con las variables.
+Para seguir, en la figura \ref{fig:boxplots} se observan los boxplots y violin plots de las distintas variables según la clase de cultivo.
 
-## Comparación de métodos de clasificación
+```{r, warning = FALSE, fig.align="center", fig.height = 7, fig.width = 8, fig.cap = "\\label{fig:boxplots}Boxplots y violin plots de las 13 variables según el tipo de cultivo."}
+vinos %>% 
+  mutate(cultivo = as.factor(cultivo)) %>%
+  pivot_longer(cols = -cultivo,
+                       names_to = "Variable",
+                       values_to = "Valor") %>%
+  ggplot(aes(x = cultivo,
+             y = Valor,
+             color = cultivo,
+             fill = cultivo)) +
+  geom_violin(alpha = 0.2) +
+  geom_boxplot(width = .2, alpha = .2) +
+  labs(x = NULL, y = NULL) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") + 
+  facet_wrap(~Variable, scales="free_y") +
+  theme(legend.position = "top",
+        strip.background = element_rect(fill="white", colour = NA))
+```
 
-El objetivo del trabajo consiste en explorar diferentes métodos de clasificación para determinar el tipo de cultivo y comparar sus desempeños. Para eso, vamos a considerar los enfoques de K vecinos cercanos, Random Forest y Regresión logística para modelos multinomiales.
+Allí podemos ver que hay algunas variables que presentan una clara separación por tipo de cultivo y pueden ser relevantes en la clasificación, tales como *alcohol*, *total_phenois*, *flavanoids* y *color_intensity*. A modo de ejemplo, en el caso de la variable *alcohol* vemos que las mediciones son superiores en el cultivo 1, siguiendo el cultivo 3 y luego el 2. Por otra parte, tenemos variables como *ash* y *magnesium* que parecen diferenciarse menos a través de los grupos. Y por último, se observan casos de mediciones como *hue* y *proline* que se distinguen en uno de los cultivos en comparación con los otros dos. Por ejemplo, vemos que las mediciones de *hue* son menores en el cultivo 3, mientras que los otros dos cultivos son más díficiles de diferenciar entre sí a simple vista.
+
+## Elección de los modelos de clasificación
+
+El objetivo del trabajo consiste en explorar diferentes métodos de clasificación para determinar el tipo de cultivo y comparar sus desempeños. Para esto, vamos a considerar los enfoques de K vecinos cercanos, Random Forest, Regresión logística (para modelos multinomiales) y Redes neuronales.
 
 Para analizar los distintos métodos de clasificación, separamos la
 muestra en un set de entrenamiento (dos tercios de los datos) y un set
@@ -84,20 +106,19 @@ folds<- vfold_cv(training,
                  strata = cultivo)
 ```
 
-La métrica que vamos a utilizar para evaluar el modelo es el *accuracy* ya que los datos
-no presentan desbalances de clases marcados ni creemos que haya alguno de los errores 
-(tipo I y tipo II) que debamos favorecer por sobre el otro.
+La métrica que vamos a utilizar para evaluar los distintos modelos es el *accuracy* ya que los datos
+no presentan desbalances de clases marcados ni creemos que haya alguno de los errores que debamos favorecer por sobre el otro.
 
 ### K vecinos cercanos
 
 El primer modelo que vamos a ajustar es el de K vecinos cercanos. Para
-esto consideramos una grilla de valores de $k$ (cantidad de vecinos) entre
+esto consideraremos una grilla de valores de $k$ (cantidad de vecinos) entre
 1 y 20. Para evaluar cuál es la cantidad de vecinos más conveniente
 realizamos validación cruzada separando la muestra de entrenamiento en
 10 folds estratificando según la clase. Estos *folds* son generados
 utilizando la función `vfold_cv` del paquete *{rsample}*.
 
-Para utilizar el modelo de KNN primero vamos a escalar los datos.
+Como el método de KNN puede verse afectado por variaciones de escala, en cada paso de validación cruzada estandarizamos los datos del subconjunto que se utiliza como entrenamiento y, con esa misma transformación, escalamos los datos del subconjunto sobre el cual se predice.
 
 ```{r}
 Ks <- 1:20
@@ -155,14 +176,13 @@ Como puede verse en la figura \ref{fig:KNN}, el máximo de Accuracy para los mod
 
 La siguiente alternativa que vamos a considerar es un modelo basado en ensambles
 de árboles conocido como Random Forest. En este caso también utilizaremos validación 
-cruzada para hallar la combinación de parámetros que maximice el Accuracy. Los 
-hiperparámetros a optimizar en un modelo de Random Forest son: el número de variables 
+cruzada para hallar la combinación de parámetros que maximice el Accuracy, considerando los mismos folds que en K vecinos cercanos pero sin estandarizar los datos. Los 
+hiperparámetros que vamos a optimizar en el modelo de Random Forest son: el número de variables 
 que se consideran en cada split del árbol aleatorio (`mtry`); y el número mínimo 
 de observaciones requeridas para que una hoja se bifurque (`min_n`). 
 
 Vamos a calcular el Accuracy para una grilla de 160 filas, con $1 \leq$`mtry`$\leq 10$ y
-$5 \leq$`min_n`$\leq 20$. Al igual que en KNN, utilizaremos los datos estandarizados
-(aunque en este caso no debería afectar a los resultados).
+$5 \leq$`min_n`$\leq 20$.
 
 ```{r}
 Ks <- 1:20
@@ -174,6 +194,7 @@ rf_grid <- expand_grid(
   mtry = seq(1,10),
   min_n = seq(5,20))
 
+set.seed(123)
 for (i in 1:nrow(rf_grid)) { # Loop en k
   acc <- c()
   for (j in 1:v_cv) { # Cross-validation
@@ -218,9 +239,9 @@ Como puede verse en la figura \ref{fig:RF}, el máximo valor de accuracy vale `r
 
 ### Regresión logística
 
-El último enfoque que vamos a considerar es el de regresión logística para modelos multinomiales. Ajustaremos una familia de modelos con regularización Lasso utilizando el paquete glmnet. 
+Para continuar, otro enfoque que exploraremos es el de regresión logística para modelos multinomiales. Vamos a ajustar una familia de modelos con regularización Lasso utilizando el paquete glmnet. 
 
-Para esto, armamos una grilla de valores de $\lambda$ tomando 100 valores entre $10^{-3}$ y $10^0$. Para cada valor de $\lambda$, evaluamos el Accuracy realizando validación cruzada de la misma forma que en los otros métodos.
+Para esto, armamos una grilla de valores de $\lambda$ tomando 100 valores entre $10^{-3}$ y $10^0$. Para cada valor de $\lambda$, evaluamos el Accuracy realizando validación cruzada de la misma forma que en los métodos previos.
 
 ```{r, warning=FALSE}
 lambdas <- 10 ^ seq(0, -3, length = 50)
@@ -269,13 +290,16 @@ En la figura \ref{fig:glm} observamos los resultados del Accuracy en función de
 
 ### Redes neuronales
 
-Finalmente vamos a considerar un modelo de redes neuronales para preecir el cultivo. Por simplicidad el modelo contiene una sola capa intermedia y por medio de validación cruzada vamos a determinar cuántas neuronas tiene esta capa.
+Finalmente, vamos a considerar un modelo de redes neuronales para predecir el cultivo. Por simplicidad el modelo contiene una sola capa intermedia y por medio de validación cruzada vamos a determinar cuántas neuronas conviene incluir en esta capa. Para esto, consideramos una grilla de valores entre 1 y 10 para la cantidad de neuronas y buscamos el número que maximice el Accuracy.
+
+En este caso, al igual que en K vecinos cercanos, estandarizamos los datos en cada paso de validación cruzada ya que obtuvimos mejores resultados de esta manera.
 
 ```{r}
 Ns <- 1:10
 metricas_dnn <- tibble(n = numeric(),
                        Accuracy = numeric())
 
+set.seed(123)
 for (n in Ns) { # Loop en n
   acc <- c()
   for (j in 1:v_cv) { # Cross-validation
@@ -328,17 +352,19 @@ metricas_dnn %>%
   theme_bw()
 ```
 
-En la figura \ref{fig:DNN} observamos los resultados del Accuracy en función de la cantidad de neuronas de la capa intermedia y vemos que el máximo se alcanza en`r metricas_dnn$n[which.max(metricas_dnn$Accuracy)]` con un valor de `r round(max(metricas_dnn$Accuracy), digits = 3)`.
+En la figura \ref{fig:DNN} observamos los resultados del Accuracy en función de la cantidad de neuronas de la capa intermedia y vemos que el máximo se alcanza utilizando `r metricas_dnn$n[which.max(metricas_dnn$Accuracy)]` neuronas con un valor de `r round(max(metricas_dnn$Accuracy), digits = 3)`.
 
-En la figura \ref{fig:DNN_esquema} podemos ver una representación del modelo que elegimos mediante validación cruzada.
+Además, en la figura \ref{fig:DNN_esquema} podemos ver una representación del modelo que elegimos mediante validación cruzada, ajustado con todos los datos del set de entrenamiento.
 
 ```{r, warning=FALSE, fig.height = 6, fig.width = 10, fig.align="center", fig.cap = "\\label{fig:DNN_esquema}Representación esquemática de la red neuronal ajustada a partir de la selección de parámetros con validación cruzada."}
-X_train <- training %>% select(-cultivo)
-Y_train <- training %>% select(cultivo)
+train<- training %>% mutate(cultivo = as.factor(cultivo))
+X_train <- train %>% select(-cultivo)
+Y_train <- train %>% select(cultivo)
     
 train_scaled <- scale(X_train) %>%
       bind_cols(Y_train)
-    
+
+set.seed(12)    
 model = neuralnet(
       cultivo ~ .,
       data = train_scaled,
@@ -349,5 +375,157 @@ model = neuralnet(
 plot(model, rep = "best")
 ```
 
-## Evaluación del modelo elegido
+## Comparación de los métodos en un conjunto de testeo
 
+A partir del análisis realizado, vemos que los mejores modelos de cada familia estudiada tienen un comportamiento muy similar basándonos en el Accuracy obtenido por validación cruzada.
+
+A continuación vamos a comparar el desempeño de los modelos seleccionados para cada método ajustándolos con todo el set de entrenamiento y evaluándolos en el conjunto que reservamos para testeo. Calculamos el Accuracy en cada caso y los resultados obtenidos son los siguientes:
+
+
+```{r, warning=FALSE}
+X_training <- training %>% select(-cultivo)
+Y_training <- training %>% select(cultivo)
+    
+X_testing <- testing %>% select(-cultivo)
+Y_testing <- testing %>% select(cultivo)
+    
+X_training_scaled <- scale(X_training)
+X_testing_scaled  <- as_tibble(scale(X_testing, 
+                                  center = attr(X_training_scaled, "scaled:center"), 
+                                  scale = attr(X_training_scaled, "scaled:scale")))
+X_training_scaled <- as_tibble(X_training_scaled)
+    
+   
+#vecinos cercanos
+pred_knn<- knn(train = X_training_scaled, 
+                test = X_testing_scaled, 
+                cl = Y_training %>% pull(cultivo), 
+                k = which.max(metricas_knn$Accuracy), 
+                prob = TRUE)
+
+acc_knn<-mean(pred_knn == Y_testing %>% pull(cultivo))
+
+```
+
+- `r round(acc_knn, digits = 3)` para el modelo de KNN utilizando `r which.max(metricas_knn$Accuracy)` vecinos cercanos.
+
+```{r, warning=FALSE}
+#random forest
+set.seed(12)
+ajuste_rf <- randomForest(as_factor(cultivo) ~ ., 
+                       data     = training, 
+                       mtry     = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry),
+                       maxnodes = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n),
+                       ntree    = 500)
+
+pred_rf <- predict(ajuste_rf, newdata = testing)
+acc_rf<-mean(pred_rf == testing %>% pull(cultivo))
+
+```
+
+
+- `r round(acc_rf, digits = 3)` en el modelo seleccionado para Random Forest con m_try igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y min_n igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)`.
+
+```{r, warning=FALSE}
+#glm
+ajuste_glm <- glmnet(x = as.matrix(training %>% select(-cultivo)), 
+                  y = as.matrix(training %>% select(cultivo)), 
+                  family = "multinomial", 
+                  type.multinomial = "grouped",
+                  lambda = lambdas[which.max(metricas_glm$Accuracy)])
+
+pred_glm <- predict(ajuste_glm, 
+                newx = as.matrix(testing %>% select(-cultivo)), 
+                s = lambdas[which.max(metricas_glm$Accuracy)], 
+                    type = 'class')
+acc_glm <- mean(pred_glm == testing %>% pull(cultivo))
+```
+
+
+- `r round(acc_glm, digits = 3)` en el caso del modelo de regresión logística con regularización Lasso con un $\lambda$ igual a `r round(lambdas[which.max(metricas_glm$Accuracy)], digits = 3)`.
+
+```{r, warning=FALSE}
+#red neuronal
+train<- training %>% mutate(cultivo = as.factor(cultivo))
+test<-testing %>% mutate(cultivo = as.factor(cultivo))
+
+X_train <- train %>% select(-cultivo)
+Y_train <- train %>% select(cultivo)
+
+X_test <- test %>% select(-cultivo)
+Y_test <- test %>% select(cultivo)
+
+X_train_scaled <- scale(X_train)
+test_scaled <- as_tibble(scale(X_test, 
+                               center = attr(X_train_scaled, "scaled:center"), 
+                               scale = attr(X_train_scaled, "scaled:scale"))) %>%
+  bind_cols(Y_test)
+train_scaled <- as_tibble(X_train_scaled) %>%
+  bind_cols(Y_train)
+
+set.seed(12)
+model = neuralnet(
+  cultivo ~ .,
+  data = train_scaled,
+  hidden = c(metricas_dnn$n[which.max(metricas_dnn$Accuracy)]),
+  linear.output = FALSE
+)
+
+pred <- predict(model, test_scaled)
+labels <- c("1", "2", "3")
+check <- as.numeric(test_scaled$cultivo) == max.col(pred)
+
+acc_nn <- (sum(check)/nrow(test_scaled))
+
+```
+
+
+- `r round(acc_nn, digits = 3)` para la red neuronal con una capa que contiene `r metricas_dnn$n[which.max(metricas_dnn$Accuracy)]` neuronas.
+
+Además, para tener una mayor comprensión de cómo clasifican los diferentes métodos realizamos tablas donde se pueden ver las clases predichas vs. las clases verdaderas.
+
+```{r, warning=FALSE}
+tabla_knn <-table(Y_testing %>% pull(cultivo),pred_knn)
+tabla_rf <-table(Y_testing %>% pull(cultivo),pred_rf)
+tabla_glm <-table(Y_testing %>% pull(cultivo),pred_glm)
+tabla_nn <- table(as.numeric(test_scaled$cultivo),max.col(pred))
+```
+
+```{=tex}
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{| c | c | c  c  c || c | c | c  c  c |}
+\hline
+\multicolumn{5}{| c|| }{ \textbf{KNN}} & \multicolumn{5}{| c| }{\textbf{Random Forest}}\\ \hline
+& & \multicolumn{3}{ c|| }{Predichos}& & & \multicolumn{3}{ c| }{Predichos} \\ \hline
+& & 1 & 2 & 3 & & & 1 & 2 & 3\\ \hline
+Verdaderos & 1 & `r tabla_knn[1,1]` & `r tabla_knn[1,2]` & `r tabla_knn[1,3]` &
+Verdaderos & 1 & `r tabla_rf[1,1]` & `r tabla_rf[1,2]` & `r tabla_rf[1,3]`\\
+& 2 & `r tabla_knn[2,1]` & `r tabla_knn[2,2]` & `r tabla_knn[2,3]` &
+& 2 & `r tabla_rf[2,1]` & `r tabla_rf[2,2]` & `r tabla_rf[2,3]` \\
+& 3 & `r tabla_knn[3,1]` & `r tabla_knn[3,2]` & `r tabla_knn[3,3]` &
+& 3 & `r tabla_rf[3,1]` & `r tabla_rf[3,2]` & `r tabla_rf[3,3]`\\
+ \hline
+\end{tabular}
+
+\vspace{5mm}
+
+\begin{tabular}{| c | c | c  c  c || c | c | c  c  c |}
+\hline
+\multicolumn{5}{| c|| }{ \textbf{Regresión logística}} & \multicolumn{5}{| c| }{\textbf{Red neuronal}}\\ \hline
+& & \multicolumn{3}{ c|| }{Predichos}& & & \multicolumn{3}{ c| }{Predichos} \\ \hline
+& & 1 & 2 & 3 & & & 1 & 2 & 3\\ \hline
+Verdaderos & 1 & `r tabla_glm[1,1]` & `r tabla_glm[1,2]` & `r tabla_glm[1,3]` &
+Verdaderos & 1 & `r tabla_nn[1,1]` & `r tabla_nn[1,2]` & `r tabla_nn[1,3]`\\
+& 2 & `r tabla_glm[2,1]` & `r tabla_glm[2,2]` & `r tabla_glm[2,3]` &
+& 2 & `r tabla_nn[2,1]` & `r tabla_nn[2,2]` & `r tabla_nn[2,3]` \\
+& 3 & `r tabla_glm[3,1]` & `r tabla_glm[3,2]` & `r tabla_glm[3,3]` &
+& 3 & `r tabla_nn[3,1]` & `r tabla_nn[3,2]` & `r tabla_nn[3,3]`\\
+ \hline
+\end{tabular}
+\caption{Tablas de clases predichas vs. clases verdaderas.}
+\end{center}
+
+\end{table}
+
+```
