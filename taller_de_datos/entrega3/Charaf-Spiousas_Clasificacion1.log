@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.12.10)  13 DEC 2023 19:17
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2023.12.10)  13 DEC 2023 21:18
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -416,7 +416,7 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <7> on input line 89.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <5> on input line 89.
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-2-1.pdf, id=42, 216.81pt x 216.81pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-2-1.pdf, id=46, 216.81pt x 216.81pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-2-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-2-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-2-1.pdf  used on input line 111.
@@ -424,7 +424,7 @@ Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnam
 [1
 
 {/Users/ignacio/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc} <./Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-2-1.pdf>]
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-3-1.pdf, id=63, 578.16pt x 505.89pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-3-1.pdf, id=67, 578.16pt x 505.89pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-3-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-3-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-3-1.pdf  used on input line 127.
@@ -434,30 +434,30 @@ LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 16
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-6-1.pdf, id=79, 361.35pt x 216.81pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-6-1.pdf, id=83, 361.35pt x 216.81pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-6-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-6-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-6-1.pdf  used on input line 187.
 (pdftex.def)             Requested size: 361.34912pt x 216.80946pt.
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-8-1.pdf, id=81, 433.62pt x 289.08pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-8-1.pdf, id=85, 433.62pt x 289.08pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-8-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-8-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-8-1.pdf  used on input line 216.
 (pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
 [3{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc} <./Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-6-1.pdf>]
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-10-1.pdf, id=101, 361.35pt x 216.81pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-10-1.pdf, id=105, 361.35pt x 216.81pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-10-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-10-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-10-1.pdf  used on input line 240.
 (pdftex.def)             Requested size: 361.34912pt x 216.80946pt.
 [4{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc} <./Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-8-1.pdf>]
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-12-1.pdf, id=121, 361.35pt x 216.81pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-12-1.pdf, id=125, 361.35pt x 216.81pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-12-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-12-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-12-1.pdf  used on input line 267.
 (pdftex.def)             Requested size: 361.34912pt x 216.80946pt.
 [5 <./Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-10-1.pdf> <./Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-12-1.pdf>]
-<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-13-1.pdf, id=148, 722.7pt x 433.62pt>
+<Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-13-1.pdf, id=152, 722.7pt x 433.62pt>
 File: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-13-1.pdf Graphic file (type pdf)
 <use Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-13-1.pdf>
 Package pdftex.def Info: Charaf-Spiousas_Clasificacion1_files/figure-latex/unnamed-chunk-13-1.pdf  used on input line 284.
@@ -475,21 +475,21 @@ LaTeX2e <2023-11-01>
 L3 programming layer <2023-12-08>
  ***********
 Package rerunfilecheck Info: File `Charaf-Spiousas_Clasificacion1.out' has not changed.
-(rerunfilecheck)             Checksum: 6A476654949728E2EBE8EC23A3A6D5A8;1634.
+(rerunfilecheck)             Checksum: C68AA5DE984C810A9D4C803B04799E2E;1750.
  ) 
 Here is how much of TeX's memory you used:
- 10966 strings out of 476137
- 173472 string characters out of 5794224
+ 10970 strings out of 476137
+ 173522 string characters out of 5794224
  1939470 words of memory out of 5000000
- 32804 multiletter control sequences out of 15000+600000
+ 32806 multiletter control sequences out of 15000+600000
  609064 words of font info for 78 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
  63i,9n,67p,535b,463s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr7.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy7.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on Charaf-Spiousas_Clasificacion1.pdf (7 pages, 471683 bytes).
+Output written on Charaf-Spiousas_Clasificacion1.pdf (7 pages, 472349 bytes).
 PDF statistics:
- 232 PDF objects out of 1000 (max. 8388607)
- 183 compressed objects within 2 object streams
- 34 named destinations out of 1000 (max. 500000)
- 108 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 237 PDF objects out of 1000 (max. 8388607)
+ 188 compressed objects within 2 object streams
+ 36 named destinations out of 1000 (max. 500000)
+ 116 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -42,7 +42,7 @@ vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
   clean_names()
 ```
 
-Los datos contienen 178 observaciones donde la primera variable indica el tipo de cultivo (1, 2 o 3) y las siguientes 13 variables corresponden a mediciones de: Alcohol, *Malicacid*, *Ash*, *Alcalinity_of_ash*, *Magnesium*, *Total_phenols*, *Flavanoids*, *Nonflavanoid_phenols*, *Proanthocyanins*, *Color_intensity*, *Hue*, *0D280_0D315_of_diluted_wines* y *Proline*.
+Los datos contienen 178 observaciones donde la primera variable indica el tipo de cultivo (1, 2 o 3) y las siguientes 13 variables corresponden a mediciones de: *Alcohol*, *Malicacid*, *Ash*, *Alcalinity_of_ash*, *Magnesium*, *Total_phenols*, *Flavanoids*, *Nonflavanoid_phenols*, *Proanthocyanins*, *Color_intensity*, *Hue*, *0D280_0D315_of_diluted_wines* y *Proline*.
 
 Lo primero que vamos a ver es cómo se distribuyen las clases, es decir, cuántos datos pertenecientes a cada cultivo tenemos (figura \ref{fig:clases}).
 
@@ -532,4 +532,4 @@ Verdaderos & 1 & `r tabla_nn[1,1]` & `r tabla_nn[1,2]` & `r tabla_nn[1,3]`\\
 
 ## Conclusiones
 
-Como puede verse en la sección anterior, todos los modelos propuestos tienen una excelente performance clasificando el cultivo de una muestra de vino a partir de las 13 variables. Si tuviéramos que elegir un modelo candidato, elegiríamos Regrasión Logística Multinomial o Random Forest ya que resultan modelos más interpretables.
+Como puede verse en la sección anterior, todos los modelos propuestos tienen una excelente performance clasificando el cultivo de una muestra de vino a partir de las 13 variables. Si tuviéramos que elegir un modelo candidato, elegiríamos Regresión Logística Multinomial o Random Forest ya que resultan modelos más interpretables.
