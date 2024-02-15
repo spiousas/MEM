@@ -1,0 +1,733 @@
+---
+title: "Clasificación del varietal de una muestra de vino basado en medidas objetivas"
+subtitle: "Trabajo final de la Especialización en Estadística Matemática"
+author: "Ignacio Spiousas"
+date: "14 de febrero de 2024"
+output:
+  pdf_document:
+    extra_dependencies: ["float"]
+bibliography: references.bib
+csl: apa.csl
+fontsize: 11pt
+lang: es  
+editor_options: 
+  markdown: 
+    wrap: 72
+header-includes:
+    - \usepackage{setspace}
+---
+
+\onehalfspacing
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, 
+                      out.extra = "")
+pacman::p_load(tidyverse, here, FNN, pls, patchwork, broom, knitr, GGally, janitor, rsample, randomForest, glmnet, neuralnet, ggcorrplot, varImp)
+theme_set(theme_bw(base_size = 10))
+
+doParallel::registerDoParallel()
+```
+
+# Introducción
+
+La identificación del varietal de uvas con las cual se produce un vino es una tarea compleja y que muchas veces se basa en la pericia de un sommelier experimentado. Este tipo de tarea se basa usualmente en descriptores subjetivos como "suave", "robusto" o "astringente". Estos descriptores son a menudo poco confiables y hay evidencia de inconsistensias sistemáticas en estas caracterizaciones (@cao2014quantifying). Sin embargo, estas predicciones subjetivas no deben ser pasadas por alto ya que son una herramienta altamente instalada en la industria del vino y con relativo valor predictivo. Por ejemplo, en @oczkowski2016identifying se demostró que la influencia de estas opiniones personales expertas en la predicción de vinos de alta gama en Australia es similar a la influencia de mediciones objetivas como clima, año y productor del vino.
+
+Sin embargo, muchas de estas cualidades subjetivas pueden relacionarse con medidas objetivas obtenidas a través del análisis químico. De hecho, en la literatura podemos encontrar muchos ejemplos de aplicaciones de aprendizaje automático a partir de este tipo de métricas para la clasificación de vinos. Por ejemplo, Beltran y colegas (@beltran2008chilean) emplearon algoritmos de reducción de la dimensión (PCA^[Principal component analysis.]) en combinación con técnicas de clasificación (LDA, SVM y RBFNNs^[Linear Discriminant Analysis, Support Vector Machine y Radial Basis Function Neural Networks.]) para clasificar el varietal de vinos chilenos (Cabernet Sauvignon, Merlot o Carmenere) a partir de los perfiles de aroma obtenidos por cromatografía. Otro ejemplo, muy relevante para el presente trabajo, es la propuesta de Barth y colegas (@barth2021classification) en la que utilizan el mismo conjunto de datos que utilizaremos a continuación y, utilizando PCA y un algoritmo de clasificación (KNN^[K-nearest neighbor.]), clasifican el varietal de una muestra a partir de 13 métricas objetivas obtenidas a parti del análisis químico. En particular, los autores de este último artículo ponderan la interpretabilidad de su propuesta, que reduce las dimensiones a sólo dos, una relacionada con el perfil aromático y la otra relacionada con el alcohol y los niveles de fermentación. El resultado de este procedimiento nos permite comprender cómo se relacionan las características sensoriales de cada vino con su varietal, haciendo posible crear o verifican hipótesis sobre las condiciones geográfica, geológicas y climáticas de cada cultivo en el perfil aromático de cada vino.
+
+En el presente trabajo vamos a evaluar estrategias de clasificación automática para determinar el varietal de una muestra de vino a partir de mediciones objetivas. En particular, vamos a estudiar el mismo conjunto de datos que Barth y colegas (@barth2021classification), un conjunto de datos que contiene los resultados de análisis químicos de vinos provenientes de la misma región de Italia pero de tres varietales diferentes[^2].
+
+[^2]: Los datos utilizados pueden consultarse en el siguiente
+    [link](http://archive.ics.uci.edu/ml/datasets/Wine). Más información
+    en @aeberhard1994comparative.
+
+# Métodos y resultados
+
+La presente sección comienza con una descripción cualitativa de los datos y un análisis exploratorio de los mismos. Luego, vamos a detallar los métodos evaluados como posibles candidatos para construir un algoritmo que nos clasifique el varietal de cada muestra a partir de los resultados del análisis químico de forma confiable. Las cuatro alternativas de modelado propuestas son: K vecinos cercanos, Random Forest, Regresión logística y Redes neuronales. Los detalles de cada uno de estos modelos así como de su implementación se darán en la subsección correspondiente.
+
+Todos los computos de estos modelos fueron realizados utilizando código R (@R) y diversos paquetes específicos que serán mencionados en cada uno de los métodos^[Todas las manipulaciones de los datos fueron realizadas utilizando {dplyr} (@dplyr) y {tidyr} (@tidyr) y todas las visualizaciones utilizando {ggplot2} (@ggplot2)].
+
+## Análisis exploratorio de datos
+
+```{r, warning=FALSE}
+vinos <- read_csv(here("taller_de_datos/entrega3/data/wine.data"),
+                  col_names = c("Cultivar", "Alcohol", "Ácido málico", "Nivel de ceniza", "Alcalinidad de la ceniza",
+                                "Niveles de Magnesio", "Fenoles totales", "Fenoles flavonoides", "Fenoles no flavonoides",
+                                "Proantocianidinas", "Intensidad del color", "Matiz", "OD280/OD315",
+                                "Proline"),
+                  col_types = cols()) %>%
+  mutate(Cultivar = as.factor(Cultivar)) %>% 
+  mutate(Varietal = fct_recode(as.factor(Cultivar), Barolo = "1", Grignolino = '2', Barbera = "3")) %>%
+  select(-Cultivar)
+```
+
+El conjunto de datos con el trabajaremos consiste en mediciones de un análisis químico de 178 vinos junto con el varietal al que pertenecen. El análisis químico está representado en 13 variables numéricas: **Alcohol**, **Ácido málico**, **Nivel de ceniza**, **Alcalinidad de la ceniza**, **Niveles de Magnesio**, **Fenoles totales**, **Fenoles flavonoides**, **Fenoles no flavonoides**, **Proantocianidinas**, **Intensidad del color**, **Matiz**, **OD280/OD315**, y **Proline**. A su vez, estas variables pueden agruparse en cuatro categorías: Alcohol/fermentación, Sabor, Contenido de minerales y Apariencia. En el cuadro 0 puede verse una descripción de cada una de las variables medidas y la categoría a la que pertenecen. El varietal en los datos originales es una variable númerica que puede tomar valores de 1 a 3, pero basado en lo propuesto en @barth2021classification, podemos inferir que los números correponden con los varietales *Barolo*, *Grignolino* y *Barbera*, respectivamente.
+
+```{=tex}
+\renewcommand{\arraystretch}{1.5}
+\begin{table}[]
+\begin{tabular}{lcc}
+\multicolumn{3}{l}{Cuadro 0: Categorías y descripción de las variables medidas. Adaptada de Barth et al. (2021).} \\ \hline
+\textit{Categoria}     & \textit{Variable}      & \textit{Descripción} \\ \hline
+Alcohol/fermentación   & Alcohol                & Porcentaje de alcohol \\
+                       & Proline                & Aminoácidos que afectan el crecimiento de las levaduras \\ \hline
+Sabor                  & Fenoles totales        & Compuestos químicos que afectan el gusto \\
+                       & Fenoles flavonoides    & \\
+                       & Fenoles no flavonoides & \\
+                       & Ácido málico           & Contribuye a la acidez \\
+                       & Proantocianidinas      & Afectan la astringencia y la "sequedad" \\ \hline
+Contenido de minerales & Nivel de ceniza        & Cantidad de minerales inorgánicos \\
+                       & Alcalinidad de ceniza  & pH de la ceniza \\
+                       & Nivel de magnesio      & \\ \hline
+Apariencia             & Matiz                  & Color general \\
+                       & Intensidad del color   & Claridad u oscuridad del color \\
+                       & OD280/OD315            & Contribuye a la opacidad \\ \hline
+\end{tabular}
+\end{table}
+```
+
+Vamos a comenzar el análisis exploratorio de datos observando cuán balanceada es la muestra repecto a los varietales. En la figura \ref{fig:clases} podemos ver esto representado en un gráfico de barras en el que se observa que, si bien el varietal *Barbera* está ligeramente subrepresentado, no existen grandes desbalances de clase en el conjunto de datos a evaluar. Se tienen 59 observaciones correspondientes al varietal *Barolo*, 71 del *Grignolino* y 48 del *Barbera*.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 3, fig.width = 3, fig.cap = "\\label{fig:clases}Cantidad de datos pertenecientes a cada clase (Varietal) en el dataset a utilizar. El color codifica el varietal."}
+vinos %>%
+  group_by(Varietal) %>%
+  summarise(count = n()) %>%
+  ggplot(aes(x = Varietal,
+             y = count,
+             color = Varietal,
+             fill = Varietal)) +
+  geom_hline(yintercept = 0) +
+  geom_col() +
+  geom_text(aes(label = count,
+                y = count - 3),
+            color = "white") +
+  labs(x = NULL,
+       y = "Cantidad de casos") +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") + 
+  theme(legend.position = "none",
+        strip.background = element_rect(fill="white", colour = NA))
+```
+
+Luego, observamos como se distribuye cada una de las variables medidas para cada uno de los varietales. Esto lo haremos combinando un boxplot, que nos permite ver ciertos parámetros representativos de la distribución de los datos, y un violin plot, que nos muestra una estimación no paramétrica de la densidad a partir de un *kernel* gaussiano. En la figura \ref{fig:boxplots} pueden verse ambas representaciones para cada variable descrita anteriormente con el varietal al que pertenecen codificado con color.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 7, fig.width = 8, fig.cap = "\\label{fig:boxplots}Boxplots y violin plots de las 13 variables según el tipo de cultivo. El color codifica el varietal."}
+vinos %>% 
+  pivot_longer(cols = -Varietal,
+                       names_to = "Variable",
+                       values_to = "Valor") %>%
+  ggplot(aes(x = Varietal,
+             y = Valor,
+             color = Varietal,
+             fill = Varietal)) +
+  geom_violin(alpha = 0.2) +
+  geom_boxplot(width = .2, alpha = .2) +
+  labs(x = NULL, y = NULL) +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") + 
+  facet_wrap(~Variable, scales="free_y") +
+  theme(legend.position = "top",
+        strip.background = element_rect(fill="white", colour = NA))
+```
+
+En la figura \ref{fig:boxplots} se observa que hay algunas variables que presentan una clara separación por tipo de varietal y pueden ser relevantes en la clasificación, tales como **Alcohol**, **Alcalinida de la ceniza**, **Fenoles totales**, **flavonoides** y **no flavonoides**. A modo de ejemplo, en el caso de la variable **Fenoles totales** vemos que las mediciones son superiores para el varietal *Barolo*, seguido por el *Grignolino* y, por último, el *Barbera*. Por otra parte, en **Matiz**, **Ácido málico, Intensidad de color** y **OD280/OD315**, el varietal *Barbera* pareciera separarse del resto, mientras que en **Proline** es el *Barolo* el que se separa de los otros dos. Por último, se observan casos de mediciones como **Nivel de Ceniza**, **Niveles de Magnesio** y **Proantocianidinas** en las que no se distinguen claramente los varietales.
+
+Otra cosa que puede verse en la figura \ref{fig:boxplots} es que cuando  **Fenoles flavonoides** bajan los **Fenoles no flavonoides**, lo que me generó la pregunta si la variable **Fenoles totales** es la suma de ambas magnitudes. Esto es relevante ya que, si fuera una variable la combinación lineal de otras dos, esto la transformaría en inútil para cualquier tarea de clasifiación. Para verificar esta hipótesis, grafiqué la variable **Fenoles totales** vs. la suma de los **flavonoides** y **no flavonoides**. En la figura \ref{fig:fenoles} podemos ver un *scatterplot* que represeenta la relación antes planteada, codificando con color el varietal al que pertenece cada medición. Puede verse también que, si bien hay una alta correlación entre ambas magnitudes, la variable **Fenoles totales** no es simplemente la suma de los **flavonoides** y los **no flavonoides**.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 4, fig.width = 4, fig.cap = "\\label{fig:fenoles}Fenoles totales vs. la suma de Fenoles flavonoides y no flavonoides. La línea negra representa una recta con ordenada al origen 0 y pendiente 1, que indicaría la igualdad entre ambas magnitudes. El color de los puntos codifica el varietal."}
+vinos %>%
+  clean_names() %>%
+  ggplot(aes(x = fenoles_totales,
+             y = fenoles_flavonoides + fenoles_no_flavonoides,
+             color = varietal)) +
+  geom_abline(intercept = 0, slope = 1) +
+  geom_point() +
+  labs(x = "Fenoles totales",
+       y = "Fenoles flavonoides + no flavonoides",
+       color = "Varietal") +
+  scale_color_brewer(palette = "Dark2") + 
+  scale_fill_brewer(palette = "Dark2") + 
+  theme(legend.position = "top",
+        strip.background = element_rect(fill="white", colour = NA))
+```
+
+Por último, vamos a indagar en la correrlación entre las medidas químicas. Para esto vamos a graficar la matriz de correlación ya que no estamos interesados en la información numérica exacta sino más bien en las estructuras esquemáticas de alta y baja correlación, ya sea positiva o negativa^[La figura fue realizada utilizando el paquete *{ggcorrplot}*(@ggcorrplot)]. En la figura \ref{fig:corrplot} puede verse que hay variables que están altamente correlacionadas positivamente, en especial el grupo de abajo a la izquierda que incluye a **Matiz**, **Proantocianidinas**, **OD280/OD315**, **Fenoles totales** y **Fenoles flavonoides**. Vale la pena notar que tres de estas cinco variables pertenecen a la categoría *Alcohol/fermentación*, mientras las restantes dos pertenecen a la categoría *Apariencia*. Sin embargo, no se observan agrupamientos generales con respecto a las categorías planteadas en la Tabla 1. Este puede tener que ver con que la definición de las categorías es conceptual y no necesariamente tiene porque haber una relación directa entre todas las variables que la componen.
+
+```{r, warning = FALSE, fig.align="center", fig.height = 5, fig.width = 5, fig.cap = "\\label{fig:corrplot}Matriz de correlación relacionando todas las mediciones químicas de las 178 muestas de vino."}
+corr <- cor(vinos %>% select(-Varietal))
+ggcorrplot(corr, hc.order = TRUE, outline.col = "white")
+```
+
+## Evaluación y selección de los métodos de clasificación
+
+Como se mencionó en la Introducción, el objetivo del presente trabajo es el de explorar diferentes métodos de clasificación para determinar el tipo de varietal de una dada muestra. Como candidatos vamos a considerar métodos basados en K vecinos cercanos, Random Forest, Regresión logística (para modelos multinomiales) y Redes neuronales. La selección de estos cuatro métodos surge de la idea de considerar un método no parámetrico, uno basado en árboles, uno paramétrico (GLM) y uno basado en redes neuronales. 
+
+Para evaluar los distintos métodos de clasificación, separamos la muestra en un conjunto de entrenamiento (dos tercios de los datos) y un conjunto de testeo (un tercio de los datos) de forma estratificada según el Varietal ^[Esto lo hice utilizando la función `initial_split` de *{rsample}* (@rsample)].
+
+```{r}
+# Dividimos el dataset y generamos los folds
+set.seed(1234)
+split <- initial_split(vinos, 
+                       strata = Varietal, 
+                       prop = 2/3)
+training <- training(split)
+testing <- testing(split)
+
+# Los folds de CV
+v_cv <- 10
+folds<- vfold_cv(training, 
+                 v = v_cv,
+                 strata = Varietal)
+```
+
+La métrica que vamos a utilizar para evaluar los distintos modelos es el
+*accuracy*^[Usaré la palabra en inglés ya que no hay una traducción específica al español.] ya que los datos no presentan desbalances de clases marcados ni creemos que haya alguno de los errores que debamos favorecer por sobre el otro. El *accuracy* se define como:
+
+$$
+accuracy = \frac{Número\;de\;predicciones\;correctas}{Número\;total\;de\;predicciones}.
+$$
+
+Para decidir cuál es el mejor método vamos a estimar el error utilizando el conjunto de datos de entrenamiento. Una forma sencilla de hacer esto sería dividir el conjunto de entrenamiento en dos subconjuntos (usualmente llamados de entrenamiento y de validación) y a partir de eso estimar la performance del modelo (en este caso calculando el *accuracy*). Sin embargo, para obtener una estimación menos sesgada, se presenta una alternativa conocida como validación cruzada (@james2013introduction). La idea detrás de esta propuesta es la de separar el conjunto de testeo en *n* subconjuntos (llamado *folds*) y luego utilizar *n-1* para entrenar el modelo y el fold restante para evaluar su performance, repitiendo este procedimiento *n* veces, una por cada *fold*. Luego, la estimación del *accuracy* resulta de calcular el promedio de cada uno de estas estimaciones (una por *fold*). En nuestro caso realizamos la Validación cruzada separando la muestra de entrenamiento en 10 *folds* estratificando según el varietal^[Estos *folds* son generados utilizando la función `vfold_cv` del paquete *{rsample}* (@rsample).]. La medida de performance, *accuracy* en este caso, será el promedio de la del las 10 estimaciones.
+
+### K vecinos cercanos
+
+El primer modelo que vamos a evaluar es el de K vecinos cercanos (KNN de acá en adelante). Este método consiste en la determinación de la clase de un nuevo dato a partir de la clase mayoritaria en sus K puntos más cercanos, o vecinos (@hastie2009elements). 
+
+El único parámetro a determinar en un modelo de KNN es la cantidad de vecinos cercanos a considerar en la predicción. Para seleccionar esté parámetro vamos a evaluar una grilla de  de valores de $K$ entre 1 y 30. Para evaluar cuál es la cantidad de vecinos más conveniente realizamos validación cruzada tal como se describió anteriormente.
+
+Como el método de KNN puede verse afectado por variaciones de escala, en cada paso de validación cruzada estandarizamos los datos del subconjunto que se utiliza como entrenamiento (9 *folds*) y, con esa misma transformación, escalamos los datos del subconjunto sobre el cual se predice (el *fold* restante).
+
+```{r}
+Ks <- 1:30
+metricas_knn <- tibble(K = numeric(),
+                   Accuracy = numeric())
+
+for (k in Ks) { # Loop en k
+  err <- c()
+  for (j in 1:v_cv) { # Cross-validation
+    
+    # Los folds
+    fold  <- folds$splits[[j]]
+    train <- analysis(fold)
+    test  <- assessment(fold)
+    
+    X_train <- train %>% select(-Varietal)
+    Y_train <- train %>% select(Varietal)
+    
+    X_test <- test %>% select(-Varietal)
+    Y_test <- test %>% select(Varietal)
+    
+    X_train_scaled <- scale(X_train)
+    X_test_scaled  <- as_tibble(scale(X_test, 
+                                      center = attr(X_train_scaled, "scaled:center"), 
+                                      scale = attr(X_train_scaled, "scaled:scale")))
+    X_train_scaled <- as_tibble(X_train_scaled)
+    
+    pred <- knn(train = X_train_scaled, 
+                test = X_test_scaled, 
+                cl = Y_train %>% pull(Varietal), 
+                k = k, 
+                prob = TRUE)
+    
+    err <- append(err, mean(pred == Y_test %>% pull(Varietal)))
+  }
+  
+  metricas_knn <- metricas_knn %>% bind_rows(tibble(K = k, Accuracy = mean(err)))
+}
+```
+
+Como puede verse en la figura \ref{fig:KNN}, el máximo *accuracy* para los modelos de KNN es de `r round(max(metricas_knn$Accuracy), digits = 4)` para `r which.max(metricas_knn$Accuracy)` vecinos.
+
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:KNN}Accuracy en función de la cantidad de vecinos cercanos para la validación cruzada del modelo de K vecinos cercanos. La línea punteada roja indica la cantidad de vecinos que maximiza el accuracy."}
+metricas_knn %>%
+  ggplot(aes(x = K,
+             y = Accuracy)) +
+  geom_point(size = 2) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_vline(xintercept = which.max(metricas_knn$Accuracy),
+             color = "red",
+             linetype = "dashed") +
+  ylim(c(0.9, 1)) +
+  geom_label(x = which.max(metricas_knn$Accuracy),
+            y = .92,
+            label = paste("Accuracy =", round(max(metricas_knn$Accuracy), digits = 4),
+                          "\npara", which.max(metricas_knn$Accuracy), "vecinos")) +
+  labs(title = "K vecinos cercanos", x = "K (contidad de vecinos)") +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+### Random Forest
+
+La siguiente alternativa que vamos a considerar es un modelo denominado *Random Forest*. Este método se basa en árboles de decisión pero es considerado un método de ensamble, ya que el modelo ajustado realiza las predicciones basado en una combinación de las predicciones de varios árboles, de ahí que su nombre en español se podría traducir como bosque aleatorio (@hastie2009elements). 
+
+En este caso también utilizaremos validación cruzada para hallar la combinación de parámetros que maximice el *accuracy*, considerando los mismos *folds* que en KNN pero sin estandarizar los datos ya que para los métodos basados en árboles de decisión no resulta necesario (@james2013introduction). Los hiperparámetros que vamos a optimizar en el modelo de Random Forest son: el número de variables que se consideran en cada split del árbol aleatorio (`mtry`); y el número mínimo de observaciones requeridas para que una hoja se bifurque (`min_n`).
+
+Voy a calcular el accuracy para una grilla bidimensional que contenga valores de `mtry` entre 1 y 10 y valores de `min_n` entre 5 y 20. En total se trata de 160 combinaciones de hiperparámetros. El ajuste del modelo lo vamos a hacer utilizando la función `randomForest` del paquete *{randomForest}* (@randomForest).
+
+```{r}
+Ks <- 1:20
+metricas_rf <- tibble(mtry = numeric(),
+                      min_n = numeric(),
+                      Accuracy = numeric())
+
+rf_grid <- expand_grid(
+  mtry = seq(1,10),
+  min_n = seq(5,20))
+
+set.seed(123)
+for (i in 1:nrow(rf_grid)) { # Loop en k
+  acc <- c()
+  for (j in 1:v_cv) { # Cross-validation
+    
+    # Los folds
+    fold  <- folds$splits[[j]]
+    train <- analysis(fold) %>% clean_names()
+    test  <- assessment(fold) %>% clean_names()
+
+    # Entreno con training
+    rf <- randomForest(varietal ~ ., 
+                       data     = train, 
+                       mtry     = rf_grid[i,] %>% pull(mtry),
+                       maxnodes = rf_grid[i,] %>% pull(min_n),
+                       ntree    = 500)
+    
+    # Predigo con testing
+    yhat_rf <- predict(rf, 
+                       newdata = test)
+    
+    acc <- append(acc, mean(yhat_rf == test %>% pull(varietal)))
+  }
+  
+  metricas_rf <- metricas_rf %>% bind_rows(tibble(mtry = rf_grid[i,] %>% pull(mtry), 
+                                            min_n = rf_grid[i,] %>% pull(min_n), 
+                                            Accuracy = mean(acc)))
+}
+```
+
+```{r, warning=FALSE, fig.height = 6, fig.width = 8, fig.align="center", fig.cap = "\\label{fig:RF}Accuracy en escala de colores en función de las variables en cada split y el número máximo de casos en cada nodo terminal para la validación cruzada del modelo de Random Forest. El cuadrado negro indica la combinación de hiperparámetros que maximiza el accuracy."}
+metricas_rf %>%
+  ggplot(aes(x = min_n,
+             y = mtry,
+             fill = Accuracy)) +
+  geom_tile(size = 2) +
+  geom_text(aes(label = round(Accuracy,3), color = Accuracy), size = 3.5) +
+  geom_rect(size=1, fill=NA, colour="black", 
+            xmin=metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n) - 0.5, 
+            xmax=metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n) + 0.5, 
+            ymin=metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry) - 0.5, 
+            ymax=metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry) + 0.5) +
+  scale_fill_viridis_c() +
+  scale_color_viridis_c(direction = -1, guide = F) +
+  labs(title = "Random forest", 
+       x = "Mínimo número de casos en nodo terminal (min_n)",
+       y = "Variables en cada split (mtry)",
+       fill = "Accuracy") +
+  scale_x_continuous(breaks = unique(metricas_rf$min_n), expand=c(0,0)) +
+  scale_y_continuous(breaks = unique(metricas_rf$mtry), expand=c(0,0)) +
+  guides(fill = guide_colorbar(title.position = 'bottom', title.hjust = .5,
+                                barwidth = unit(20, 'lines'), barheight = unit(.5, 'lines'))) +
+  coord_cartesian(clip = 'off') +
+  theme_bw() +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+Como puede verse en la figura \ref{fig:RF}, el máximo valor de accuracy vale `r round(max(metricas_rf$Accuracy), digits = 3)` para `m_try` igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y `min_n` igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)`. Como el máximo accuracy se obtiene para varios valores de `m_try`, vamos a quedarnos con el menor para que se trate de árboles más simples (menos tiempo de cómputo y menos posibilidades de *overfitting*).
+
+A continuación, vamos a ajustar un modelo de Random Forest a todo el conjunto de datos de entrenamiento, con los valores de hiperparámetros que maximizan el *accuracy*, para hacer un estudio de la importancia de las variables en la clasificación. Esto no permitirá ver si las ideas extraídas del análisis exploratorio tienen algún reflejo en la importancia de cada variable en la decisión. 
+´
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:RF_vi}Importancia de las variables para el modelo de Random Forest ajustado a todo el conjunto de training con los hiperparámetros seleccionados en validación cruzada."}
+rf <- randomForest(varietal ~ ., 
+                   data       = training %>% clean_names(), 
+                   mtry       = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry),
+                   maxnodes   = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n),
+                   ntree      = 500,
+                   importance = TRUE)
+
+as_tibble(rf$importance) %>%
+  mutate(variable = colnames(training %>% select(-Varietal))) %>%
+  ggplot(aes(x = fct_reorder(variable, MeanDecreaseAccuracy),
+             y = MeanDecreaseAccuracy)) +
+  geom_col(fill = "steelblue") +
+  labs(x = NULL, y = "Decrecimiento promedio de accuracy") +
+  coord_flip()
+    
+
+```
+
+En la figura \ref{fig:RF_vi} podemos ver que, curiosamente, las tres variables más importantes para el modelo son las que habíamos identificado en el análisis exploratorio como variables que diferencian bien un varietal en particular de los otras dos. Por otro lado, las siguientes tres variables en importancia fueron identíficadas como buenas diferenciando los tres varietales.
+
+### Regresión logística
+
+Para continuar, vamos a explorar una alternativa paramétrica y basada en modelos lineales para construir un clasificador. Se trata de un modelo lineal generalizado con *link function* logit(), es decir, lo que se conoce como una regresión logística. Como en este caso tenemos más de dos categorías debemos considerar una regresión logística multinomial (con tres categorías posibles) en lugar de la clásica binomial. Las ventajas de este modelo es la interpretabilidad de sus resultados. Al tratarse de un modelo paramétrico se puede asociar fácilmente las estimaciones de los parámetros con la dependencia de los *log-odds* con cada variable. Por tratarse de un problema con tantas variables voy a considerar los modelos lineales generalizados con regularizaciones Ridge y Lasso^[Los ajustes los voy a realizar con la implementación del paquete {*glmnet*} (@glmnet, @glmnet_GLM)].
+
+Para esto, armamos una grilla de valores de $\lambda$ tomando 100 valores entre $10^{-3}$ y $10^0$. Para cada valor de $\lambda$, evaluamos el accuracy para las regularizaciones de Ridge y Lasso realizando validación cruzada de la misma forma que en los métodos previos.
+
+```{r, warning=FALSE}
+lambdas <- 10 ^ seq(0, -3, length = 50)
+metricas_glm <- tibble(reg = character(), lambda = numeric(), Accuracy = numeric())
+
+for (l in 1:length(lambdas)){
+  acc_lasso <- rep(0,10)
+  acc_ridge <- rep(0,10)
+  
+  for (j in 1:v_cv) { # Cross-validation
+    # Los folds
+    fold  <- folds$splits[[j]]
+    train <- analysis(fold)
+    test  <- assessment(fold)
+    
+    # LASSO
+    fit <- glmnet(x = as.matrix(train %>% select(-Varietal)), 
+                  y = as.matrix(train %>% select(Varietal)), 
+                  family = "multinomial", 
+                  type.multinomial = "grouped",
+                  lambda = lambdas[l])
+    pred <- predict(fit, 
+                    newx = as.matrix(test %>% select(-Varietal)), 
+                    s = lambdas[l], 
+                    type = 'class')
+    acc_lasso[j] <- mean(pred == test %>% pull(Varietal))
+    
+    # RIDGE
+    fit <- glmnet(x = as.matrix(train %>% select(-Varietal)), 
+                  y = as.matrix(train %>% select(Varietal)), 
+                  family = "multinomial", 
+                  alpha = 0,
+                  type.multinomial = "grouped",
+                  lambda = lambdas[l])
+    pred <- predict(fit, 
+                    newx = as.matrix(test %>% select(-Varietal)), 
+                    s = lambdas[l], 
+                    type = 'class')
+    acc_ridge[j] <- mean(pred == test %>% pull(Varietal))
+  }
+  
+  metricas_glm <- metricas_glm %>% bind_rows(tibble(reg = "Lasso",
+                                                    lambda = lambdas[l], 
+                                                    Accuracy = mean(acc_lasso)))
+  
+  metricas_glm <- metricas_glm %>% bind_rows(tibble(reg = "Ridge",
+                                                    lambda = lambdas[l], 
+                                                    Accuracy = mean(acc_ridge)))
+  
+}
+```
+
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:glm}Accuracy en función del factor de regularización (lambda) la cantidad de vecinos cercanos para la validación cruzada del modelo de K vecinos cercanos. La línea punteada roja indica la cantidad de vecinos que maximiza el accuracy."}
+maximos_glm <- metricas_glm %>%
+  group_by(reg) %>% 
+  filter(Accuracy == max(Accuracy)) %>%
+  summarise(max_acc = max(Accuracy),
+            lambda = min(lambda)) %>%
+  bind_cols(y = c(0.92, 0.95))
+
+metricas_glm %>%
+  ggplot(aes(x = lambda,
+             y = Accuracy,
+             color = reg)) +
+  geom_point(size = 2) +
+  labs(color = "Regularización",
+       title = "Regresión logística multinomial",
+       x =  "Parámetro de regularización (lambda, en escala log.)") +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_vline(data = maximos_glm,
+             aes(xintercept = lambda,
+                 color = reg),
+             linetype = "dashed") +
+  ylim(c(0.9, 1)) +
+  scale_color_brewer(palette = "Dark2") +
+  geom_label(data = maximos_glm,
+             aes(x = lambda, y = y,
+                 label = paste(reg,":\nAccuracy =", round(max_acc, digits = 3),
+                               "\npara lambda =", round(lambda, digits = 3))),
+             show.legend = FALSE) +
+  scale_x_continuous(trans='log10') +
+  theme(legend.position = "bottom") +
+  coord_cartesian(clip = 'off') +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+En la figura \ref{fig:glm} observamos los resultados del accuracy en función de $\lambda$ y vemos que, para la regularización Lasso el máximo se alcanza en $\lambda$ igual a `r round(maximos_glm$lambda[maximos_glm$reg == "Lasso"], digits = 3)` con un valor de `r round(maximos_glm$max_acc[maximos_glm$reg == "Lasso"], digits = 4)` y para la regularización Ridge, el valor máximo de accuracy es el mismo, pero en este caso para $\lambda$ igual a `r round(maximos_glm$lambda[maximos_glm$reg == "Ridge"], digits = 3)`. Ya que ambas opciones de regularización llegan a la misma accuracy, voy a elegir trabajar con Lasso ya que, al permitir que los valores de los parámetros ajustados valgan cero, el modelo ajustado resulta más "chico" y, por ende, más fácilmente interpretable.
+
+Una forma de tener una idea de la complejidad del modelo es ver los valores de los parámetros estandarizados. Para eso ajustamos el modelo elegido (Regularización Lasso con $\lambda$ igual a `r round(maximos_glm$lambda[maximos_glm$reg == "Lasso"], digits = 3)`) a los datos de entrenamiento completos y luego obtuvimos sus coeficientes. En el cuadro 1, podemos ver los valores de los parámetros para cada clase. De los trece parámetros originalmente presentes en el modelo de GLM, hay cinco que valen cero, es decir, el modelo utiliza sólo 8 de las variables para predecir el varietal. Resulta interesante remarcar que **Alcalinidad de la ceniza**, **Niveles de Magnesio**, **Proantocianidinas**, **Fenoles totales** y **Proantocianidinas** también se encuentran entre las variables menos importantes para el modelo de Random Forest^[Son seis de las ocho variables menos importantes.]. 
+
+```{r, fig.cap = "\\label{fig:DNN_esquema}Representación esquemática de la red neuronal ajustada a partir de la selección de parámetros con validación cruzada."}
+fit <- glmnet(x = as.matrix(training %>% select(-Varietal)), 
+              y = as.matrix(training %>% select(Varietal)), 
+              family = "multinomial", 
+              type.multinomial = "grouped",
+              lambda = maximos_glm$lambda[maximos_glm$reg == "Lasso"])
+
+coefs <- predict(fit,type="coef")
+
+coeficientes_GLM <-
+  tibble(Parametros = names(coefs$Barbera[,])) %>%
+  mutate(Parametros = if_else(Parametros == "", "beta 0", Parametros)) %>%
+  bind_cols(as_tibble(coefs$Barbera[,]) %>% rename(Barbera = "value")) %>%
+  bind_cols(as_tibble(coefs$Barolo[,]) %>% rename(Barolo = "value")) %>%
+  bind_cols(as_tibble(coefs$Grignolino[,]) %>% rename(Grignolino = "value"))
+
+coeficientes_GLM %>% kable(caption = "Parámetros estandarizados del ajuste de GLM logístico multinomial con los datos de training con regularización Lasso y lambda igual a 0.06.")
+```
+
+
+### Redes neuronales
+
+Finalmente, vamos a considerar un modelo de redes neuronales para predecir el cultivo. Debido a que el problema es relativamente simple, exploraremos sólo modelos con una capa intermedia. Al igual que en los métodos anteriores, vamos a determinar la cantidad de neuronas de esta capa por medio de validación cruzada. Para esto, consideramos una grilla de valores entre 1 y 10 para la cantidad de neuronas y buscamos el valor que maximice el accuracy de validación cruzada.
+
+En este caso, al igual que en K vecinos cercanos, estandarizamos los datos en cada paso de validación cruzada. El modelo de redes se ajusta utilizando la función `neuralnet` del paquete {*neuralnet*} (@neuralnet).
+
+```{r}
+Ns <- 1:10
+metricas_dnn <- tibble(n = numeric(),
+                       Accuracy = numeric())
+
+set.seed(123)
+for (n in Ns) { # Loop en n
+  acc <- c()
+  for (j in 1:v_cv) { # Cross-validation
+    
+    # Los folds
+    fold  <- folds$splits[[j]]
+    train <- analysis(fold)
+    test  <- assessment(fold)
+    
+    X_train <- train %>% clean_names() %>% select(-varietal)
+    Y_train <- train %>% clean_names() %>% select(varietal)
+    
+    X_test <- test %>% clean_names() %>% select(-varietal)
+    Y_test <- test %>% clean_names() %>% select(varietal)
+    
+    X_train_scaled <- scale(X_train)
+    test_scaled <- as_tibble(scale(X_test, 
+                                   center = attr(X_train_scaled, "scaled:center"), 
+                                   scale = attr(X_train_scaled, "scaled:scale"))) %>%
+      bind_cols(Y_test)
+    train_scaled <- as_tibble(X_train_scaled) %>%
+      bind_cols(Y_train)
+    
+    model = neuralnet(
+      varietal ~ .,
+      data = train_scaled,
+      hidden = c(Ns[n]),
+      linear.output = FALSE
+    )
+    
+    pred <- predict(model, test_scaled)
+    labels <- c("Barbera" , "Barolo", "Grignolino")
+    check <- test_scaled$varietal == labels[max.col(pred)]
+    
+    acc <- append(acc, (sum(check)/nrow(test_scaled)))
+  }
+  
+  metricas_dnn <- metricas_dnn %>% bind_rows(tibble(n = Ns[n], Accuracy = mean(acc)))
+}
+```
+
+```{r, warning=FALSE, fig.height = 4, fig.width = 6, fig.align="center", fig.cap = "\\label{fig:DNN}Accuracy en función de la cantidad de neuronas de la capa intermedia en un modelo de redes neuronales. La línea punteada roja indica la cantidad de neuronas que maximiza el accuracy."}
+metricas_dnn %>%
+  ggplot(aes(x = n,
+             y = Accuracy)) +
+  geom_point(size = 2) +
+  geom_line(linewidth = 2, alpha = 0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  scale_color_brewer(palette = "Dark2", name = "Semilla") +
+  labs(title = "Redes neuronales", x = "Cantidad de neuronas en la capa intermedia") +
+  geom_vline(xintercept = metricas_dnn$n[which.max(metricas_dnn$Accuracy)],
+             color = "red",
+             linetype = "dashed") +
+  ylim(c(0.8, 1)) +
+  scale_x_continuous(breaks = unique(metricas_dnn$n)) +
+  geom_label(x = which.max(metricas_dnn$Accuracy),
+             y = .92,
+              label = paste("Accuracy =", round(max(metricas_dnn$Accuracy), digits = 3),
+                            "\npara",metricas_dnn$n[which.max(metricas_dnn$Accuracy)], "neuronas")) +
+  theme(legend.position = "bottom") +
+  coord_cartesian(clip = 'off') +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5)) 
+```
+
+En la figura \ref{fig:DNN} se observa los resultados del accuracy en función de la cantidad de neuronas de la capa intermedia y vemos que el máximo se alcanza utilizando `r metricas_dnn$n[which.max(metricas_dnn$Accuracy)]` neuronas con un valor de `r round(max(metricas_dnn$Accuracy), digits = 3)`.
+
+Para tener un idea de la complejidad de la red propuesta, podemos ajustar la red con la cantidad de neuronas obtenidas mediante validación cruzada a todos los datos de entrenamiento. En la figura \ref{fig:DNN_esquema} podemos ver una representación esquemática de este modelo.
+
+```{r, warning=FALSE, fig.height = 8, fig.width = 10, fig.align="center", fig.cap = "\\label{fig:DNN_esquema}Representación esquemática de la red neuronal ajustada a partir de la selección de parámetros con validación cruzada."}
+X_train <- training %>% clean_names() %>% select(-varietal)
+Y_train <- training %>% clean_names() %>% select(varietal)
+    
+train_scaled <- scale(X_train) %>%
+      bind_cols(Y_train)
+
+set.seed(12)    
+model = neuralnet(
+      varietal ~ .,
+      data = train_scaled,
+      hidden = c(metricas_dnn$n[which.max(metricas_dnn$Accuracy)]),
+      linear.output = FALSE
+    )
+
+plot(model, rep = "best")
+```
+
+## Selección del mejor clasificador basado en los resultados de la validación cruzada
+
+En el Cuadro 2 podemos ver el *accuracy* obtenido en cada método luego de ajustar los hiperparámetros correpondientes por validación cruzada. Todos los métodos tienen un nivel de *accuracy* alto, siendo K vecinos cercanos el único ligeramente más bajo. Por este motivo, seguiremos considerando como candidatos a los otros tres métodos.
+
+```{r}
+tibble(Metodo = c("KNN", "Random Forest", "GLM-Lasso", "Redes neuronales")) %>%
+  cbind(`Accuracy de VC` = c(round(max(metricas_knn$Accuracy), digits = 4),
+                             round(max(metricas_rf$Accuracy), digits = 4),
+                             round(max(metricas_glm$Accuracy), digits = 4),
+                             round(max(metricas_dnn$Accuracy), digits = 4))) %>%
+  kable(caption = "Accuracy para cada método propuesto luego de hallar los hiperparámetros que la maximicen por validación cruzada.")
+```
+
+Paara elegir entre los otros tres métodos podemos considerar varios criterios entre los cuales elegí: Simplicidad del modelo, interpretabilidad del modelo y tiempo de cómputo. Por supuesto que estos tres criterios no son independientes (por ejemplo, modelos más simples suelen ser más interpretables).
+
+Para comparar los tiempos de cómputo de cada uno de los tres modelos competidores, creamos un conjunto de datos de 10000 muestras, repitiendo aleatoriamente filas de los datos de entrenamiento. Luego, calculamos el tiempo en milisegundos que tarda cada modelo en predecir todos esas muestras. En el Cuadro 3 podemos ver que claramente los modelos basados en Random Forest y en Redes neuronales son más rápidos que la regresión logística multinomial. Siendo el más rápido de estos el Rándom Forest. Vale la pena aclarar que esta prueba de tiempo de cómputo es una estimación que sólo nos permite observar diferencias grandes.
+
+```{r}
+rows <- c(1:nrow(training))
+times <- 100
+
+# RF
+rf <- randomForest(varietal ~ ., 
+                   data       = training %>% clean_names(), 
+                   mtry       = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry),
+                   maxnodes   = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n),
+                   ntree      = 500,
+                   importance = TRUE)
+
+data <- training %>% select(-Varietal)
+data <- data[rep(rows, times),]
+data <- data[1:10000,]
+
+start <- Sys.time()
+pred <- predict(rf, 
+                  newx = as.matrix(data))
+time_rf <- as.numeric(Sys.time() - start) * 1000
+
+# GLM
+glm <- glmnet(x = as.matrix(training %>% select(-Varietal)), 
+              y = as.matrix(training %>% select(Varietal)), 
+              family = "multinomial", 
+              type.multinomial = "grouped",
+              lambda = maximos_glm$lambda[maximos_glm$reg == "Lasso"])
+
+data <- as.matrix(training %>% clean_names() %>% select(-varietal))
+data <- data[rep(rows, times),]
+data <- data[1:10000,]
+
+start <- Sys.time()
+pred <- predict(glm, 
+              newx = as.matrix(training %>% clean_names() %>% select(-varietal)), 
+              s = maximos_glm$lambda[maximos_glm$reg == "Lasso"], 
+              type = 'class')
+time_glm <- as.numeric(Sys.time() - start) * 1000
+
+# DNN
+dnn = neuralnet(
+      varietal ~ .,
+      data = train_scaled,
+      hidden = c(metricas_dnn$n[which.max(metricas_dnn$Accuracy)]),
+      linear.output = FALSE
+    )
+
+data <- as_tibble(scale(training %>% clean_names %>% select(-varietal)))
+data <- data[rep(rows, times),]
+data <- data[1:10000,]
+
+start <- Sys.time()
+pred <- predict(dnn, data)
+time_dnn <- as.numeric(Sys.time() - start) * 1000
+
+times <- tibble(Metodo = c("Random Forest", "GLM-Lasso", "Redes neuronales")) %>%
+  mutate(`Tiempos (ms)` = c(time_rf, time_glm, time_dnn))
+times %>% kable(caption = "Tiempo en milisegundos que le lleva a cada modelo clasificar 10000 muestras de vino.")
+```
+
+Sin embargo, y como ya mencionamos anteriormente, la regresión logística tiene la ventaja de ser más interpretable. En cuanto a simplicidad, creo que tanto el Random Forest como la regresión logística son modelos más simples que las redes neuronales. Por estos motivos, sumados a la ligera ventaja de Random Forest sobre redes neuronales en tiempos de cómputo, es que vamos a considerar como modelos más adecuados apra la tarea de clasificación propuesta a Random Forest y Regresión logística multinomial con regularización Lasso.
+
+## Comparación de los métodos en un conjunto de testeo
+
+De los cuatro modelos propuestos inicialmente conservamos dos basándonos en la estimación de accuracy de validación cruzada y criterios más "blandos" como el tiempo de cómputo y la interpretabilidad de los modelos. A continuación vamos a comparar el desempeño de los modelos seleccionados para cada método ajustándolos con todo el set de entrenamiento y evaluándolos en el conjunto que reservamos para testeo. 
+
+```{r, warning=FALSE}
+X_training <- training %>% select(-Varietal)
+Y_training <- training %>% select(Varietal)
+    
+X_testing <- testing %>% select(-Varietal)
+Y_testing <- testing %>% select(Varietal)
+    
+X_training_scaled <- scale(X_training)
+X_testing_scaled  <- as_tibble(scale(X_testing, 
+                                  center = attr(X_training_scaled, "scaled:center"), 
+                                  scale = attr(X_training_scaled, "scaled:scale")))
+X_training_scaled <- as_tibble(X_training_scaled)
+```
+
+### Random Forest
+
+```{r, warning=FALSE}
+#random forest
+set.seed(12)
+ajuste_rf <- randomForest(varietal ~ ., 
+                       data     = training %>% clean_names(), 
+                       mtry     = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry),
+                       maxnodes = metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n),
+                       ntree    = 500)
+
+pred_rf <- predict(ajuste_rf, newdata = testing %>% clean_names())
+acc_rf<-mean(pred_rf == testing %>% pull(Varietal))
+
+```
+
+El *accuracy de testeo* es de `r round(acc_rf, digits = 3)` para el modelo de  Random Forest con la cantidad de variables en cada *join* del árbol aleatorio igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y la catidad máxima de casos en un nodo terminal igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)`. 
+
+Adicionalmente, en el cuadro 4 pondemos ver la matriz de confusión para las 3 categorías del modelo de Random Forest al clasificar el conjunto de datos de *testeo*. Podemos ver que, de las 60 mediciones presentes, sólo una de las muestras fue mal clasificada: Una muestra de *Grignolino* fue clasificada como *Barolo*.
+
+```{r, warning=FALSE}
+table(Y_testing %>% pull(Varietal), pred_rf) %>% 
+  kable(caption = "Matriz de confusión para el modelo de Random Forest al clasificar el conjunto de datos de testeo. En las filas vamos la verdadera catergoría de las muestras y en las columnas las categorías predichas por el modelo.")
+```
+
+### Regresión logística
+
+```{r, warning=FALSE}
+#glm
+ajuste_glm <- glmnet(x = as.matrix(training %>% select(-Varietal)), 
+                  y = as.matrix(training %>% select(Varietal)), 
+                  family = "multinomial", 
+                  type.multinomial = "grouped",
+                  lambda = maximos_glm$lambda[maximos_glm$reg == "Lasso"])
+
+pred_glm <- predict(ajuste_glm, 
+                newx = as.matrix(testing %>% select(-Varietal)), 
+                s = maximos_glm$lambda[maximos_glm$reg == "Lasso"], 
+                    type = 'class')
+acc_glm <- mean(pred_glm == testing %>% pull(Varietal))
+```
+
+En la regresión logística multinomial con regularización Lasso y $\lambda$ igual a `r round(maximos_glm$lambda[maximos_glm$reg == "Lasso"], digits = 3)`, el accuracy luego de predecir el varietal a partir del conjunto de datos de *testeo* es de `r round(acc_glm, digits = 3)`. En este caso, el *accuracy de testeo* es notablemente inferior que el de validación cruzada.
+
+Para este modelo también calculamos la matriz de confusión para las 3 categorías (Cuadro 5). En este caso podemos ver que son tres las muestras que están mal clasificadas: Una muestra de *Grignolino* clasificada como *Barolo* y dos mustras de *Grignolino* clasificadas como *Barbera*. De hecho, la muestra mal clasificada como *Barolo* es la misma que clasifica mal el modelo de Random Forest (la medición correspondiente a la fila 27). Entonces, el modelo de regresión logística multinomial, clasifica erroneamente dos muestras más del conjunto de testeo que el de Random Forest.
+
+```{r, warning=FALSE}
+cbind(table(Y_testing %>% pull(Varietal), pred_glm)[,2:3], table(Y_testing %>% pull(Varietal), pred_glm)[,1:2])[,1:3] %>% 
+  kable(caption = "Matriz de confusión poara la regresión logística multinomial con regularización Lasso al clasificar el conjunto de datos de testeo. En las filas vamos la verdadera catergoría de las muestras y en las columnas las categorías predichas por el modelo.")
+```
+
+# Conclusiones
+
+Como puede verse en la sección anterior, ambos modelos preseleccionados a partir de la validación cruzada tienen una excelente performance con el conjunto de datos de *testeo*, sin embargo, el modelo basado en Random Forest clasifica ligeramente mejor las muestras de este conjunto de datos. Si bien el criterio de selección de modelo no puede depender de los datos de testeo, sino de la validación cruzada, esta ligera diferencia, sumada a la diferencia en tiempo de procesamiento hace que **el modelo basado en Random Forest con la cantidad de variables en cada *join* del árbol aleatorio igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(mtry)` y la cantidad máxima de casos en un nodo terminal igual a `r metricas_rf[which.max(metricas_rf$Accuracy),] %>% pull(min_n)` sea el considerado como más adecuado para la tarea de clasificación de varietales basado en las mediciones químicas de muestras de vinos**.
+
+Una de las posibles limitaciones del modelo elegido es que no tenemos información concreta de cuándo ni dónde se tomaron las muestras con las cuales se entrenaron y evaluaron los modelos. Esto no sólo significa que al clasificar muestras con distintas características (medias, varianzas, covarianzas, etc.) el modelo seleccionado podría tener una peor performance, sino que, dada esta nueva muestra, el modelo elegido como **más adecuado** podría ser otro aún siguiendo el mismo razonamiento que en este trabajo.
+
+# Referencias
+
+::: {#refs}
+:::

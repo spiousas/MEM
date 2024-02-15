@@ -1,15 +1,15 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.2.9)  9 FEB 2024 22:06
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=pdflatex 2024.2.9)  15 FEB 2024 15:52
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**Charaf-Spiousas_Problema0.tex
-(./Charaf-Spiousas_Problema0.tex
+**TP_Final_Spiousas.tex
+(./TP_Final_Spiousas.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2023/05/17 v1.4n Standard LaTeX document class
-(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/base/size10.clo
-File: size10.clo 2023/05/17 v1.4n Standard LaTeX file (size option)
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/base/size11.clo
+File: size11.clo 2023/05/17 v1.4n Standard LaTeX file (size option)
 )
 \c@part=\count187
 \c@section=\count188
@@ -262,12 +262,38 @@ Package graphics Info: Driver file: pdftex.def on input line 107.
 )
 \Gin@req@height=\dimen177
 \Gin@req@width=\dimen178
+)
+\cslhangindent=\skip62
+\csllabelwidth=\skip63
+\cslentryspacingunit=\skip64
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/babel/babel.sty
+Package: babel 2024/02/07 v24.2 The Babel package
+\babel@savecnt=\count289
+\U@D=\dimen179
+\l@unhyphenated=\language3
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/babel/txtbabel.def)
+\bbl@readstream=\read2
+\bbl@dirlevel=\count290
+Package babel Info: You haven't specified a language as a class or package
+(babel)             option. I'll load 'nil'. Reported on input line 4258.
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/babel/nil.ldf
+Language: nil 2024/02/07 v24.2 Nil language
+\l@nil=\language4
+))
+\everypar=\toks28
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/babel/locale/es/babel-spanish.tex)
+Package babel Info: Importing data for spanish
+(babel)             from babel-es.ini. Reported on input line 96.
+Package babel Info: Hyphen rules for 'spanish' set to \l@nil
+(babel)             (\language4). Reported on input line 96.
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/setspace/setspace.sty
+Package: setspace 2022/12/04 v6.7b set line spacing
 ) (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
-\c@float@type=\count289
-\float@exts=\toks28
+\c@float@type=\count291
+\float@exts=\toks29
 \float@box=\box61
-\@float@everytoks=\toks29
+\@float@everytoks=\toks30
 \@floatcapt=\box62
 ) (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/hyperref/hyperref.sty
 Package: hyperref 2024-01-20 v7.01h Hypertext links for LaTeX
@@ -294,11 +320,11 @@ Package: refcount 2019/12/15 v3.6 Data extraction from label references (HO)
 ) (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/gettitlestring/gettitlestring.sty
 Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
-\c@section@level=\count290
+\c@section@level=\count292
 )
-\@linkdim=\dimen179
-\Hy@linkcounter=\count291
-\Hy@pagecounter=\count292
+\@linkdim=\dimen180
+\Hy@linkcounter=\count293
+\Hy@pagecounter=\count294
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/hyperref/pd1enc.def
 File: pd1enc.def 2024-01-20 v7.01h Hyperref: PDFDocEncoding definition (HO)
 Now handling font encoding PD1 ...
@@ -306,7 +332,7 @@ Now handling font encoding PD1 ...
 ) (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/intcalc/intcalc.sty
 Package: intcalc 2019/12/15 v1.3 Expandable calculations with integers (HO)
 )
-\Hy@SavedSpaceFactor=\count293
+\Hy@SavedSpaceFactor=\count295
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/hyperref/puenc.def
 File: puenc.def 2024-01-20 v7.01h Hyperref: PDF Unicode definition (HO)
 Now handling font encoding PU ...
@@ -320,21 +346,21 @@ Package hyperref Info: Plain pages OFF on input line 4194.
 Package hyperref Info: Backreferencing OFF on input line 4199.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4446.
-\c@Hy@tempcnt=\count294
+\c@Hy@tempcnt=\count296
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/url/url.sty
 \Urlmuskip=\muskip17
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
 LaTeX Info: Redefining \url on input line 4784.
-\XeTeXLinkMargin=\dimen180
+\XeTeXLinkMargin=\dimen181
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/bitset/bitset.sty
 Package: bitset 2019/12/09 v1.3 Handle bit-vector datatype (HO)
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/bigintcalc/bigintcalc.sty
 Package: bigintcalc 2019/12/15 v1.5 Expandable calculations on big integers (HO)
 ))
-\Fld@menulength=\count295
-\Field@Width=\dimen181
-\Fld@charsize=\dimen182
+\Fld@menulength=\count297
+\Field@Width=\dimen182
+\Fld@charsize=\dimen183
 Package hyperref Info: Hyper figures OFF on input line 6063.
 Package hyperref Info: Link nesting OFF on input line 6068.
 Package hyperref Info: Hyper index ON on input line 6071.
@@ -346,9 +372,9 @@ Package hyperref Info: PDF/A mode OFF on input line 6093.
 Package: atbegshi-ltx 2021/01/10 v1.0c Emulation of the original atbegshi
 package with kernel methods
 )
-\Hy@abspage=\count296
-\c@Item=\count297
-\c@Hfootnote=\count298
+\Hy@abspage=\count298
+\c@Item=\count299
+\c@Hfootnote=\count300
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/hyperref/hpdftex.def
@@ -357,8 +383,8 @@ File: hpdftex.def 2024-01-20 v7.01h Hyperref driver for pdfTeX
 Package: atveryend-ltx 2020/08/19 v1.0a Emulation of the original atveryend package
 with kernel methods
 )
-\Fld@listcount=\count299
-\c@bookmark@seq@number=\count300
+\Fld@listcount=\count301
+\c@bookmark@seq@number=\count302
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/rerunfilecheck/rerunfilecheck.sty
 Package: rerunfilecheck 2022-07-10 v1.10 Rerun checks for auxiliary files (HO)
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/generic/uniquecounter/uniquecounter.sty
@@ -366,61 +392,36 @@ Package: uniquecounter 2019/12/15 v1.4 Provide unlimited unique counter (HO)
 )
 Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 285.
 )
-\Hy@SectionHShift=\skip62
+\Hy@SectionHShift=\skip65
 )
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 84.
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 127.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 ) (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2024-01-04 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count301
+\l__color_backend_stack_int=\count303
 \l__pdf_internal_box=\box63
-) (./Charaf-Spiousas_Problema0.aux
+) (./TP_Final_Spiousas.aux)
+\openout1 = `TP_Final_Spiousas.aux'.
 
-LaTeX Warning: Label `fig:exploratoria' multiply defined.
-
-
-LaTeX Warning: Label `fig:check_model_aditivo' multiply defined.
-
-
-LaTeX Warning: Label `fig:check_model_interact' multiply defined.
-
-
-LaTeX Warning: Label `fig:tukey_aditivo' multiply defined.
-
-
-LaTeX Warning: Label `fig:check_model_log' multiply defined.
-
-
-LaTeX Warning: Label `fig:check_model_boxcox' multiply defined.
-
-
-LaTeX Warning: Label `fig:interacccion_1_boxcox' multiply defined.
-
-
-LaTeX Warning: Label `fig:tukey_boxcox' multiply defined.
-
-)
-\openout1 = `Charaf-Spiousas_Problema0.aux'.
-
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 84.
-LaTeX Font Info:    ... okay on input line 84.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 127.
+LaTeX Font Info:    ... okay on input line 127.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
 Package epstopdf-base Info: Redefining graphics rule for `.eps' on input line 485.
@@ -446,12 +447,12 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 * \topmargin=-37.0pt
 * \headheight=12.0pt
 * \headsep=25.0pt
-* \topskip=10.0pt
+* \topskip=11.0pt
 * \footskip=30.0pt
-* \marginparwidth=65.0pt
-* \marginparsep=11.0pt
+* \marginparwidth=59.0pt
+* \marginparsep=10.0pt
 * \columnsep=10.0pt
-* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \skip\footins=10.0pt plus 4.0pt minus 2.0pt
 * \hoffset=0.0pt
 * \voffset=0.0pt
 * \mag=1000
@@ -461,143 +462,171 @@ File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Live
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package hyperref Info: Link coloring OFF on input line 84.
-(./Charaf-Spiousas_Problema0.out) (./Charaf-Spiousas_Problema0.out)
+Package hyperref Info: Link coloring OFF on input line 127.
+(./TP_Final_Spiousas.out) (./TP_Final_Spiousas.out)
 \@outlinefile=\write3
-\openout3 = `Charaf-Spiousas_Problema0.out'.
+\openout3 = `TP_Final_Spiousas.out'.
 
-LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 86.
+LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 129.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OML+lmm on input line 86.
+LaTeX Font Info:    Trying to load font information for OML+lmm on input line 129.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 86.
+LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 129.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 86.
+LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 129.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 86.
+(Font)              <12> on input line 129.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 86.
+(Font)              <8> on input line 129.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 86.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 86.
+(Font)              <6> on input line 129.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 129.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 86.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 129.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 97.
+(Font)              <10.95> on input line 154.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 97.
+(Font)              <9> on input line 154.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 97.
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 128.
-(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
-File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-<Charaf-Spiousas_Problema0_files/figure-latex/exploratoria-1.pdf, id=21, 361.35pt x 289.08pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/exploratoria-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/exploratoria-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/exploratoria-1.pdf  used on input line 148.
-(pdftex.def)             Requested size: 361.34912pt x 289.07928pt.
+(Font)              <5> on input line 154.
 [1
 
-{/Users/ignacio/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
-<Charaf-Spiousas_Problema0_files/figure-latex/interacccion-1.pdf, id=36, 289.08pt x 216.81pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/interacccion-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/interacccion-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/interacccion-1.pdf  used on input line 162.
-(pdftex.def)             Requested size: 289.09251pt x 216.81938pt.
-[2 <./Charaf-Spiousas_Problema0_files/figure-latex/exploratoria-1.pdf> <./Charaf-Spiousas_Problema0_files/figure-latex/interacccion-1.pdf>]
-LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 184.
+{/Users/ignacio/Library/TinyTeX/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}]
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 227.
+
+
+Overfull \hbox (53.21501pt too wide) in paragraph at lines 228--245
+[][] 
+ []
+
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf, id=83, 216.81pt x 216.81pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf  used on input line 258.
+(pdftex.def)             Requested size: 216.81938pt x 216.81938pt.
+[2]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-3-1.pdf, id=96, 578.16pt x 505.89pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-3-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-3-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-3-1.pdf  used on input line 276.
+(pdftex.def)             Requested size: 469.75385pt x 411.0346pt.
+[3]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-4-1.pdf, id=105, 289.08pt x 289.08pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-4-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-4-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-4-1.pdf  used on input line 316.
+(pdftex.def)             Requested size: 289.09251pt x 289.09251pt.
+
+Underfull \hbox (badness 1028) in paragraph at lines 323--340
+\T1/lmr/m/n/10.95 en especial el grupo de abajo a la izquierda que incluye a \T1/lmr/bx/n/10.95 Matiz\T1/lmr/m/n/10.95 , \T1/lmr/bx/n/10.95 Proantocianidinas\T1/lmr/m/n/10.95 ,
+ []
+
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-5-1.pdf, id=108, 361.35pt x 361.35pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-5-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-5-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-5-1.pdf  used on input line 343.
+(pdftex.def)             Requested size: 361.34912pt x 361.34912pt.
+[4 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf>] [5 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-3-1.pdf>] [6 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-4-1.pdf>] [7 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-5-1.pdf>]
+LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 367.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-<Charaf-Spiousas_Problema0_files/figure-latex/check_model_aditivo-1.pdf, id=57, 578.16pt x 433.62pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/check_model_aditivo-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/check_model_aditivo-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_aditivo-1.pdf  used on input line 193.
-(pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
-[3 <./Charaf-Spiousas_Problema0_files/figure-latex/check_model_aditivo-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/check_model_interact-1.pdf, id=77, 578.16pt x 433.62pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/check_model_interact-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/check_model_interact-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_interact-1.pdf  used on input line 218.
-(pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
 
-Overfull \hbox (1.2774pt too wide) in paragraph at lines 280--280
- []|\T1/lmr/m/n/10 NA|
+LaTeX Warning: Command \' invalid in math mode on input line 377.
+
+
+LaTeX Warning: Command \' invalid in math mode on input line 377.
+
+[8{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf, id=172, 433.62pt x 289.08pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf  used on input line 426.
+(pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
+[9 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf>]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf, id=187, 578.16pt x 433.62pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf  used on input line 462.
+(pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 481.
+(/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
+File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
+) [10 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf>]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-11-1.pdf, id=201, 433.62pt x 289.08pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-11-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-11-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-11-1.pdf  used on input line 485.
+(pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
+[11{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc} <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-11-1.pdf>]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-13-1.pdf, id=216, 433.62pt x 289.08pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-13-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-13-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-13-1.pdf  used on input line 525.
+(pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
+[12{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc} <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-13-1.pdf>]
+Underfull \hbox (badness 4981) in paragraph at lines 559--559
+\T1/lmr/m/n/10.95 logístico multinomial con los datos de training con
  []
 
-[4 <./Charaf-Spiousas_Problema0_files/figure-latex/check_model_interact-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf, id=95, 361.35pt x 361.35pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf  used on input line 302.
-(pdftex.def)             Requested size: 361.34912pt x 361.34912pt.
-<Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf, id=98, 578.16pt x 433.62pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf  used on input line 334.
-(pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
-[5 <./Charaf-Spiousas_Problema0_files/figure-latex/tukey_aditivo-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf, id=113, 578.16pt x 433.62pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf  used on input line 362.
-(pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
-[6{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc} <./Charaf-Spiousas_Problema0_files/figure-latex/check_model_log-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf, id=134, 289.08pt x 216.81pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf  used on input line 376.
-(pdftex.def)             Requested size: 289.09251pt x 216.81938pt.
-[7 <./Charaf-Spiousas_Problema0_files/figure-latex/check_model_boxcox-1.pdf>]
-Overfull \hbox (1.11961pt too wide) in paragraph at lines 481--481
- []|\T1/lmr/m/n/10 NA|
+[13]
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-16-1.pdf, id=243, 433.62pt x 289.08pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-16-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-16-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-16-1.pdf  used on input line 604.
+(pdftex.def)             Requested size: 433.63878pt x 289.09251pt.
+<TP_Final_Spiousas_files/figure-latex/unnamed-chunk-17-1.pdf, id=246, 722.7pt x 578.16pt>
+File: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-17-1.pdf Graphic file (type pdf)
+<use TP_Final_Spiousas_files/figure-latex/unnamed-chunk-17-1.pdf>
+Package pdftex.def Info: TP_Final_Spiousas_files/figure-latex/unnamed-chunk-17-1.pdf  used on input line 623.
+(pdftex.def)             Requested size: 469.76045pt x 375.80836pt.
+[14 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-16-1.pdf>] [15 <./TP_Final_Spiousas_files/figure-latex/unnamed-chunk-17-1.pdf>] [16] [17] [18] [19]
+Underfull \hbox (badness 1509) in paragraph at lines 883--888
+[]\T1/lmr/m/n/10.95 Tay, J. K., Narasimhan, B., & Hastie, T. (2023). Elastic Net Regularization Paths for
  []
 
-[8 <./Charaf-Spiousas_Problema0_files/figure-latex/interacccion_1_boxcox-1.pdf>]
-<Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf, id=163, 361.35pt x 361.35pt>
-File: Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf Graphic file (type pdf)
-<use Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf>
-Package pdftex.def Info: Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf  used on input line 504.
-(pdftex.def)             Requested size: 361.34912pt x 361.34912pt.
-[9 <./Charaf-Spiousas_Problema0_files/figure-latex/tukey_boxcox-1.pdf>] (./Charaf-Spiousas_Problema0.aux)
+
+Underfull \hbox (badness 3098) in paragraph at lines 883--888
+\T1/lmr/m/n/10.95 All Generalized Linear Models. \T1/lmr/m/it/10.95 Journal of Statistical Software\T1/lmr/m/n/10.95 , \T1/lmr/m/it/10.95 106\T1/lmr/m/n/10.95 (1), 1-31. []$https :$
+ []
+
+[20] (./TP_Final_Spiousas.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-01-22>
  ***********
-
-LaTeX Warning: There were multiply-defined labels.
-
-Package rerunfilecheck Info: File `Charaf-Spiousas_Problema0.out' has not changed.
-(rerunfilecheck)             Checksum: DB22FAEF666EDADC9A88B55C4F057E3C;646.
+Package rerunfilecheck Info: File `TP_Final_Spiousas.out' has not changed.
+(rerunfilecheck)             Checksum: 7FC56C99282B4A3ED978E80F47761CC9;2737.
  ) 
 Here is how much of TeX's memory you used:
- 11305 strings out of 476188
- 179155 string characters out of 5794838
- 1941975 words of memory out of 5000000
- 33085 multiletter control sequences out of 15000+600000
- 606069 words of font info for 77 fonts, out of 8000000 for 9000
+ 12634 strings out of 476188
+ 203313 string characters out of 5794838
+ 1934975 words of memory out of 5000000
+ 34325 multiletter control sequences out of 15000+600000
+ 627195 words of font info for 85 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 69i,8n,79p,530b,540s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi7.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on Charaf-Spiousas_Problema0.pdf (9 pages, 272078 bytes).
+ 69i,9n,79p,556b,567s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbxi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr6.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr8.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri9.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt9.pfb>
+Output written on TP_Final_Spiousas.pdf (20 pages, 657468 bytes).
 PDF statistics:
- 232 PDF objects out of 1000 (max. 8388607)
- 181 compressed objects within 2 object streams
- 30 named destinations out of 1000 (max. 500000)
- 78 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 434 PDF objects out of 1000 (max. 8388607)
+ 353 compressed objects within 4 object streams
+ 93 named destinations out of 1000 (max. 500000)
+ 163 words of extra memory for PDF output out of 10000 (max. 10000000)
 
