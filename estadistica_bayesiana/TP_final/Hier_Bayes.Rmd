@@ -105,7 +105,8 @@ ppc_intervals(artist_means$popularity, yrep = predictions_complete,
   ggplot2::scale_x_continuous(labels = artist_means$artist,
                               breaks = 1:nrow(artist_means)) +
   theme_bw() +
-  xaxis_text(angle = 90, hjust = 1) 
+  xaxis_text(angle = 90, hjust = 1)  +
+  labs(x = "Artista", y = "Popularidad")
 ```
 
 Las estimaciones promedio por artista van a ser todas iguales e iguales a las estimaciones por canción, ya que todas las estimaciones son iguales.
@@ -161,7 +162,8 @@ ppc_intervals(artist_means$popularity, yrep = predictions_no,
                               breaks = 1:nrow(artist_means)) +
   theme_bw() +
   geom_point(x = 1:nrow(artist_means), y = complete_summary$estimate[1], color = "darkorange") +
-  xaxis_text(angle = 90, hjust = 1)
+  xaxis_text(angle = 90, hjust = 1) +
+  labs(x = "Artista", y = "Popularidad")
 ```
 
 Qué pasa si poneoms el mismo prior para $\mu$ pero con menor dispersión. Pongamos $0.1$ en la función que sería equivalente a decir que $\mu_j \sim N(50, 2)$:
@@ -188,9 +190,104 @@ ppc_intervals(artist_means$popularity, yrep = predictions_no,
                               breaks = 1:nrow(artist_means)) +
   theme_bw() +
   geom_point(x = 1:nrow(artist_means), y = complete_summary$estimate[1], color = "darkorange") +
-  xaxis_text(angle = 90, hjust = 1)
+  xaxis_text(angle = 90, hjust = 1) +
+  labs(x = "Artista", y = "Popularidad")
 ```
 
 Efectivamente vemos que los $\mu_j$ quedan más cerca de $50$ y ya no son la media de las observaciones para ese artista.
 
-## El modelos jerárquico
+## El modelo jerárquico
+
+Ahora tenemos básicamente tres capas de modelado:
+
+$$
+\begin{array}
+_Capa 1: Y_{ij}|\mu_j,\sigma_y &\sim& Modela \,\, cómo \,\, varía \,\, la \,\, popularidad \,\, dentro \,\, del \,\, artista_j \\
+Capa 2: \mu_j|\mu,\sigma_\mu &\sim& Modela \,\, cómo \,\, varía \,\, la \,\, popularidad \,\, \mu_j \,\, entre \,\, artistas \\
+Capa 3: \mu,\sigma_y,\sigma_\mu &\sim& Priors \,\, para \,\, los \,\, parámetros \,\, globales \,\, compartidos
+\end{array}
+$$
+
+En la definición formal del Christensen:
+
+$$
+\begin{array}
+_y|\theta,\alpha &\sim& f(y|\theta,\alpha) \\
+\theta|\alpha &\sim& p_0(\theta|\alpha) \\
+\alpha &\sim& p_1(\alpha) \equiv p_1(\alpha|\beta_0)\\
+\end{array}
+$$
+
+Podemos ver la densidad de las medias por artista:
+
+```{r}
+ggplot(artist_means, aes(x = popularity)) + 
+  geom_density()
+```
+
+```{r, fig.height=2}
+ggplot(artist_means, aes(x = popularity)) + 
+  geom_density(linewidth = 1, fill = "steelblue", alpha = .3) +
+  theme_bw()
+```
+
+Ajustamos el modelos jerárquico. El término `(1 | artist)` indica que artista es un factor de agrupamiento (o efecto aleatorio). `prior_covariance` tiene que ver con la matriz de covarianza de los efectos aleatorios , sería el prior de $\mu_j$ y, no entiendo bien por qué, sería lo mismo que poner un prior $\mathcal{E}(1)$:
+
+```{r, results="hide"}
+spotify_hierarchical <- stan_glmer(
+  popularity ~ (1 | artist), 
+  data = spotify, family = gaussian,
+  prior_intercept = normal(50, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  prior_covariance = decov(reg = 1, conc = 1, shape = 1, scale = 1),
+  chains = 4, iter = 5000*2, seed = 84735)
+```
+
+Y vemos los priors: 
+
+```{r}
+# Confirm the prior tunings
+prior_summary(spotify_hierarchical)
+```
+
+Podemos ver el diagnóstico sobre los 47 parámetros (44 $\mu_j$, $\mu$, $\sigma_y$ y $\sigma_\mu$):
+
+```{r, fig.height=8}
+mcmc_trace(spotify_hierarchical)
+```
+
+```{r, fig.height=8}
+mcmc_dens_overlay(spotify_hierarchical)
+```
+
+```{r}
+neff_ratio(spotify_hierarchical)
+rhat(spotify_hierarchical)
+```
+
+Y también la posterior:
+
+```{r, fig.height=3}
+pp_check(spotify_hierarchical) + 
+  xlab("popularity") +
+  theme_bw()
+```
+
+Podemos ver también las posteriores por artista:
+
+```{r, fig.height=4}
+set.seed(84735)
+predictions_hierarchical <- posterior_predict(spotify_hierarchical, 
+                                              newdata = artist_means)
+
+# Posterior predictive plots
+ppc_intervals(artist_means$popularity, yrep = predictions_hierarchical, 
+              prob_outer = 0.80) +
+  ggplot2::scale_x_continuous(labels = artist_means$artist, 
+                              breaks = 1:nrow(artist_means)) +
+  theme_bw() +
+  xaxis_text(angle = 90, hjust = 1) + 
+  geom_hline(yintercept = 58.4, color = "darkorange")  +
+  labs(x = "Artista", y = "Popularidad")
+```
+
