@@ -1,0 +1,149 @@
+---
+title: "Ejercicio 1 - Estadística Robusta 2024"
+author: "Ignacio Spiousas"
+date: '02-04-2024'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Ejercicio 1
+
+Vamos a probar que la mediana es un estimador equivariante por transformaciones afines.
+
+Primero definamos la mediana de $x$:
+
+$$
+\tilde{x} = Med_{1 \leq i \leq n} \{ x_i\} = \left\{
+	\begin{array}{ll}
+	  x_{\left( \frac{n+1}{2} \right)} & \mathrm{si\ } n \mathrm{\ }\mathrm{es\ } \mathrm{impar\ } \\
+	  \frac{x_{\left( \frac{n}{2} \right)} + x_{\left( \frac{n}{2} + 1 \right)}}{2} & \mathrm{si\ } n \mathrm{\ }\mathrm{es\ } \mathrm{par\ }
+  \end{array}
+\right.
+$$
+
+## Ejercicio 1.a
+
+Probar que la mediana es un estimador equivariante por traslaciones.
+
+Para evaluar una traslación solidaria, definamos una nueva variable $y_i$ tal que $y_i = x_i + a$. Veamos que pasa con los estad'isticos de orden de $x$ e $y$:
+
+$$
+\begin{array}
+_x_{(1)} &\leq& x_{(2)} &\leq& \cdots &\leq& x_{(n)} \\
+y_{(2)} &\leq& y_{(2)} &\leq& \cdots &\leq& y_{(n)}
+\end{array}
+$$
+
+Es decir, los estadísticos de orden de $x$ e $y$ son iguales. Esto significa que si ordenamos de mayor a menor todas las $x$ y todas las $y$, al sumarle $a$ a la i-ésima $x$ obtenemos como resultado al i-ésima $y$. 
+
+### $n$ impar
+
+Ahora calculemos la mediana de $y$ para el caso en el que $n$ es impar.
+
+$$
+\tilde{y} =  y_{\left( \frac{n+1}{2} \right)} =  x_{\left( \frac{n+1}{2} \right)} + a = \tilde{x} + a
+$$
+
+### $n$ par
+
+Y para el caso en el que en el que $n$ es par.
+
+$$
+\tilde{y} = \frac{y_{\left( \frac{n}{2} \right)} + y_{\left(\frac{n}{2} + 1 \right)}}{2} = \frac{x_{\left( \frac{n}{2} \right)} + a + x_{\left( \frac{n}{2} + 1 \right)} + a}{2} = \frac{x_{\left( \frac{n}{2} \right)} + x_{\left( \frac{n}{2} + 1 \right)}}{2} + \frac{2a}{2} = \tilde{x} + a  
+$$
+
+Finalmente, demostramos que, tanto cuando $n$ es par como impar, la mediana es un estimador equivariante por tranlaciones.
+
+## Ejercicio 1.b
+
+Probar que la mediana es un estimador equivariante por cambios de escala.
+
+Para evaluar el cambio de escala, definimos una nueva variable $y_i$ tal que $y_i = ax_i$. En este caso la transformación de estadísticos de orden no es tan directa por lo que tendremos que considerar los casos en los que $a \geq 0$ y $a < 0$ separadamente.
+
+### $a \geq 0$
+
+En este caso, los estadísticos de órden se mantienen iguales al caso de la traslación:
+
+$$
+\begin{array}
+_x_{(1)} &\leq& x_{(2)} &\leq& \cdots &\leq& x_{(n)} \\
+y_{(2)} &\leq& y_{(2)} &\leq& \cdots &\leq& y_{(n)}
+\end{array}
+$$
+
+#### $n$ impar
+
+Ahora calculemos la mediana de $y$ para el caso en el que $n$ es impar.
+
+$$
+\tilde{y} =  y_{\left( \frac{n+1}{2} \right)} =  a x_{\left( \frac{n+1}{2} \right)} = a \tilde{x}
+$$
+
+#### $n$ par
+
+Y para el caso en el que en el que $n$ es par.
+
+$$
+\tilde{y} = \frac{y_{\left( \frac{n}{2} \right)} + y_{\left( \frac{n}{2} + 1 \right)}}{2} = \frac{a x_{\left( \frac{n}{2} \right)} + a x_{\left( \frac{n}{2} + 1 \right)}}{2} = a \frac{x_{\left( \frac{n}{2} \right)} + x_{\left( \frac{n}{2} + 1 \right)}}{2}  = a\tilde{x}
+$$
+
+### $a < 0$
+
+En este caso, los estadísticos de órden se se invierten ya que, por ejemplo, el valor de $x$ más alto ($x_n$) pasa a ser el valor de $y$ más bajo ($y_1$):
+
+$$
+\begin{array}
+_x_{(1)} &\leq& x_{(2)} &\leq& \cdots &\leq& x_{(n-1)} &\leq& x_{(n)} \\
+ax_{(1)} &\geq& ax_{(2)} &\geq& \cdots &\geq& ax_{(n-1)} &\geq& ax_{(n)} \\
+y_{(1)} &\geq& y_{(2)} &\geq& \cdots &\geq& y_{(n-1)} &\geq& y_{(n)}
+\end{array}
+$$
+Entonces, el estadístico de orden $k$ de la nueva variable $y$ puede definirse como $y_{(k)} = ax_{(n-k+1)}$. Con esto en mente vamos a continuar con las demostraciones para $n$ impar y par.
+
+#### $n$ impar
+
+Ahora calculemos la mediana de $y$ para el caso en el que $n$ es impar.
+
+$$
+\tilde{y} =  y_{\left( \frac{n+1}{2} \right)} =  a x_{\left( \frac{n+1}{2} \right)} = a \tilde{x}
+$$
+
+O sea, $k = \frac{n+1}{2}$, y:
+
+$$
+ y_{\left( \frac{n+1}{2} \right)} = y_{(k)} = ax_{(n-k+1)} = ax_{(n-\frac{n+1}{2}+1)} = ax_{(n-\frac{n}{2}-\frac{1}{2}+1)} = ax_{(\frac{n}{2}+\frac{1}{2})} = ax_{(\frac{n+1}{2})}
+$$
+Entonces:
+
+$$
+\tilde{y} =  y_{\left( \frac{n+1}{2} \right)} =  a x_{\left( \frac{n+1}{2} \right)} = a \tilde{x}
+$$
+
+#### $n$ par
+
+Veamos como se modifican los estadísticos de orden en este caso. Primero, consideremos el caso en el que $k = \frac{n}{2}$:
+
+$$
+ y_{\left( \frac{n}{2} \right)} = y_{(k)} = ax_{(n-k+1)} = ax_{(n-\frac{n}{2}+1)} = ax_{(\frac{n}{2}+1)}
+$$
+Y segundo, consideremos el caso en el que $k = \frac{n}{2}+1$:
+
+$$
+ y_{\left( \frac{n}{2}+1 \right)} = y_{(k)} = ax_{(n-k+1)} = ax_{(n-(\frac{n}{2}+1)+1)} = ax_{(n - \frac{n}{2}- 1+1)} = ax_{(\frac{n}{2})}
+$$
+
+Entonces, veamos como se modifica la mediana de $x$ por un cambio de escala cuando $a < 0$ y $n$ es par:
+
+$$
+\tilde{y} = \frac{y_{\left( \frac{n}{2} \right)} + y_{\left( \frac{n}{2} + 1 \right)}}{2} = \frac{a x_{\left( \frac{n}{2}+1 \right)} + a x_{\left( \frac{n}{2} \right)}}{2} = a \frac{x_{\left( \frac{n}{2}+1 \right)} + x_{\left( \frac{n}{2} \right)}}{2}  = a\tilde{x}
+$$
+
+Finalmente, demostramos que, tanto cuando $n$ es par como impar, la mediana es un estimador equivariante por cambios de escala.
+
+## Conclusión
+
+**Hemos demostrado que la mediana es un estimador equivariante por transformaciones afines, es decir, que es equivariante por traslaciones y cambios de escala.**

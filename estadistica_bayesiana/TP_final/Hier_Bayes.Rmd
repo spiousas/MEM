@@ -1,0 +1,194 @@
+---
+title: "Modelos bayesianos jerárquicos"
+author: "Jesica Charaf, Gonzalo Berasaluce e Ignacio Spiousas"
+date: "2024-05-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Load packages
+pacman::p_load(bayesrules, tidyverse, rstanarm, bayesplot, 
+               tidybayes, broom.mixed, forcats)
+
+# Load data
+data(spotify)
+```
+
+## Exploración de datos
+
+Modificamos los datos para ver las medias por artista:
+
+```{r}
+spotify <- spotify %>% 
+  select(artist, title, popularity) %>% 
+  mutate(artist = fct_reorder(artist, popularity, .fun = 'mean'))
+
+artist_means <- spotify %>% 
+  group_by(artist) %>% 
+  summarize(count = n(), popularity = mean(popularity))
+```
+
+Los artistas más y menos populares:
+
+```{r}
+artist_means %>%
+  slice(1:2, 43:44)
+```
+
+## Modelo full pooleado
+
+Tenemos de 2 a 40 canciones por artista:
+
+```{r}
+artist_means %>% 
+  summarize(min(count), max(count))
+```
+
+La estimación no paramétrica de la densidad tiene esta pinta:
+
+```{r}
+ggplot(spotify, aes(x = popularity)) + 
+  geom_density(linewidth = 1, fill = "steelblue", alpha = .3) +
+  theme_bw()
+```
+
+Ahora vamos a ajustar el modelo full pooleado:
+
+```{r, results='hide'}
+spotify_complete_pooled <- stan_glm(
+  popularity ~ 1, 
+  data = spotify, family = gaussian, 
+  prior_intercept = normal(50, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2, seed = 84735)
+```
+
+Si bien en el texto dice que el prior de $\mu$ es $\mu \sim N(50, 52^2)$, podemos ver que en el código dice `normal(50, 2.5, autoscale = TRUE)`. Esto es porque el autor aprovecha la opción `autoscale` de `stan_glm()`. En el caso del prior gaussiano esto significa que $\sigma$ es $2.5 \times S_y$:
+
+```{r}
+round(2.5 * sd(spotify$popularity))
+```
+
+`prior_aux` por defecto si el prior de intercept es normal es $\sigma$. Para setear el `prior_aux` también aprovecha la opción `autoscale` de `stan_glm()`. Esto significa, para el caso exponencial, que el prior para $\sigma$ es $1 / S_y$:
+
+```{r}
+round(1/sd(spotify$popularity), digits = 3)
+```
+
+De hecho, si chequeamos los priors podemos ver los valore ajustados:
+
+```{r}
+# Get prior specifications
+prior_summary(spotify_complete_pooled)
+```
+
+Y ver el posterior summary:
+
+```{r}
+complete_summary <- tidy(spotify_complete_pooled, 
+                         effects = c("fixed", "aux"), 
+                         conf.int = TRUE, conf.level = 0.80)
+complete_summary
+```
+
+Las estimaciónes del modelo en relación a las medias por artista:
+
+```{r}
+set.seed(84735)
+predictions_complete <- posterior_predict(spotify_complete_pooled,
+                                          newdata = artist_means)
+
+ppc_intervals(artist_means$popularity, yrep = predictions_complete,
+              prob_outer = 0.80) +
+  ggplot2::scale_x_continuous(labels = artist_means$artist,
+                              breaks = 1:nrow(artist_means)) +
+  theme_bw() +
+  xaxis_text(angle = 90, hjust = 1) 
+```
+
+Las estimaciones promedio por artista van a ser todas iguales e iguales a las estimaciones por canción, ya que todas las estimaciones son iguales.
+
+$$
+E(\mu|y) \approx 58.39
+$$
+
+## Modelo sin poolear
+
+Ahora vamos a conservar todos los artistas por separado.
+
+```{r}
+ggplot(spotify, aes(x = popularity, group = artist)) + 
+  geom_density(linewidth = .5, fill = "steelblue", alpha = .3) +
+  theme_bw()
+```
+
+$$
+Y_{ij}|\mu_j,\sigma \sim N(\mu, \sigma^2)
+$$
+
+Ahora definimos el modelo. Lo único que cambia es que agregamos `artist` como predictor (y con el `-1` le sacamos el intercept). Fijensé que ahora en lugar de `prior_intercept` dice sólo `prior` y por eso es que en la definici'on del libro dice que $\mu_j \sim N(50, S^2_j)$.
+
+```{r, results='hide'}    
+spotify_no_pooled <- stan_glm(
+  popularity ~ artist - 1, 
+  data = spotify, family = gaussian, 
+  prior = normal(50, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2, seed = 84735)
+```
+
+Acá también podemos chequear los priors:
+
+```{r}
+# Get prior specifications
+prior_summary(spotify_no_pooled)
+```
+
+Y ahora podemos ver los ajustes por artista con respecto a la $\bar{y}_j$:
+
+```{r}
+# Simulate the posterior predictive models
+set.seed(84735)
+predictions_no <- posterior_predict(
+  spotify_no_pooled, newdata = artist_means)
+  
+# Plot the posterior predictive intervals
+ppc_intervals(artist_means$popularity, yrep = predictions_no, 
+              prob_outer = 0.80) +
+  ggplot2::scale_x_continuous(labels = artist_means$artist, 
+                              breaks = 1:nrow(artist_means)) +
+  theme_bw() +
+  geom_point(x = 1:nrow(artist_means), y = complete_summary$estimate[1], color = "darkorange") +
+  xaxis_text(angle = 90, hjust = 1)
+```
+
+Qué pasa si poneoms el mismo prior para $\mu$ pero con menor dispersión. Pongamos $0.1$ en la función que sería equivalente a decir que $\mu_j \sim N(50, 2)$:
+
+```{r, results='hide'}    
+spotify_no_pooled_smallsigma <- stan_glm(
+  popularity ~ artist - 1, 
+  data = spotify, family = gaussian, 
+  prior = normal(50, .1, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2, seed = 84735)
+```
+
+```{r}
+# Simulate the posterior predictive models
+set.seed(84735)
+predictions_no <- posterior_predict(
+  spotify_no_pooled_smallsigma, newdata = artist_means)
+  
+# Plot the posterior predictive intervals
+ppc_intervals(artist_means$popularity, yrep = predictions_no, 
+              prob_outer = 0.80) +
+  ggplot2::scale_x_continuous(labels = artist_means$artist, 
+                              breaks = 1:nrow(artist_means)) +
+  theme_bw() +
+  geom_point(x = 1:nrow(artist_means), y = complete_summary$estimate[1], color = "darkorange") +
+  xaxis_text(angle = 90, hjust = 1)
+```
+
+Efectivamente vemos que los $\mu_j$ quedan más cerca de $50$ y ya no son la media de las observaciones para ese artista.
