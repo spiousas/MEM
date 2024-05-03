@@ -48,7 +48,7 @@ artist_means %>%
 
 La estimación no paramétrica de la densidad tiene esta pinta:
 
-```{r}
+```{r, fig.height=2}
 ggplot(spotify, aes(x = popularity)) + 
   geom_density(linewidth = 1, fill = "steelblue", alpha = .3) +
   theme_bw()
@@ -95,7 +95,7 @@ complete_summary
 
 Las estimaciónes del modelo en relación a las medias por artista:
 
-```{r}
+```{r, fig.height=4}
 set.seed(84735)
 predictions_complete <- posterior_predict(spotify_complete_pooled,
                                           newdata = artist_means)
@@ -118,7 +118,7 @@ $$
 
 Ahora vamos a conservar todos los artistas por separado.
 
-```{r}
+```{r, fig.height=3}
 ggplot(spotify, aes(x = popularity, group = artist)) + 
   geom_density(linewidth = .5, fill = "steelblue", alpha = .3) +
   theme_bw()
@@ -148,7 +148,7 @@ prior_summary(spotify_no_pooled)
 
 Y ahora podemos ver los ajustes por artista con respecto a la $\bar{y}_j$:
 
-```{r}
+```{r, fig.height=4}
 # Simulate the posterior predictive models
 set.seed(84735)
 predictions_no <- posterior_predict(
@@ -175,7 +175,7 @@ spotify_no_pooled_smallsigma <- stan_glm(
   chains = 4, iter = 5000*2, seed = 84735)
 ```
 
-```{r}
+```{r, fig.height=4}
 # Simulate the posterior predictive models
 set.seed(84735)
 predictions_no <- posterior_predict(
@@ -192,3 +192,5 @@ ppc_intervals(artist_means$popularity, yrep = predictions_no,
 ```
 
 Efectivamente vemos que los $\mu_j$ quedan más cerca de $50$ y ya no son la media de las observaciones para ese artista.
+
+## El modelos jerárquico
