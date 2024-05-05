@@ -1,0 +1,692 @@
+---
+title: "Entrega Final - Estadística Robusta 2024"
+author: "Ignacio Spiousas"
+format: pdf
+lang: es
+---
+
+```{r, echo=FALSE}
+pacman::p_load(tidyverse, emo, here, ggmagnify)
+```
+
+## Ejercicio 4
+
+Probar que tanto **s** como la **MAD** cumplen estas dos propiedades:
+
+1. **Propiedad de ser invariante por traslaciones**: Sea $a \in \mathbb{R}$ e $y_i = x_i + a$ para todo $1 \leq i \leq n$. Luego, si $\textbf{y} = (y_1,..., y_n)$ entonces:
+$$
+\hat{\sigma}(\textbf{y}) = \hat{\sigma}(\textbf{x}) 
+$$
+
+2. **Propiedad de ser equivariante por cambios de escala**: Sea $a \in \mathbb{R}$ e $y_i = ax_i$ para todo $1 \leq i \leq n$. Luego, si $\textbf{y} = (y_1,..., y_n)$ entonces:
+
+$$
+\hat{\sigma}(\textbf{y}) = |a| \hat{\sigma}(\textbf{x}) 
+$$
+
+### Resolución para el $s$
+
+Empecemos por lo más fácil: $s$. Dada $\textbf{x} = (x_1,..., x_n)$ una secuencia de **n** variables aleatorias, podemos definir a $s(\textbf{x})$ como:
+
+$$
+s(\textbf{x}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i-\bar{x})^2},
+$$
+
+donde $\bar{x} = 1/n \sum_{i=1}^n x_i$.
+
+#### Invarianza por traslación de $s$
+
+Recordemos que $y_i = x_i + a$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Empecemos calculando $\bar{y}$ que seguramente lo vayamos a necesitar:
+
+$$
+\bar{\textbf{y}} = \frac{1}{n} \sum_{i=1}^n y_i = \frac{1}{n} \sum_{i=1}^n (x_i+a) = \frac{1}{n} \sum_{i=1}^n x_i+ \frac{1}{n}\sum_{i=1}^na = \bar{x} + \frac{1}{n} an = \bar{\textbf{x}} + a.
+$$
+
+Y ahora a lo que nos importa, a probar que $s(\textbf{y}) = s(\textbf{x})$. Empecemos escribiendo $s(\textbf{y})$:
+
+$$
+s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (y_i-\bar{\textbf{y}})^2}.
+$$
+
+Y reemplacemos cada $y_i$ por $x_i + a$ y $\bar{y}$ por $\bar{x}+a$ (que sale del cálculo auxiliar):
+
+$$
+\begin{split}
+s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [x_i+a-(\bar{\textbf{x}}+a)]^2}
+= \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i+a-\bar{\textbf{x}}-a)^2} = \\
+= \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = s(\textbf{x}).
+\end{split}
+$$
+
+Que es lo que queríamos demostrar.
+
+#### Equivarianza por cambio de escala de $s$
+
+Recordemos que $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Empecemos calculando $\bar{\textbf{y}}$ que seguramente lo vayamos a necesitar:
+
+$$
+\bar{\textbf{y}} = \frac{1}{n} \sum_{i=1}^n y_i = \frac{1}{n} \sum_{i=1}^n ax_i = a \frac{1}{n} \sum_{i=1}^n x_i = a \bar{\textbf{x}}.
+$$
+
+En este caso queremos probar que $s(\textbf{y}) = |a| s(\textbf{x})$. Podemos retomar el $s(\textbf{y})$ definido anteriormente pero esta vez reemplazando cada $y_i$ por $ax_i$ y $\bar{y}$ por $a\bar{x}$ (que sale del cálculo auxiliar):
+
+$$
+\begin{split}
+s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (ax_i-a\bar{\textbf{x}})^2}
+= \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [a(x_i-\bar{\textbf{x}})]^2}
+= \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = \\
+= \sqrt{a^2} \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2}
+= |a| \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = |a| s(\textbf{x}).
+\end{split}
+$$
+
+Que es lo que queríamos demostrar.
+
+### Resolución para la MAD
+
+Empecemos refrescando las propiedades de la mediana que vimos en el **ejercicio 1** (para más detalle ver la sección Anexo:Ejercicio 1)[^1].
+
+
+$$
+\begin{split}
+\tilde{\textbf{y}} = \tilde{\textbf{x}} + a \qquad si \qquad y_i = x_i + a \qquad y \qquad \textbf{y} = (y_1,..., y_n) \\
+\tilde{\textbf{y}} = a\tilde{\textbf{x}} \qquad si \qquad y_i = ax_i \qquad y \qquad \textbf{y} = (y_1,..., y_n),
+\end{split}
+$$
+en ambos casos con $a \in \mathbb{R}$.
+
+[^1]: Donde $\tilde{\textbf{x}}$ es la mediana de $\textbf{x}$.
+
+Ahora sí, definamos la $MAD$. Dada $\textbf{x} = (x_1,..., x_n)$ una secuencia de **n** variables aleatorias, podemos definir a $MAD(\textbf{x})$ como:
+
+$$
+MAD(\textbf{x}) = Med_{1 \leq i \leq n} \left\{ |x_i-\tilde{\textbf{x}}| \right\}
+$$
+
+#### Invarianza por traslación de la MAD
+
+Recordemos que $y_i = x_i + a$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Queremos probar que $MAD(\textbf{y}) = MAD(\textbf{x})$. Empecemos escribiendo la $MAD(\textbf{y})$: 
+
+$$
+MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\}
+$$
+
+Y reemplacemos cada $y_i$ por $x_i + a$ y $\tilde{\textbf{y}}$ por $\tilde{\textbf{x}}+a$ (que sale de las propiedades del ejercicio 1.a):
+
+$$
+\begin{split}
+MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\}
+= Med_{1 \leq i \leq n} \left\{ |x_i + a - (\tilde{\textbf{x}} + a)| \right\} = \\
+= Med_{1 \leq i \leq n} \left\{ |x_i + a - \tilde{\textbf{x}} - a| \right\}
+= Med_{1 \leq i \leq n} \left\{ |x_i - \tilde{\textbf{x}}| \right\} = MAD(\textbf{x}).
+\end{split}
+$$
+
+Que es lo que queríamos demostrar.
+
+#### Equivarianza por cambio de escala de la MAD
+
+Recordemos que $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. En este caso queremos probar que $MAD(\textbf{y}) = |a| MAD(\textbf{x})$. Podemos retomar la $MAD(\textbf{y})$ definido anteriormente pero esta vez reemplazando cada $y_i$ por $ax_i$ y $\tilde{\textbf{y}}$ por $a\tilde{\textbf{x}}$ (que sale de las propiedades del ejercicio 1.b):
+
+$$
+\begin{split}
+MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\}
+= Med_{1 \leq i \leq n} \left\{ |ax_i - a\tilde{\textbf{x}} | \right\} = \\
+= Med_{1 \leq i \leq n} \left\{ |a| |x_i - \tilde{\textbf{x}} | \right\} = |a| MAD(\textbf{x}).
+\end{split}
+$$
+
+Que es lo que queríamos demostrar.
+
+## Ejercicio 8
+
+Realizar una simulación en la que se pueda visualizar la eficiencia asintótica de la mediana en comparación con la media cuando los datos son normales. 
+Para ello, construir un gráfico en el que se observe cómo aumentando el tamaño de muestra, la eficiencia de la mediana tiende a $2/\pi \approx 0.637$.
+A modo comparativo, realizar un gráfico para observar que si bien el cociente de las varianzas tiende a $2/\pi$, el cociente de las medias tiende a $1$. 
+¿A qué se debe esto? ¿Se puede decir u observar algo más?
+
+### Resolución
+
+Lo que vamos a hacer es simular varias realizaciones ($nrep$) de una muestra de tamaño $n$ y calcular para cada una de ellas la media y la mediana. Luego, para cada $n$ vamos a calcular la eficiencia como el cociente entre la varianza de las $nrep$ medias y la varianza de las $nrep$ medianas.
+
+Para la simulación vamos a definir algunos parámetros:
+
+* `min_n`: Mínimo tamaño de muestra a considerar.
+* `max_n`: Máximo tamaño de muestra a considerar.
+* `step`: Pasos para los tamaños de muestra que voy a explorar.
+* `nrep`: Cantidad de repeticiones de cada simulación.
+
+```{r}
+min_n <- 1
+max_n <- 1e3
+step <- 20
+nrep <- 4000
+```
+
+Luego, vamos a generar una matriz $x$, de la cual luego utilizaremos una sección en particular de acuerdo al n[^2].
+
+[^2]: Para evitar que la compilación sea una pesadilla el documento no calcula $x$ ni las medias y medianas sino que lo tengo precalculado y lo cargo para graficarlo. Entonces, las explicaciones de código son más bien para comprender la lógica de trabajo.
+
+```{r}
+#| eval: false
+set.seed(1234)
+x <- matrix(rnorm(nrep * max_n, 1, 1), nrep, max_n)
+```
+
+Para calcular la eficiencia vamos a echar mano a algunas erramientas del *{tidyverse}*. Para empezar utilizamos la función `expand_grid` que nos genera un tibble con todas las combiaciones de, en este caso, `rep` y `ns`. Donde `rep` varía de 1 a `nrep` y `ns` es un vector de `min_n` a `max_n` con paso `step`.
+
+```{r}
+grilla <- expand_grid(ns  = seq(min_n, max_n, step),
+                      rep = 1:nrep)
+slice(grilla, c(1:3, (nrow(grilla)-2):nrow(grilla)))
+```
+
+Podemos ver las primeras tres y las últimas tres filas del tibble `grilla`, donde puede verse que para cada valor de `ns` hay `nrep` filas con el índice `rep`.
+
+Lo siguiente que hacemos es calcular para cada fila el la media y la mediana para los primeras `ns` columnas de la fila `rep` de `x` (es un poco un trabalenguas, pero juro que tiene sentido). El código nos puede ayudar a entender:
+
+```{r}
+#| eval: false
+medias_medianas <- grilla |>
+  rowwise() |>
+  mutate(mean   = mean  (x[rep, 1:ns]),
+         median = median(x[rep, 1:ns])) 
+```
+
+En este código usamos la opción `rowwise()` que nos asegura que las operaciones del verbo `mutate` se están haciendo fila por fila.
+
+Finalmente, sólo nos queda calcular la eficiencia para cada valor de `ns`. Para esto vamos a utilizar dos intrucciones muy útiles de *{dplyr}*: `group_by()` y `summarise()`. La primera nos permite agrupar un tibble de acuerdo a los valores de una columna mientras que el verbo `summarise()` nos permite calcular operaciones sobre estas filas agrupadas. Entonces el código final queda de esta forma:
+
+```{r}
+#| eval: false
+eficiencia_mediana <- medias_medianas |>
+  group_by(ns) |>
+  summarise(eficiencia = var(mean) / var(median))
+```
+
+Una de las cosa que nos permite hacer *{tidyverse}* es encadenar todo el código en una sóla línea usando el operador pipe `|>`:
+
+```{r}
+#| eval: false
+eficiencia_mediana <- expand_grid(rep = 1:nrep,
+                                  ns  = seq(min_n, max_n, step)) %>%
+  rowwise() %>%
+  mutate(mean   = mean  (x[rep, 1:ns]),
+         median = median(x[rep, 1:ns])) %>%
+  group_by(ns) %>%
+  summarise(eficiencia = var(mean) / var(median))
+```
+
+Ahora que tenemos este código, resulta trivial agregar el cociente entre las medias (en lugar de las varianzas):
+
+```{r}
+#| eval: false
+eficiencia_mediana <- expand_grid(rep = 1:nrep,
+                                  ns  = seq(min_n, max_n, step)) %>%
+  rowwise() %>%
+  mutate(mean   = mean  (x[rep, 1:ns]),
+         median = median(x[rep, 1:ns])) %>%
+  group_by(ns) %>%
+  summarise(eficiencia = var(mean) / var(median),
+            coc_medias = mean(mean) / mean(median))
+```
+
+En la figura @fig-eficiencias puede verse la representación gráfica de la eficiencia y el cociente de medias en función del tamaño de la muestra (n). En la misma podemos ver que efectivamente la eficiencia de la mediana converge a $2/\pi = 0.637$ mientras que el cociente entre las medias es $1$ para todo $n$. Esto último se debe a que tanto la media como la mediana son estimadores insesgados de $\mu$ entonces, sin importar el $n$ la esperanza de ambos (en este caso simulada como la media de `nrep` repeticiones) es $\mu$.
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-asp: .6
+#| label: fig-eficiencias
+#| fig-cap: "Eficiencia de la mediana y cociente de medias."
+#| fig-align: center
+# Leer los datos
+eficiencia_mediana <- read_csv(here("estadistica_robusta/entrega/data/eficiencias.csv"), col_types = cols())
+
+# Pivotear para que me quede tidy
+eficiencia_mediana_long <- eficiencia_mediana |>
+  rename(`Cociente de varianzas (eficiencia)` = eficiencia,
+         `Cociente de medias` = coc_medias) |>
+  pivot_longer(cols = `Cociente de varianzas (eficiencia)`:`Cociente de medias`, 
+               names_to = "medida", 
+               values_to = "valor")
+
+# Graficar
+eficiencia_mediana_long |> 
+  ggplot(aes(x = ns, y = valor, color = medida)) +
+  geom_hline(yintercept = 2/pi, linetype = "dashed") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_y_continuous(breaks = c(round(2/pi,3), seq(.7,1,.1))) +
+  labs(x = "Tamaño de la muestra (n)", y = "Cocientes", color = NULL) +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+```
+
+Como última observación quiero retomar algo que tal vez haya pasado desapercibido. Cuando generamos `x` no tomamos muestras de una $\mathcal{N}(0,1)$ sino de una $\mathcal{N}(1,1)$ (hicimos `rnorm(nrep * max_n, 1, 1)`) ¿Por qué? Bueno, como estamos realizando una simulación numérica, tenemos que tener cuidado de no hacer cocientes con números muy chicos y, sobre todo cuando $n$ es grande, la media y la mediana son muy cercanas a cero. Esto lo que genera es que aparezcan inestabilidades numéricas. Repitamos la misma simulación que antes pero muestreando de una $\mathcal{N}(0,1)$ y veamos qué pasa.
+
+En la figura @fig-eficiencias_0 vemos que, efectivamente, el cociente entre las medidas tiene puntos raros debido a inestabilidades numéricas. También se observa que, para muestras más grandes donde es más esperable que la media y le mediana sean más parecidas hay menos puntos inestables. Sin embargo, como puede verse en el insert que magnifica la zona de `ns` $250$ a $1000$, el cociente de las medias está lejos de estabilizarse en $1$.
+
+```{r}
+#| echo: false
+#| fig-width: 6
+#| fig-asp: .6
+#| label: fig-eficiencias_0
+#| fig-cap: "Eficiencia de la mediana y cociente de medias muestrando una N(0,1)."
+#| fig-align: center
+# Leer los datos
+eficiencia_mediana_0 <- read_csv(here("estadistica_robusta/entrega/data/eficiencias_media_0.csv"), col_types = cols())
+
+eficiencia_mediana_0_long <- eficiencia_mediana_0 |>
+  rename(`Cociente de varianzas (eficiencia)` = eficiencia,
+         `Cociente de medias` = coc_medias) |>
+  pivot_longer(cols = `Cociente de varianzas (eficiencia)`:`Cociente de medias`, 
+               names_to = "medida", 
+               values_to = "valor")
+
+eficiencia_mediana_0_long |> 
+  ggplot(aes(x = ns, y = valor, color = medida)) +
+  geom_hline(yintercept = 2/pi, linetype = "dashed") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Tamaño de la muestra (n)", y = "Cocientes", color = NULL) +
+  theme_bw() +
+  geom_magnify(from = c(250, 980, .6, 1.4), to = c(250, 980, -7, -2)) +
+  theme(legend.position = "bottom")
+```
+
+
+## Ejercicio 15
+
+a. Verificar que el MLE de escala para la distribución *t* de Student con $\nu$ grados de libertad es equivalente a considerar:
+
+$$
+\rho(t) = \frac{t^2}{t^2+\nu} \qquad y \qquad \delta = \frac{1}{\nu+1} 
+$$
+
+b. Probar que la función $\rho$ del item anterior es una $\rho$-función.
+
+c. Mostrar que si se usa como $\rho(t) = I(|t|>c)$, con $c>0$, y $\delta=1/2$, se tiene que $\hat{\sigma} = Med(|x|)/c$.
+
+### Resolución
+
+#### Inciso a
+
+Recordemos primero el modelo de escala:
+
+$$
+x_i = \sigma u_i.
+$$
+
+Lo que queremos es minimizar la verosimilitud de este modelo que tiene función de densidad:
+
+$$
+f_x = \frac{1}{\sigma} f_0 \left( \frac{x_i}{\sigma}\right),
+$$
+
+donde $f_0()$ es una t de Student de $\nu$ grados de libertad.
+
+La función de verosimilitud la podemos escribir como:
+
+$$
+L(\sigma) = \prod_{i=1}^n f_x = \prod_{i=1}^n\frac{1}{\sigma} f_0 \left( \frac{x_i}{\sigma}\right) =  \frac{1}{\sigma^n} \prod_{i=1}^n f_0 \left( \frac{x_i}{\sigma}\right),
+$$
+
+que, aplicando logaritmo me queda:
+
+$$
+l(\sigma) = \log[l(\sigma)] = -n \log(\sigma) + \sum_{i=1}^n \log\left(f_0 \left( \frac{x_i}{\sigma}\right)\right).
+$$
+
+Ahora para minimizar lo que tengo que hacer es derivar e igualar a $0$:
+
+$$
+\frac{dl(\sigma)}{d\sigma} = \frac{-n}{\sigma} + \sum_{i=1}^n \frac{f_0' \left( \frac{x_i}{\sigma}\right)}{f_0 \left( \frac{x_i}{\sigma}\right)} \left( \frac{-x_i}{\sigma^2} \right) = 0.
+$$
+
+Sacando el $1/\sigma$ de factor común y operando un poco llegamos a que:
+
+$$
+\frac{1}{n}\sum_{i=1}^n \frac{f_0' \left( \frac{x_i}{\sigma}\right)}{f_0 \left( \frac{x_i}{\sigma}\right)} \left( \frac{-x_i}{\sigma} \right) = 1,
+$$
+donde el $\sigma$ que cumple esta ecuación es efectivamente el $\hat{\sigma}$. Reemplazando $t=x_i/\sigma$ podemos reescribir la igualdad anterior como:
+
+$$
+\frac{1}{n}\sum_{i=1}^n - \frac{f_0' (t)}{f_0 (t)} t = 1.
+$$
+
+Ahora escribamos explícitamente $f_0(t)$:
+
+$$
+f_0(t) = H(\nu) \left( 1 + \frac{t^2}{\nu} \right)^{-\frac{\nu+1}{2}}
+$$
+
+donde $H(\nu)$ es una función de los grados de libertad y no de $t$. Escribamos también su derivada:
+
+$$
+f_0'(t) = \frac{df_0(t)}{dt} = H(\nu) \left(-\frac{\nu+1}{2} \right) \left( 1 + \frac{t^2}{\nu} \right)^{-\frac{\nu+1}{2}-1} \frac{2t}{\nu},
+$$
+
+que, luego de operar algebraícamente queda como:
+
+$$
+f_0'(t) = -H(\nu) \frac{\nu+1}{\nu} \left( 1 + \frac{t^2}{\nu} \right)^{-\frac{\nu+3}{2}} t.
+$$
+
+Ahora que tenemos estas expresiones podemos tratar de simplificar un poco $f_0' (t)/f_0 (t)$:
+
+$$
+\frac{f_0' (t)}{f_0 (t)} = \frac{-H(\nu) \frac{\nu+1}{\nu} \left( 1 + \frac{t^2}{\nu} \right)^{-\frac{\nu+3}{2}} t}{H(\nu) \left( 1 + \frac{t^2}{\nu} \right)^{-\frac{\nu+1}{2}}} = -\frac{(\nu+1)t}{\nu} \left( 1 + \frac{t^2}{\nu} \right)^{-\frac{\nu+3}{2} + \frac{\nu+1}{2}},
+$$
+
+donde, haciendo un pequeño cálculo auxiliar podemos ver que:
+
+$$
+-\frac{\nu+3}{2} + \frac{\nu+1}{2} = \frac{-\nu-3+\nu+1}{2} = \frac{-2}{2} = -1,
+$$
+
+Entonces:
+
+$$
+\frac{f_0' (t)}{f_0 (t)} = -\frac{(\nu+1)t}{\nu} \left( 1 + \frac{t^2}{\nu} \right)^{-1} = -\frac{(\nu+1)}{\nu} \left( \frac{\nu t}{\nu + t^2} \right) = -(\nu+1) \left( \frac{t}{\nu + t^2} \right),
+$$
+
+entonces el sumando de la suma nos queda:
+
+$$
+- \frac{f_0' (t)}{f_0 (t)} t = (\nu+1) \left( \frac{t^2}{\nu + t^2} \right).
+$$
+Entonces el estimador MLE $\hat{\sigma}$ será el que cumpla:
+
+$$
+\frac{1}{n}\sum_{i=1}^n (\nu+1) \left( \frac{t^2}{\nu + t^2} \right) =  \frac{\nu+1}{n}\sum_{i=1}^n \left( \frac{t^2}{\nu + t^2} \right) = 1,
+$$
+
+recordando que $t = x_i/\sigma$. Entonces, lo siguiente que vamos a hacer es reescribirlo de forma tal de poder identificar $\rho()$ y $\delta$:
+
+$$
+\frac{1}{n} \sum_{i=1}^n \left( \frac{t^2}{\nu + t^2} \right) = \frac{1}{\nu+1},
+$$
+
+o sea:
+
+$$
+\frac{1}{n} \sum_{i=1}^n \rho\left(\frac{x_i}{\hat{\sigma}}\right) = \delta,
+$$
+
+donde puede verse claramente que:
+
+$$
+\rho(t) = \frac{t^2}{\nu + t^2} ,
+$$
+
+y,
+
+$$
+\delta  = \frac{1}{\nu+1},
+$$
+
+tal como se quería demostrar.
+
+#### Inciso b
+
+Para ser $t^2/(\nu + t^2)$ un $\rho$-función, esta debe cumplir:
+
+1. Ser una función no decreciente en $|t|$ (en particular, es una función par).
+2. Que se cumpla que $\rho(0) = 0$.
+3. Ser creciente (monótona) para $t > 0$ tal que $\rho(x) < \lim_{t \to+\infty} = \rho(\infty)$.
+4. Que si $\rho$ es acotada, se supone $\rho(\infty) = 1$.
+
+Lo primero que vamos a verificar es que el $\rho(t)$ propuesto sea par:
+
+$$
+\rho(-t) =  \frac{(-t)^2}{\nu + (-t)^2} =  \frac{t^2}{\nu + t^2} = \rho(t),
+$$
+
+es decir, es una función par. Eso lo podemos ver también gráficamente. En la figura @fig-rhosym podemos ver a $\rho(t)$ en función de $t$ para $\nu=1$.
+
+```{r}
+#| echo: false
+#| fig-width: 4
+#| fig-asp: .6
+#| label: fig-rhosym
+#| fig-cap: "Función rho(t) en función de t para 10 grados de libertad."
+#| fig-align: center
+nu <- 10
+rho <- tibble(t = seq(-2,2,.01),
+              rho = t^2/(1 + t^2))
+
+rho |> ggplot(aes(x = t,
+           y = rho)) +
+  geom_vline(xintercept = 0, color = "gray70", linetype = "dashed") +
+  geom_line(linewidth = 1) +
+  labs(x = "t", y = "rho(t)") +
+  theme_bw()
+```
+
+Ahora una fácil $\rho(0) = 0^2/(\nu + 0^2) = 0/\nu = 0$. Algo que también puede verse en la figura @fig-rhosym.
+
+Sigamos con la monotonía para $x>0$. Dados $0<t_a<t_b$ queremos demostrar que $\rho(t_a) < \rho(t_b)$. Primero evaluemos $\rho(t)$ en ambos puntos:
+
+$$
+\rho(t_a) =  \frac{t_a^2}{\nu + t_a^2} \qquad y \qquad \rho(t_b) =  \frac{t_a^2}{\nu + t_b^2} ,
+$$
+
+que podemos reescribir como:
+
+$$
+\rho(t_a) =  \frac{1}{\nu/t_a^2+1} \qquad y \qquad \rho(t_b) =  \frac{1}{\nu/t_b^2+1}.
+$$
+
+Como $t_a$ y $t_b$ son mayores que cero demostrar que $\rho(t_a) < \rho(t_b)$ es equivalente a demostrar que $1/\rho(t_a) > 1/\rho(t_b)$. Escribamos $1/\rho(t_a)$ y $1/\rho(t_b)$:
+
+$$
+\frac{1}{\rho(t_a)} =  \nu/t_a^2+1 \qquad y \qquad \frac{1}{\rho(t_a)} = \nu/t_b^2+1.
+$$
+
+De nuevo, demostrar que $1/\rho(t_a) > 1/\rho(t_b)$ es equivalente a demostrar que $1/\rho(t_a) - 1 > 1/\rho(t_b) - 1$. Operemos de neuvo:
+
+$$
+\frac{1}{\rho(t_a)}-1 =  \nu/t_a^2 \qquad y \qquad \frac{1}{\rho(t_a)} -1  = \nu/t_b^2.
+$$
+
+Como $\nu$ es una constante positiva y $t_a<t_b$ entonces $\nu/t_a > \nu/t_a$ y $1/\rho(t_a) - 1 > 1/\rho(t_b) - 1$, que es lo que queríamos demostrar. Esto también lo podemos ver graficamente. En la figura @fig-rhomonot se observa que, para valores de $t>0$, la $\rho(t)$ propuesta es monótona creciente.
+
+```{r}
+#| echo: false
+#| fig-width: 4
+#| fig-asp: .6
+#| label: fig-rhomonot
+#| fig-cap: "Función rho(t) en función de t para 10 grados de libertad solo para valores de t>0."
+#| fig-align: center
+nu <- 10
+rho <- tibble(t = seq(0,10,.01),
+              rho = t^2/(1 + t^2))
+
+rho |> ggplot(aes(x = t,
+           y = rho)) +
+  geom_vline(xintercept = 0, color = "gray70", linetype = "dashed") +
+  geom_hline(yintercept = 1, color = "gray70", linetype = "dashed") +
+  geom_line(linewidth = 1) +
+  labs(x = "t", y = "rho(t)") +
+  theme_bw()
+```
+
+Lo último que nos queda por probar es que $\rho(t)$ es acotada ($\rho(\infty) = 1$), algo que se ve fuertemente sugerido en la figura @fig-rhomonot. Para esto vamos a resolver el límite cuando $t \to \infty$ de $\rho(t)$:
+
+$$
+\lim_{t \to \infty} \rho(t) = \lim_{t \to \infty} \frac{1}{\nu/t^2+1} = 1,
+$$
+
+ya que $\nu/t^2$ tiende a $0$ cuando $t \to \infty$.
+
+Finalmente, hemos demostrado que la $rho(t)$ propuesta $t^2/(\nu + t^2)$ es una $\rho$-función.
+
+#### Inciso c
+
+Se nos pide mostrar que si se usa como $\rho(t) = I(|t|>c)$, con $c>0$, y $\delta=1/2$, se tiene que $\hat{\sigma} = Med(|x|)/c$. O sea, en este caso el estimador $\hat{\sigma}$ sería el que cumple la siguiente ecuación:
+
+$$
+\frac{1}{n} \sum_{i=1}^n \rho\left(\frac{x}{\hat{\sigma}}\right) = \delta \qquad o\, \, sea \qquad \frac{1}{n} \sum_{i=1}^n I(|t|>c) = \frac{1}{2}.
+$$
+
+Como por LGN la media tiene a la esperanza, y considerando a $I(|t|>c)$ como una variable aleatoria, podemos decir que:
+
+$$
+\sum_{i=1}^n I(|t|>c) \overset{\mathcal{P}}{\to} \mathbb{E}[I(|t|>c)].
+$$
+
+Entonces, como $\mathbb{E}[I(|t|>c)] = 1/2$ podemos decir que $P(|t|>c) = 1/2$. A partir de esto podemos despejar $\hat{\sigma}$:
+
+$$
+P(|t|>c) = P(\left|\frac{x}{\hat{\sigma}}\right|>c) = P(|x|>c\hat{\sigma}) = \frac{1}{2},
+$$
+
+ya que $\hat{\sigma}$ es siempre mayor que cero. Que, por la definición de mediana podemos reescribir como:
+
+$$
+c\hat{\sigma} = Med(|x|)
+$$
+
+O sea, que $\hat{\sigma} = Med(|x|)/c$ tal como queríamos demostrar.
+
+## Anexo: Ejercicio 1
+
+Vamos a probar que la mediana es un estimador equivariante por transformaciones afines.
+
+Primero definamos la mediana de $\textbf{x}$ ($\textbf{x} = x_1, ..., x_n$):
+
+$$
+\tilde{\textbf{x}} = Med_{1 \leq i \leq n} \{ x_i\} = \left\{
+	\begin{array}{ll}
+	  x_{\left( \frac{n+1}{2} \right)} & \mathrm{si\ } n \mathrm{\ }\mathrm{es\ } \mathrm{impar\ } \\
+	  \frac{x_{\left( \frac{n}{2} \right)} + x_{\left( \frac{n}{2} + 1 \right)}}{2} & \mathrm{si\ } n \mathrm{\ }\mathrm{es\ } \mathrm{par\ }
+  \end{array}
+\right.
+$$
+
+### Ejercicio 1.a
+
+Probar que la mediana es un estimador equivariante por traslaciones.
+
+Para evaluar una traslación solidaria, definamos una nueva variable $y_i$ tal que $y_i = x_i + a$. Veamos que pasa con los estadísticos de orden de $\textbf{x}$ e $\textbf{y}$:
+
+$$
+\begin{split}
+x_{(1)} \leq x_{(2)} \leq \cdots \leq x_{(n)} \\
+y_{(2)} \leq y_{(2)} \leq \cdots \leq y_{(n)}
+\end{split}
+$$
+
+Es decir, los estadísticos de orden de $\textbf{x}$ e $\textbf{y}$ son iguales. Esto significa que si ordenamos de mayor a menor todas las $x$ y todas las $y$, al sumarle $a$ a la i-ésima $\textbf{x}$ obtenemos como resultado al i-ésima $\textbf{y}$.
+
+#### $n$ impar
+
+Ahora calculemos la mediana de $\textbf{y}$ para el caso en el que $n$ es impar.
+
+$$
+\tilde{\textbf{y}} =  y_{\left( \frac{n+1}{2} \right)} =  x_{\left( \frac{n+1}{2} \right)} + a = \tilde{\textbf{x}} + a
+$$
+
+#### $n$ par
+
+Y para el caso en el que en el que $n$ es par.
+
+$$
+\tilde{\textbf{y}} = \frac{y_{\left( \frac{n}{2} \right)} + y_{\left(\frac{n}{2} + 1 \right)}}{2} = \frac{x_{\left( \frac{n}{2} \right)} + a + x_{\left( \frac{n}{2} + 1 \right)} + a}{2} = \frac{x_{\left( \frac{n}{2} \right)} + x_{\left( \frac{n}{2} + 1 \right)}}{2} + \frac{2a}{2} = \tilde{\textbf{x}} + a
+$$
+
+Finalmente, demostramos que, tanto cuando $n$ es par como impar, la mediana es un estimador equivariante por tranlaciones.
+
+### Ejercicio 1.b
+
+Probar que la mediana es un estimador equivariante por cambios de escala.
+
+Para evaluar el cambio de escala, definimos una nueva variable $y_i$ tal que $y_i = ax_i$. En este caso la transformación de estadísticos de orden no es tan directa por lo que tendremos que considerar los casos en los que $a \geq 0$ y $a < 0$ separadamente.
+
+#### $a \geq 0$
+
+En este caso, los estadísticos de órden se mantienen iguales al caso de la traslación:
+
+$$
+\begin{split}
+x_{(1)} \leq x_{(2)} \leq \cdots \leq x_{(n)} \\
+y_{(2)} \leq y_{(2)} \leq \cdots \leq y_{(n)}
+\end{split}
+$$
+
+#### $a \geq 0$ y $n$ impar
+
+Ahora calculemos la mediana de $y$ para el caso en el que $n$ es impar.
+
+$$
+\tilde{\textbf{y}} =  y_{\left( \frac{n+1}{2} \right)} =  a x_{\left( \frac{n+1}{2} \right)} = a \tilde{\textbf{x}}
+$$
+
+#### $a \geq 0$ y $n$ par
+
+Y para el caso en el que en el que $n$ es par.
+
+$$
+\tilde{\textbf{y}} = \frac{y_{\left( \frac{n}{2} \right)} + y_{\left( \frac{n}{2} + 1 \right)}}{2} = \frac{a x_{\left( \frac{n}{2} \right)} + a x_{\left( \frac{n}{2} + 1 \right)}}{2} = a \frac{x_{\left( \frac{n}{2} \right)} + x_{\left( \frac{n}{2} + 1 \right)}}{2}  = a\tilde{\textbf{x}}
+$$
+
+#### $a < 0$
+
+En este caso, los estadísticos de órden se se invierten ya que, por ejemplo, el valor de $\textbf{x}$ más alto ($x_n$) pasa a ser el valor de $\textbf{y}$ más bajo ($y_1$):
+
+$$
+\begin{split}
+x_{(1)} \leq x_{(2)} \leq \cdots \leq x_{(n-1)} \leq x_{(n)} \\
+ax_{(1)} \geq ax_{(2)} \geq \cdots \geq ax_{(n-1)} \geq ax_{(n)} \\
+y_{(1)} \geq y_{(2)} \geq \cdots \geq y_{(n-1)} \geq y_{(n)}
+\end{split}
+$$
+Entonces, el estadístico de orden $k$ de la nueva variable $\textbf{y}$ puede definirse como $y_{(k)} = ax_{(n-k+1)}$. Con esto en mente vamos a continuar con las demostraciones para $n$ impar y par.
+
+#### $a < 0$ y $n$ impar
+
+Ahora calculemos la mediana de $y$ para el caso en el que $n$ es impar.
+
+$$
+\tilde{\textbf{y}} =  y_{\left( \frac{n+1}{2} \right)} =  a x_{\left( \frac{n+1}{2} \right)} = a \tilde{\textbf{x}}
+$$
+
+O sea, $k = \frac{n+1}{2}$, y:
+
+$$
+ y_{\left( \frac{n+1}{2} \right)} = y_{(k)} = ax_{(n-k+1)} = ax_{(n-\frac{n+1}{2}+1)} = ax_{(n-\frac{n}{2}-\frac{1}{2}+1)} = ax_{(\frac{n}{2}+\frac{1}{2})} = ax_{(\frac{n+1}{2})}
+$$
+Entonces:
+
+$$
+\tilde{\textbf{y}} =  y_{\left( \frac{n+1}{2} \right)} =  a x_{\left( \frac{n+1}{2} \right)} = a \tilde{\textbf{x}}
+$$
+
+#### $a < 0$ y $n$ par
+
+Veamos como se modifican los estadísticos de orden en este caso. Primero, consideremos el caso en el que $k = \frac{n}{2}$:
+
+$$
+ y_{\left( \frac{n}{2} \right)} = y_{(k)} = ax_{(n-k+1)} = ax_{(n-\frac{n}{2}+1)} = ax_{(\frac{n}{2}+1)}
+$$
+Y segundo, consideremos el caso en el que $k = \frac{n}{2}+1$:
+
+$$
+ y_{\left( \frac{n}{2}+1 \right)} = y_{(k)} = ax_{(n-k+1)} = ax_{(n-(\frac{n}{2}+1)+1)} = ax_{(n - \frac{n}{2}- 1+1)} = ax_{(\frac{n}{2})}
+$$
+
+Entonces, veamos como se modifica la mediana de $x$ por un cambio de escala cuando $a < 0$ y $n$ es par:
+
+$$
+\tilde{\textbf{y}} = \frac{y_{\left( \frac{n}{2} \right)} + y_{\left( \frac{n}{2} + 1 \right)}}{2} = \frac{a x_{\left( \frac{n}{2}+1 \right)} + a x_{\left( \frac{n}{2} \right)}}{2} = a \frac{x_{\left( \frac{n}{2}+1 \right)} + x_{\left( \frac{n}{2} \right)}}{2}  = a\tilde{\textbf{x}}
+$$
+
+Finalmente, demostramos que, tanto cuando $n$ es par como impar, la mediana es un estimador equivariante por cambios de escala.
+
+### Conclusión
+
+Hemos demostrado que la mediana es un estimador equivariante por transformaciones afines, es decir, que es equivariante por traslaciones y cambios de escala.

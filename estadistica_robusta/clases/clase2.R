@@ -36,43 +36,61 @@ simul_iqr %>% ggplot(aes(x = n, y = iqr)) +
   theme_bw()
 
 # Eficiencia de la mediana ####
-ns <- seq(20,2000,10)
-nrep <- 1000
-eficiencia <- c()
+min_n <- 1
+max_n <- 1e3
+step <- 20
+nrep <- 4000
 
-set.seed(3)
-for (i in 1:length(ns)) {
-  x <- matrix(rnorm(nrep * ns[i], 0, 1), nrep, ns[i])
-  aux_media <- apply(x,1,mean)
-  aux_mediana <- apply(x,1,median)
-  eficiencia <- c(eficiencia, var(aux_media)/var(aux_mediana))
-}
+set.seed(123)
+x <- matrix(rnorm(nrep * max_n, 1, 1), nrep, max_n)
 
-simul_eficiencia_mediana <- tibble(n = ns, eficiencia)
+eficiencia_mediana <- expand_grid(rep = 1:nrep,
+                                  ns  = seq(min_n, max_n, step)) |>
+  rowwise() |>
+  mutate(mean   = mean  (x[rep, 1:ns]),
+         median = median(x[rep, 1:ns])) |>
+  group_by(ns) |>
+  summarise(eficiencia = var(mean) / var(median),
+            coc_medias = mean(mean) / mean(median))
 
-simul_eficiencia_mediana %>% ggplot(aes(x = ns, y = eficiencia)) +
-  geom_line(color = "steelblue") +
-  geom_hline(yintercept = 0.57, linetype = "dashed") +
-  theme_bw()
+write_csv(eficiencia_mediana, here("estadistica_robusta/entrega/data/eficiencias.csv"))
+
+eficiencia_mediana_long <- eficiencia_mediana |>
+  rename(`Cociente de varianzas (eficiencia)` = eficiencia,
+         `Cociente de medias` = coc_medias) |>
+  pivot_longer(cols = `Cociente de varianzas (eficiencia)`:`Cociente de medias`, 
+               names_to = "medida", 
+               values_to = "valor")
+
+eficiencia_mediana_long |> 
+  ggplot(aes(x = ns, y = valor, color = medida)) +
+  geom_hline(yintercept = 2/pi, linetype = "dashed") +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  geom_line(linewidth = 1) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(x = "Tamaño de la muestra (n)", y = "Cocientes", color = NULL) +
+  theme_bw() +
+  geom_magnify(from = c(250, 900, .6, 1.4), to = c(250, 900, -8, -1)) +
+  theme(legend.position = "bottom")
 
 # Eficiencia de la media alpha podada ####
-ns <- seq(20,2000,10)
-nrep <- 1000
-eficiencia <- c()
+min_n <- 1
+max_n <-1e3
+step <- 20
+nrep <- 4000
 
-set.seed(3)
-for (i in 1:length(ns)) {
-  print(ns[i])
-  x <- matrix(rnorm(nrep * ns[i], 0, 1), nrep, ns[i])
-  aux_media <- apply(x,1,mean)
-  
-  aux_media_podada <- apply(x,1,mean, trim = .25)
-  eficiencia <- c(eficiencia, var(aux_media)/var(aux_media_podada))
-}
+set.seed(1234)
+x <- matrix(rnorm(nrep * max_n, 0, 1), nrep, max_n)
 
-simul_eficiencia_podada <- tibble(n = ns, eficiencia)
+eficiencia_podada <- expand_grid(rep = 1:nrep,
+                                 ns  = seq(min_n, max_n, step)) %>%
+  rowwise() %>%
+  mutate(mean   = mean(x[rep, 1:ns]),
+         median = mean(x[rep, 1:ns], trim = .25)) %>%
+  group_by(ns) %>%
+  summarise(eficiencia = var(mean) / var(median))
 
-simul_eficiencia_podada %>% ggplot(aes(x = ns, y = eficiencia)) +
+eficiencia_podada %>% ggplot(aes(x = ns, y = eficiencia)) +
   geom_line(color = "steelblue") +
-  geom_hline(yintercept = 0.83, linetype = "dashed") +
+  geom_hline(yintercept = .83, linetype = "dashed") +
   theme_bw()
