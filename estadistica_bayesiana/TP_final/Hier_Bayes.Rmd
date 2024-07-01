@@ -220,18 +220,13 @@ $$
 
 Podemos ver la densidad de las medias por artista:
 
-```{r}
-ggplot(artist_means, aes(x = popularity)) + 
-  geom_density()
-```
-
 ```{r, fig.height=2}
 ggplot(artist_means, aes(x = popularity)) + 
   geom_density(linewidth = 1, fill = "steelblue", alpha = .3) +
   theme_bw()
 ```
 
-Ajustamos el modelos jerárquico. El término `(1 | artist)` indica que artista es un factor de agrupamiento (o efecto aleatorio). `prior_covariance` tiene que ver con la matriz de covarianza de los efectos aleatorios , sería el prior de $\mu_j$ y, no entiendo bien por qué, sería lo mismo que poner un prior $\mathcal{E}(1)$:
+Ajustamos el modelos jerárquico. El término `(1 | artist)` indica que artista es un factor de agrupamiento (o efecto aleatorio). `prior_covariance` tiene que ver con la matriz de covarianza de los efectos aleatorios, sería el prior de $\mu_j$ y, no entiendo bien por qué, sería lo mismo que poner un prior $\mathcal{E}(1)$:
 
 ```{r, results="hide"}
 spotify_hierarchical <- stan_glmer(
@@ -253,11 +248,11 @@ prior_summary(spotify_hierarchical)
 Podemos ver el diagnóstico sobre los 47 parámetros (44 $\mu_j$, $\mu$, $\sigma_y$ y $\sigma_\mu$):
 
 ```{r, fig.height=8}
-mcmc_trace(spotify_hierarchical)
+mcmc_trace(spotify_hierarchical) + theme_bw()
 ```
 
 ```{r, fig.height=8}
-mcmc_dens_overlay(spotify_hierarchical)
+mcmc_dens_overlay(spotify_hierarchical) + theme_bw()
 ```
 
 ```{r}
@@ -269,7 +264,7 @@ Y también la posterior:
 
 ```{r, fig.height=3}
 pp_check(spotify_hierarchical) + 
-  xlab("popularity") +
+  xlab("Popularidad") +
   theme_bw()
 ```
 
@@ -287,7 +282,52 @@ ppc_intervals(artist_means$popularity, yrep = predictions_hierarchical,
                               breaks = 1:nrow(artist_means)) +
   theme_bw() +
   xaxis_text(angle = 90, hjust = 1) + 
-  geom_hline(yintercept = 58.4, color = "darkorange")  +
+  geom_hline(yintercept = 52.5, color = "darkorange")  +
   labs(x = "Artista", y = "Popularidad")
+```
+
+```{r}
+artist_summary <- tidy(spotify_hierarchical, effects = "ran_vals", 
+                       conf.int = TRUE, conf.level = 0.80)
+```
+
+Está interesante ver el tema de las variabilidades.
+
+$$
+\begin{array}
+_\frac{\sigma_y^2}{\sigma_\mu^2+\sigma_y^2} \\
+\frac{\sigma_\mu^2}{\sigma_\mu^2+\sigma_y^2}
+\end{array}
+$$
+```{r, fig.height=4}
+artist_summary <- tidy(spotify_hierarchical, effects = "ran_vals", 
+                       conf.int = TRUE, conf.level = 0.80)
+
+artist_chains <- spotify_hierarchical %>%
+  spread_draws(`(Intercept)`, b[,artist]) %>% 
+  mutate(mu_j = `(Intercept)` + b) 
+
+artist_summary_scaled <- artist_chains %>% 
+  select(-`(Intercept)`, -b) %>% 
+  mean_qi(.width = 0.80) %>% 
+  mutate(artist = fct_reorder(artist, mu_j))
+
+ggplot(artist_summary_scaled, 
+       aes(x = artist, y = mu_j, ymin = .lower, ymax = .upper)) +
+  geom_pointrange() +
+  theme_bw() +
+  xaxis_text(angle = 90, hjust = 1) +
+  labs(x = "Artista", y = "mu_j")
+```
+
+```{r, fig.height=4}
+set.seed(84735)
+prediction_shortcut <- posterior_predict(
+  spotify_hierarchical,
+  newdata = data.frame(artist = c("Frank Ocean", "Mohsen Beats")))
+
+# Posterior predictive model plots
+mcmc_areas(prediction_shortcut, prob = 0.8) +
+  ggplot2::scale_y_discrete(labels = c("Frank Ocean", "Mohsen Beats")) + theme_bw() + labs(x =  "Popularidad")
 ```
 

@@ -36,7 +36,7 @@ donde $\bar{x} = 1/n \sum_{i=1}^n x_i$.
 
 #### Invarianza por traslación de $s$
 
-Recordemos que $y_i = x_i + a$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Empecemos calculando $\bar{y}$ que seguramente lo vayamos a necesitar:
+Recordemos que $y_i = x_i + a$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Empecemos calculando la relación entre $\bar{\textbf{y}}$ y $\bar{\textbf{x}}$ que seguramente lo vayamos a necesitar:
 
 $$
 \bar{\textbf{y}} = \frac{1}{n} \sum_{i=1}^n y_i = \frac{1}{n} \sum_{i=1}^n (x_i+a) = \frac{1}{n} \sum_{i=1}^n x_i+ \frac{1}{n}\sum_{i=1}^na = \bar{x} + \frac{1}{n} an = \bar{\textbf{x}} + a.
@@ -48,11 +48,11 @@ $$
 s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (y_i-\bar{\textbf{y}})^2}.
 $$
 
-Y reemplacemos cada $y_i$ por $x_i + a$ y $\bar{y}$ por $\bar{x}+a$ (que sale del cálculo auxiliar):
+Y reemplacemos cada $y_i$ por $x_i + a$ y  $\bar{\textbf{y}}$ por  $\bar{\textbf{x}}+a$ (que sale del cálculo auxiliar):
 
 $$
 \begin{split}
-s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [x_i+a-(\bar{\textbf{x}}+a)]^2}
+s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [x_i+a-(\bar{\textbf{x}}+a)]^2} = \\
 = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i+a-\bar{\textbf{x}}-a)^2} = \\
 = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = s(\textbf{x}).
 \end{split}
@@ -60,9 +60,9 @@ $$
 
 Que es lo que queríamos demostrar.
 
-#### Equivarianza por cambio de escala de $s$
+#### Equivariancia por cambio de escala de $s$
 
-Recordemos que $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Empecemos calculando $\bar{\textbf{y}}$ que seguramente lo vayamos a necesitar:
+Recordemos que $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Empecemos calculando la relación entre $\bar{\textbf{y}}$ y $\bar{\textbf{x}}$ que seguramente lo vayamos a necesitar nuevamente:
 
 $$
 \bar{\textbf{y}} = \frac{1}{n} \sum_{i=1}^n y_i = \frac{1}{n} \sum_{i=1}^n ax_i = a \frac{1}{n} \sum_{i=1}^n x_i = a \bar{\textbf{x}}.
@@ -72,10 +72,10 @@ En este caso queremos probar que $s(\textbf{y}) = |a| s(\textbf{x})$. Podemos re
 
 $$
 \begin{split}
-s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (ax_i-a\bar{\textbf{x}})^2}
-= \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [a(x_i-\bar{\textbf{x}})]^2}
+s(\textbf{y}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (ax_i-a\bar{\textbf{x}})^2} = \\
+= \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [a(x_i-\bar{\textbf{x}})]^2} = \\
 = \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = \\
-= \sqrt{a^2} \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2}
+= \sqrt{a^2} \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = \\
 = |a| \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} = |a| s(\textbf{x}).
 \end{split}
 $$
@@ -84,7 +84,7 @@ Que es lo que queríamos demostrar.
 
 ### Resolución para la MAD
 
-Empecemos refrescando las propiedades de la mediana que vimos en el **ejercicio 1** (para más detalle ver la sección Anexo:Ejercicio 1)[^1].
+Empecemos refrescando las propiedades de la mediana que vimos en el **ejercicio 1** (para más detalle ver la sección "Anexo: Ejercicio 1"):
 
 
 $$
@@ -93,9 +93,7 @@ $$
 \tilde{\textbf{y}} = a\tilde{\textbf{x}} \qquad si \qquad y_i = ax_i \qquad y \qquad \textbf{y} = (y_1,..., y_n),
 \end{split}
 $$
-en ambos casos con $a \in \mathbb{R}$.
-
-[^1]: Donde $\tilde{\textbf{x}}$ es la mediana de $\textbf{x}$.
+donde $\tilde{\textbf{x}}$ es la mediana de $\textbf{x}$ y en ambos casos $a \in \mathbb{R}$.
 
 Ahora sí, definamos la $MAD$. Dada $\textbf{x} = (x_1,..., x_n)$ una secuencia de **n** variables aleatorias, podemos definir a $MAD(\textbf{x})$ como:
 
@@ -115,22 +113,22 @@ Y reemplacemos cada $y_i$ por $x_i + a$ y $\tilde{\textbf{y}}$ por $\tilde{\text
 
 $$
 \begin{split}
-MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\}
+MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\} = \\
 = Med_{1 \leq i \leq n} \left\{ |x_i + a - (\tilde{\textbf{x}} + a)| \right\} = \\
-= Med_{1 \leq i \leq n} \left\{ |x_i + a - \tilde{\textbf{x}} - a| \right\}
+= Med_{1 \leq i \leq n} \left\{ |x_i + a - \tilde{\textbf{x}} - a| \right\} = \\
 = Med_{1 \leq i \leq n} \left\{ |x_i - \tilde{\textbf{x}}| \right\} = MAD(\textbf{x}).
 \end{split}
 $$
 
 Que es lo que queríamos demostrar.
 
-#### Equivarianza por cambio de escala de la MAD
+#### Equivariancia por cambio de escala de la MAD
 
-Recordemos que $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. En este caso queremos probar que $MAD(\textbf{y}) = |a| MAD(\textbf{x})$. Podemos retomar la $MAD(\textbf{y})$ definido anteriormente pero esta vez reemplazando cada $y_i$ por $ax_i$ y $\tilde{\textbf{y}}$ por $a\tilde{\textbf{x}}$ (que sale de las propiedades del ejercicio 1.b):
+Recordemos que $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. En este caso queremos probar que $MAD(\textbf{y}) = |a| MAD(\textbf{x})$. Podemos retomar la $MAD(\textbf{y})$ definido anteriormente pero esta vez reemplazando cada $y_i$ por $ax_i$ e $\tilde{\textbf{y}}$ por $a\tilde{\textbf{x}}$ (que sale de las propiedades del ejercicio 1.b):
 
 $$
 \begin{split}
-MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\}
+MAD(\textbf{y}) = Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\} = \\
 = Med_{1 \leq i \leq n} \left\{ |ax_i - a\tilde{\textbf{x}} | \right\} = \\
 = Med_{1 \leq i \leq n} \left\{ |a| |x_i - \tilde{\textbf{x}} | \right\} = |a| MAD(\textbf{x}).
 \end{split}
@@ -163,7 +161,9 @@ step <- 20
 nrep <- 4000
 ```
 
-Luego, vamos a generar una matriz $x$, de la cual luego utilizaremos una sección en particular de acuerdo al n[^2].
+Luego, vamos a generar una matriz $x$. Lo hacemos tomando `nrep * max_n` muestras de una $\mathcal{N}(1,1)$[^1] que acomodamos en una matriz `x` de `nrep` filas y `max_n` columnas. Luego tomaremos distinta antidad de columnas de `x` para simular muestras de distinto tamaño[^2].
+
+[^1]: Ya vamos a ver por qué $\mathcal{N}(1,1)$ y no $\mathcal{N}(0,1)$.
 
 [^2]: Para evitar que la compilación sea una pesadilla el documento no calcula $x$ ni las medias y medianas sino que lo tengo precalculado y lo cargo para graficarlo. Entonces, las explicaciones de código son más bien para comprender la lógica de trabajo.
 
@@ -181,9 +181,9 @@ grilla <- expand_grid(ns  = seq(min_n, max_n, step),
 slice(grilla, c(1:3, (nrow(grilla)-2):nrow(grilla)))
 ```
 
-Podemos ver las primeras tres y las últimas tres filas del tibble `grilla`, donde puede verse que para cada valor de `ns` hay `nrep` filas con el índice `rep`.
+Podemos ver las primeras y últimas tres filas del tibble `grilla`, donde se observa que para cada valor de `ns` hay `nrep` filas con el índice `rep`.
 
-Lo siguiente que hacemos es calcular para cada fila el la media y la mediana para los primeras `ns` columnas de la fila `rep` de `x` (es un poco un trabalenguas, pero juro que tiene sentido). El código nos puede ayudar a entender:
+Lo siguiente que hacemos es calcular para cada fila la media y la mediana para los primeras `ns` columnas de la fila `rep` de `x` (es un poco un trabalenguas, pero juro que tiene sentido). El código nos puede ayudar a entender:
 
 ```{r}
 #| eval: false
@@ -204,16 +204,16 @@ eficiencia_mediana <- medias_medianas |>
   summarise(eficiencia = var(mean) / var(median))
 ```
 
-Una de las cosa que nos permite hacer *{tidyverse}* es encadenar todo el código en una sóla línea usando el operador pipe `|>`:
+Una de las cosa que nos permite hacer *{tidyverse}* es encadenar todo el código en una sóla línea usando el operador pipe (`|>`):
 
 ```{r}
 #| eval: false
 eficiencia_mediana <- expand_grid(rep = 1:nrep,
-                                  ns  = seq(min_n, max_n, step)) %>%
-  rowwise() %>%
+                                  ns  = seq(min_n, max_n, step)) |>
+  rowwise() |>
   mutate(mean   = mean  (x[rep, 1:ns]),
-         median = median(x[rep, 1:ns])) %>%
-  group_by(ns) %>%
+         median = median(x[rep, 1:ns])) |>
+  group_by(ns) |>
   summarise(eficiencia = var(mean) / var(median))
 ```
 
@@ -222,16 +222,16 @@ Ahora que tenemos este código, resulta trivial agregar el cociente entre las me
 ```{r}
 #| eval: false
 eficiencia_mediana <- expand_grid(rep = 1:nrep,
-                                  ns  = seq(min_n, max_n, step)) %>%
-  rowwise() %>%
+                                  ns  = seq(min_n, max_n, step)) |>
+  rowwise() |>
   mutate(mean   = mean  (x[rep, 1:ns]),
-         median = median(x[rep, 1:ns])) %>%
-  group_by(ns) %>%
+         median = median(x[rep, 1:ns])) |>
+  group_by(ns) |>
   summarise(eficiencia = var(mean) / var(median),
             coc_medias = mean(mean) / mean(median))
 ```
 
-En la figura @fig-eficiencias puede verse la representación gráfica de la eficiencia y el cociente de medias en función del tamaño de la muestra (n). En la misma podemos ver que efectivamente la eficiencia de la mediana converge a $2/\pi = 0.637$ mientras que el cociente entre las medias es $1$ para todo $n$. Esto último se debe a que tanto la media como la mediana son estimadores insesgados de $\mu$ entonces, sin importar el $n$ la esperanza de ambos (en este caso simulada como la media de `nrep` repeticiones) es $\mu$.
+En la @fig-eficiencias puede verse la representación gráfica de la eficiencia y el cociente de medias en función del tamaño de la muestra ($n$). En la misma se observa que efectivamente la eficiencia de la mediana converge a $2/\pi = 0.637$ mientras que el cociente entre las medias es $1$ para todo $n$. Esto último se debe a que tanto la media como la mediana son estimadores insesgados de $\mu$ entonces, sin importar el $n$ la esperanza de ambos (en este caso simulada como la media de `nrep` repeticiones) es $\mu$.
 
 ```{r}
 #| echo: false
@@ -265,9 +265,9 @@ eficiencia_mediana_long |>
 
 ```
 
-Como última observación quiero retomar algo que tal vez haya pasado desapercibido. Cuando generamos `x` no tomamos muestras de una $\mathcal{N}(0,1)$ sino de una $\mathcal{N}(1,1)$ (hicimos `rnorm(nrep * max_n, 1, 1)`) ¿Por qué? Bueno, como estamos realizando una simulación numérica, tenemos que tener cuidado de no hacer cocientes con números muy chicos y, sobre todo cuando $n$ es grande, la media y la mediana son muy cercanas a cero. Esto lo que genera es que aparezcan inestabilidades numéricas. Repitamos la misma simulación que antes pero muestreando de una $\mathcal{N}(0,1)$ y veamos qué pasa.
+Como última observación quiero retomar algo que tal vez haya pasado desapercibido. Cuando generamos `x` no tomamos muestras de una $\mathcal{N}(0,1)$ sino de una $\mathcal{N}(1,1)$ (hicimos `rnorm(nrep * max_n, 1, 1)`). ¿Por qué? Bueno, como estamos realizando una simulación numérica, tenemos que tener cuidado de no hacer cocientes con números muy chicos y, sobre todo cuando $n$ es grande, la media y la mediana son muy cercanas a cero. Esto lo que genera es que aparezcan inestabilidades numéricas. Repitamos la misma simulación que antes pero muestreando de una $\mathcal{N}(0,1)$ y veamos qué pasa.
 
-En la figura @fig-eficiencias_0 vemos que, efectivamente, el cociente entre las medidas tiene puntos raros debido a inestabilidades numéricas. También se observa que, para muestras más grandes donde es más esperable que la media y le mediana sean más parecidas hay menos puntos inestables. Sin embargo, como puede verse en el insert que magnifica la zona de `ns` $250$ a $1000$, el cociente de las medias está lejos de estabilizarse en $1$.
+En la @fig-eficiencias_0 vemos que, efectivamente, el cociente entre las medidas tiene puntos raros debido a inestabilidades numéricas. También se observa que, para muestras más grandes donde es más esperable que la media y le mediana sean más parecidas hay menos puntos inestables. Sin embargo, en el insert que magnifica la zona de `ns` $250$ a $1000$ se observa que el cociente de las medias está lejos de estabilizarse en $1$.
 
 ```{r}
 #| echo: false
@@ -297,7 +297,6 @@ eficiencia_mediana_0_long |>
   geom_magnify(from = c(250, 980, .6, 1.4), to = c(250, 980, -7, -2)) +
   theme(legend.position = "bottom")
 ```
-
 
 ## Ejercicio 15
 
@@ -394,7 +393,7 @@ $$
 \frac{f_0' (t)}{f_0 (t)} = -\frac{(\nu+1)t}{\nu} \left( 1 + \frac{t^2}{\nu} \right)^{-1} = -\frac{(\nu+1)}{\nu} \left( \frac{\nu t}{\nu + t^2} \right) = -(\nu+1) \left( \frac{t}{\nu + t^2} \right),
 $$
 
-entonces el sumando de la suma nos queda:
+entonces el sumando de la suma $\sum_{i=1}^n$ nos queda:
 
 $$
 - \frac{f_0' (t)}{f_0 (t)} t = (\nu+1) \left( \frac{t^2}{\nu + t^2} \right).
@@ -402,43 +401,36 @@ $$
 Entonces el estimador MLE $\hat{\sigma}$ será el que cumpla:
 
 $$
-\frac{1}{n}\sum_{i=1}^n (\nu+1) \left( \frac{t^2}{\nu + t^2} \right) =  \frac{\nu+1}{n}\sum_{i=1}^n \left( \frac{t^2}{\nu + t^2} \right) = 1,
+\frac{1}{n}\sum_{i=1}^n (\nu+1) \left( \frac{t^2}{\nu + t^2} \right) =  \frac{\nu+1}{n}\sum_{i=1}^n \left( \frac{t^2}{\nu + t^2} \right) = 1.
 $$
 
-recordando que $t = x_i/\sigma$. Entonces, lo siguiente que vamos a hacer es reescribirlo de forma tal de poder identificar $\rho()$ y $\delta$:
+Entonces, lo siguiente que vamos a hacer es reescribirlo de forma tal de poder identificar $\rho()$ y $\delta$:
 
 $$
 \frac{1}{n} \sum_{i=1}^n \left( \frac{t^2}{\nu + t^2} \right) = \frac{1}{\nu+1},
 $$
 
-o sea:
+que, recordando:
 
 $$
 \frac{1}{n} \sum_{i=1}^n \rho\left(\frac{x_i}{\hat{\sigma}}\right) = \delta,
 $$
 
-donde puede verse claramente que:
+puede verse claramente que:
 
 $$
-\rho(t) = \frac{t^2}{\nu + t^2} ,
+\rho(t) = \frac{t^2}{\nu + t^2} \qquad y \qquad \delta  = \frac{1}{\nu+1},
 $$
-
-y,
-
-$$
-\delta  = \frac{1}{\nu+1},
-$$
-
 tal como se quería demostrar.
 
 #### Inciso b
 
-Para ser $t^2/(\nu + t^2)$ un $\rho$-función, esta debe cumplir:
+Para ser $\rho(t) = t^2/(\nu + t^2)$ un $\rho$-función, esta debe cumplir:
 
-1. Ser una función no decreciente en $|t|$ (en particular, es una función par).
-2. Que se cumpla que $\rho(0) = 0$.
+1. Ser una función no decreciente en $|t|$ (en particular, ser una función par).
+2. cumplir con $\rho(0) = 0$.
 3. Ser creciente (monótona) para $t > 0$ tal que $\rho(x) < \lim_{t \to+\infty} = \rho(\infty)$.
-4. Que si $\rho$ es acotada, se supone $\rho(\infty) = 1$.
+4. Que si $\rho$ es acotada, se cumpla $\rho(\infty) = 1$.
 
 Lo primero que vamos a verificar es que el $\rho(t)$ propuesto sea par:
 
@@ -446,7 +438,7 @@ $$
 \rho(-t) =  \frac{(-t)^2}{\nu + (-t)^2} =  \frac{t^2}{\nu + t^2} = \rho(t),
 $$
 
-es decir, es una función par. Eso lo podemos ver también gráficamente. En la figura @fig-rhosym podemos ver a $\rho(t)$ en función de $t$ para $\nu=1$.
+es decir, es una función par. Eso lo podemos ver también gráficamente en la @fig-rhosym donde se grafica $\rho(t)$ en función de $t$ para $\nu=10$.
 
 ```{r}
 #| echo: false
@@ -467,7 +459,7 @@ rho |> ggplot(aes(x = t,
   theme_bw()
 ```
 
-Ahora una fácil $\rho(0) = 0^2/(\nu + 0^2) = 0/\nu = 0$. Algo que también puede verse en la figura @fig-rhosym.
+Ahora una fácil $\rho(0) = 0^2/(\nu + 0^2) = 0/\nu = 0$. Algo que también puede verse en la @fig-rhosym.
 
 Sigamos con la monotonía para $x>0$. Dados $0<t_a<t_b$ queremos demostrar que $\rho(t_a) < \rho(t_b)$. Primero evaluemos $\rho(t)$ en ambos puntos:
 
@@ -493,7 +485,7 @@ $$
 \frac{1}{\rho(t_a)}-1 =  \nu/t_a^2 \qquad y \qquad \frac{1}{\rho(t_a)} -1  = \nu/t_b^2.
 $$
 
-Como $\nu$ es una constante positiva y $t_a<t_b$ entonces $\nu/t_a > \nu/t_a$ y $1/\rho(t_a) - 1 > 1/\rho(t_b) - 1$, que es lo que queríamos demostrar. Esto también lo podemos ver graficamente. En la figura @fig-rhomonot se observa que, para valores de $t>0$, la $\rho(t)$ propuesta es monótona creciente.
+Como $\nu$ es una constante positiva y $t_a<t_b$ entonces $\nu/t_a > \nu/t_a$ y $1/\rho(t_a) - 1 > 1/\rho(t_b) - 1$, que es lo que queríamos demostrar. Esto también lo podemos ver graficamente en la @fig-rhomonot, donde se observa que para valores de $t>0$, la $\rho(t)$ propuesta es monótona creciente.
 
 ```{r}
 #| echo: false
@@ -515,7 +507,7 @@ rho |> ggplot(aes(x = t,
   theme_bw()
 ```
 
-Lo último que nos queda por probar es que $\rho(t)$ es acotada ($\rho(\infty) = 1$), algo que se ve fuertemente sugerido en la figura @fig-rhomonot. Para esto vamos a resolver el límite cuando $t \to \infty$ de $\rho(t)$:
+Lo último que nos queda por probar es que $\rho(t)$ es acotada ($\rho(\infty) = 1$), algo que se ve fuertemente sugerido en la @fig-rhomonot. Para esto vamos a resolver el límite cuando $t \to \infty$ de $\rho(t)$:
 
 $$
 \lim_{t \to \infty} \rho(t) = \lim_{t \to \infty} \frac{1}{\nu/t^2+1} = 1,
@@ -523,7 +515,7 @@ $$
 
 ya que $\nu/t^2$ tiende a $0$ cuando $t \to \infty$.
 
-Finalmente, hemos demostrado que la $rho(t)$ propuesta $t^2/(\nu + t^2)$ es una $\rho$-función.
+Finalmente, hemos demostrado que la $\rho(t)$ propuesta ($t^2/(\nu + t^2)$) es una $\rho$-función.
 
 #### Inciso c
 
@@ -554,7 +546,7 @@ $$
 O sea, que $\hat{\sigma} = Med(|x|)/c$ tal como queríamos demostrar.
 
 ## Anexo: Ejercicio 1
-
+ 
 Vamos a probar que la mediana es un estimador equivariante por transformaciones afines.
 
 Primero definamos la mediana de $\textbf{x}$ ($\textbf{x} = x_1, ..., x_n$):

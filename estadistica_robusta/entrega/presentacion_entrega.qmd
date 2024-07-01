@@ -1,0 +1,248 @@
+---
+title: "Entrega final"
+subtitle: "Introducción a la Estadística Robusta `r emo::ji('strong')` (2024)"
+date: today
+author: "Ignacio Spiousas"
+format:
+  revealjs: 
+    theme: serif
+    slide-number: c/t
+    show-slide-number: all
+---
+
+## El enunciado del **ejercicio 4**
+
+```{r, echo=FALSE}
+pacman::p_load(tidyverse, latex2exp, colorspace, emo)
+```
+
+Probar que tanto **s** como la **MAD** cumplen estas dos propiedades:
+
+::: {style="font-size: 80%;"}
+
+1. **Propiedad de ser invariante por traslaciones**: Sea $a \in \mathbb{R}$ e $y_i = x_i + a$ para todo $1 \leq i \leq n$. Luego, si $\textbf{y} = (y_1,..., y_n)$ entonces:
+$$
+\hat{\sigma}(\textbf{y}) = \hat{\sigma}(\textbf{x}) 
+$$
+
+2. **Propiedad de ser equivariante por cambios de escala**: Sea $a \in \mathbb{R}$ e $y_i = ax_i$ para todo $1 \leq i \leq n$. Luego, si $\textbf{y} = (y_1,..., y_n)$ entonces:
+
+$$
+\hat{\sigma}(\textbf{y}) = |a| \hat{\sigma}(\textbf{x}) 
+$$
+::: 
+
+## Resolución para el **s**
+
+Empecemos por lo más fácil: $s$. Dada $\textbf{x} = (x_1,..., x_n)$ una secuencia de **n** variables aleatorias, podemos definir a $s(\textbf{x})$ como:
+
+$$
+s(\textbf{x}) = \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i-\bar{x})^2}.
+$$
+
+## ¿Qué pasa con las medias `r ji("socks")`?
+
+Si $y_i = x_i + a$ con $a \in \mathbb{R}$ e $\textbf{y} = (y_1,..., y_n)$:
+
+$$
+\begin{array}
+_\bar{\textbf{y}} =  \frac{1}{n} \sum_{i=1}^n y_i =  \frac{1}{n}  \sum_{i=1}^n (x_i+a) =
+\underbrace{\frac{1}{n} \sum_{i=1}^n x_i}_{\bar{\textbf{x}}} + \color{red} {\frac{1}{n}} a \color{red} n = \bar{\textbf{x}} + a.
+\end{array}
+$$
+
+Si $y_i = ax_i$ con $a \in \mathbb{R}$ e $\textbf{y} = (y_1,..., y_n)$:
+
+$$
+\bar{\textbf{y}} = \frac{1}{n} \sum_{i=1}^n y_i = \frac{1}{n} \sum_{i=1}^n ax_i = a \underbrace{\frac{1}{n} \sum_{i=1}^n x_i}_{\bar{\textbf{x}}} = a \bar{\textbf{x}}.
+$$
+
+## Invarianza por traslación de **s**
+
+Si $y_i = x_i + a$ con $a \in \mathbb{R}$ y que $\textbf{y} = (y_1,..., y_n)$. Escribamos $s(\textbf{y})$ y reemplacemos $y_i$ por $x_i+a$ e $\bar{\textbf{y}}$ por $\bar{\textbf{x}} + a$:
+
+::: {style="font-size: 80%;"}
+
+$$
+\begin{array}
+_s(\textbf{y}) &=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (y_i-\bar{\textbf{y}})^2} &=& \\
+&=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [x_i+a-(\bar{\textbf{x}}+a)]^2} &=& \\
+&=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i \color{red} {+a} -\bar{\textbf{x}} \color{red} {-a} )^2} &=& \\
+&=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} &=& s(\textbf{x}).
+\end{array}
+$$
+:::
+
+Que es lo que queríamos demostrar.
+
+## Equiv. por cambio de escala de **s**
+
+Si $y_i = ax_i$ con $a \in \mathbb{R}$ y que $\textbf{y} = (y_1,..., y_n)$. Escribamos $s(\textbf{y})$ y reemplacemos $y_i$ por $ax_i$ e $\bar{\textbf{y}}$ por $a\bar{\textbf{x}}$:
+
+::: {style="font-size: 70%;"}
+
+$$
+\begin{array}
+_s(\textbf{y}) &=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (y_i-\bar{\textbf{y}})^2} &=& \\
+&=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (ax_i-a\bar{\textbf{x}})^2} &=& \\
+&=& \sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n [a(x_i-\bar{\textbf{x}})]^2} &=& \\
+&=& \sqrt{\frac{1}{n-1}} \sqrt{a^2 \sum_{i=1}^n (x_i-\bar{\textbf{x}})^2} &=& \\
+&=& \color{red} {\overbrace{\sqrt{a^2}}^{|a|}} \underbrace{\sqrt{\frac{1}{n-1}} \sqrt{\sum_{i=1}^n (x_i-\bar{\textbf{x}})^2}}_{s(\textbf{x})} &=& |a| s(\textbf{x}).
+\end{array}
+$$
+
+:::
+
+Que es lo que queríamos demostrar.
+
+## Propiedades de **s**
+
+Hagamos una simulación de $s(\textbf{x})$, $s(\textbf{y}=\textbf{x}+a)$ y $s(\textbf{y}=a\textbf{x})$:
+
+```{r}
+#| fig-align: center
+x <- rnorm(1e5)
+s_ad <- c()
+s_prod <- c()
+for (a in seq(-2,2,.01)) {
+  s_ad <- c(s_ad, sd(x+a))  
+  s_prod <- c(s_prod, sd(x*a))  
+}
+
+s_ad_norm <- s_ad/sd(x)
+s_prod_norm <- s_prod/sd(x)
+
+data <- tibble(a = seq(-2,2,.01), s_ad_norm, s_prod_norm)
+
+data |>
+  ggplot(aes(x = a,
+             y = s_ad_norm)) +
+  geom_line(color = "steelblue", 
+            linewidth = 2) +
+  geom_line(data = data, aes(x = a,
+                             y = s_prod_norm), 
+            color = "darkorange", 
+            linewidth = 2) + 
+  annotate(geom='label', x=0, y=1.3, 
+           label=TeX("$\\frac{s($\\textbf{y})}{s($\\textbf{x})} = $\\frac{s($\\textbf{x+a})}{s($\\textbf{x})}=1", 
+                     output='character'), parse=TRUE, color = darken("steelblue"), fill = darken("#F0F1EB", amount = .02),
+           size = 6) +
+  annotate(geom='label', x=1.2, y=0.5, 
+           label=TeX("$\\frac{s($\\textbf{y})}{s($\\textbf{x})} = $\\frac{s($\\textbf{ax})}{s($\\textbf{x})}=|a|", 
+                     output='character'), parse=TRUE, color = darken("darkorange"), fill = darken("#F0F1EB", amount = .02),
+           size = 6) +
+  labs(y = NULL) +
+  theme_minimal(base_size = 16) +
+  theme(panel.background = element_rect(fill = "#F0F1EB", color = "#F0F1EB"),
+        plot.background = element_rect(fill = "#F0F1EB", color = "#F0F1EB"),
+         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "gray70"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                colour = "gray80"))
+```
+
+
+## Resolución para la **MAD**
+
+Definamos la $MAD$. Dada $\textbf{x} = (x_1,..., x_n)$ una secuencia de **n** variables aleatorias, podemos definir a $MAD(\textbf{x})$ como:
+
+$$
+MAD(\textbf{x}) = Med_{1 \leq i \leq n} \left\{ |x_i-\tilde{\textbf{x}}| \right\},
+$$
+
+donde $\tilde{\textbf{x}}$ es la mediana de $\textbf{x}$.
+
+## ¿Qué pasa con las medianas?
+
+Empecemos refrescando las propiedades de la mediana que vimos en el **ejercicio 1**. Dada $\textbf{x} = (x_1,..., x_n)$ una secuencia de **n** variables aleatorias:
+
+$$
+\begin{array}
+_&Si& \! y_i = x_i + a \! &e& \! \textbf{y} = (y_1,..., y_n) \! \rightarrow \! \tilde{\textbf{y}} = \tilde{\textbf{x}} + a \\
+&Si& \! y_i = ax_i \! &e& \! \textbf{y} = (y_1,..., y_n) \! \rightarrow \! \tilde{\textbf{y}} = a\tilde{\textbf{x}} \!
+\end{array}
+$$
+
+con $a \in \mathbb{R}$.
+
+## Invarianza por traslación en **MAD**
+
+Si $y_i = x_i + a$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Escribamos $MAD(\textbf{y})$ y reemplacemos cada $y_i$ por $x_i + a$ y $\tilde{\textbf{y}}$ por $\tilde{\textbf{x}}+a$:
+
+$$
+\begin{array}
+_MAD(\textbf{y}) &=& Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\} &=& \\
+&=& Med_{1 \leq i \leq n} \left\{ |x_i + a - (\tilde{\textbf{x}} + a)| \right\} &=& \\
+&=& Med_{1 \leq i \leq n} \left\{ |x_i \color{red} {+a} - \tilde{\textbf{x}}  \color{red}{-a}| \right\} &=& \\
+&=& Med_{1 \leq i \leq n} \left\{ |x_i - \tilde{\textbf{x}}| \right\} &=& MAD(\textbf{x}).
+\end{array}
+$$
+
+Que es lo que queríamos demostrar.
+
+## Equiv. por cambio de escala en **MAD**
+
+
+Si $y_i = ax_i$ con $a \in R$ y que $\textbf{y} = (y_1,..., y_n)$. Escribamos $MAD(\textbf{y})$ y reemplacemos $y_i$ por $ax_i$ e $\tilde{\textbf{y}}$ por $a\tilde{\textbf{x}}$:
+
+::: {style="font-size: 80%;"}
+$$
+\begin{array}
+_MAD(\textbf{y}) &=& Med_{1 \leq i \leq n} \left\{ |y_i-\tilde{\textbf{y}}| \right\} &=& \\
+&=& Med_{1 \leq i \leq n} \left\{ |ax_i - a\tilde{\textbf{x}} | \right\} &=& \\
+&=& Med_{1 \leq i \leq n} \left\{ |a (x_i - \tilde{\textbf{x}})| \right\} &=& \\
+&=& Med_{1 \leq i \leq n} \left\{ |a| |x_i - \tilde{\textbf{x}} | \right\} &=& \\
+&=& \color{red} {|a|} \underbrace{Med_{1 \leq i \leq n} \left\{ |x_i - \tilde{\textbf{x}} | \right\}}_{MAD(\textbf{x})} &=& |a| MAD(\textbf{x}).
+\end{array}
+$$
+:::
+
+Que es lo que queríamos demostrar.
+
+## Propiedades de **MAD**
+
+Hagamos una simulación de $MAD(\textbf{x})$, $MAD(\textbf{y}=\textbf{x}+a)$ y $MAD(\textbf{y}=a\textbf{x})$:
+
+```{r}
+#| fig-align: center
+x <- rnorm(1e5)
+mad_ad <- c()
+mad_prod <- c()
+for (a in seq(-2,2,.01)) {
+  mad_ad <- c(mad_ad, median(abs(x+a-median(x+a))))  
+  mad_prod <- c(mad_prod, median(abs(x*a-median(x*a))))  
+}
+
+mad_ad_norm <- mad_ad/median(abs(x-median(x)))
+mad_prod_norm <- mad_prod/median(abs(x-median(x)))
+
+data <- tibble(a = seq(-2,2,.01), mad_ad_norm, mad_prod_norm)
+
+data |>
+  ggplot(aes(x = a,
+             y = mad_ad_norm)) +
+  geom_line(color = "steelblue", 
+            linewidth = 2) +
+  geom_line(data = data, aes(x = a,
+                             y = mad_prod_norm), 
+            color = "darkorange", 
+            linewidth = 2) + 
+  annotate(geom='label', x=0, y=1.3, 
+           label=TeX("$\\frac{MAD($\\textbf{y})}{MAD($\\textbf{x})} = $\\frac{MAD($\\textbf{x+a})}{MAD($\\textbf{x})}=1", 
+                     output='character'), parse=TRUE, color = darken("steelblue"), fill = darken("#F0F1EB", amount = .02),
+           size = 6) +
+  annotate(geom='label', x=1.4, y=0.5, 
+           label=TeX("$\\frac{MAD($\\textbf{y})}{MAD($\\textbf{x})} = $\\frac{MAD($\\textbf{ax})}{MAD($\\textbf{x})}=|a|", 
+                     output='character'), parse=TRUE, color = darken("darkorange"), fill = darken("#F0F1EB", amount = .02),
+           size = 6) +
+  labs(y = NULL) +
+  theme_minimal(base_size = 16) +
+  theme(panel.background = element_rect(fill = "#F0F1EB", color = "#F0F1EB"),
+        plot.background = element_rect(fill = "#F0F1EB", color = "#F0F1EB"),
+         panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                colour = "gray70"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                colour = "gray80"))
+```
+
+## ¡Gracias! `r ji("clap")` {.center}
