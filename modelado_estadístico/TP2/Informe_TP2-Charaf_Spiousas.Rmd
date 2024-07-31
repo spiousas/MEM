@@ -249,7 +249,7 @@ Pareciera que hay algo raro, ¿No?. Tanto los directores mejor o peor rankeados 
 Ahora bien, ¿Cómo lidiamos con este problema? Vamos a explorar una alternativa que está íntimamente relacionada con la actualización bayesiana. Es decir, vamos a partir de una "creencia inicial" ($R$) con un deteminado peso ($W$) y a partir de eso actualizamos el rating de la siguiente forma:
 
 $$
-R^b_i = \frac{R \times W + \sum_i^{n_j} r_{ji}}{W + n_i} = \frac{R W + \overline{r_i}}{W + n_i}
+R^b_i = \frac{R \times W + \sum_j^{n_i} r_{ji}}{W + n_i} = \frac{R W + n_i \overline{r_i}}{W + n_i} 
 $$
 
 donde $R^b_i$ es la calificación modificada del director $i$, $r_{ji}$ es el calificación de la película $j$ del diractor $i$ y $n_i$ es la cantidad de películas que tiene calificadas el director $i$. Esta nueva magnitud $R^b_i$ podemos pensarla como si fuera el promedio pesado de $W$ calificaciones $R$ y las calificaciones de la película. De esta forma, va a "costar más" alejar el promedio de $R$ y vamos a necesitar un $n_i$ mayor para hacerlo.
@@ -338,9 +338,9 @@ Se podría seguir explorando en la mejor forma de combinar toda esta informació
 ### (b) Plantear un modelo de efectos aleatorios para predecir el puntaje de IMDB únicamente en función del país de origen.
 ### (c)  Mostrar las estimaciones de los efectos de ambos modelos en un mismo gráfico e interpretar cómo se diferencian.
 
-Con los países de origen tenemos el mismo problema que con los géneros, hay películas que perteneces a más de un país, son una coproducción. De momento la solución propuesta va a ser duplicar las filas que tengan coproducción para ambos países. En este caso es menos influyente que en el caso de los géneros ya que pasamos de 4000 filas a 4470 filas.
+Con los países de origen tenemos el mismo problema que con los géneros, hay películas que pertenecen a más de un país, son una coproducción. De momento la solución propuesta va a ser duplicar las filas que tengan coproducción para ambos países. En este caso es menos influyente que en el caso de los géneros ya que pasamos de $4000$ filas a $4470$ filas.
 
-Lo primero que vamos a hacer es ver la cantidad de producciones por país. En la figura \ref{fig:pais_barra} podemos ver el top 20 y como es de esperarse Estados Unidos lidera cómodamente este ranking, seguido de India, Gran Bretaña y Japón. Nuestro cine aparece en la posición 17, nada mal.
+Lo primero que vamos a hacer es ver la cantidad de producciones por país. En la figura \ref{fig:pais_barra} podemos ver el top 20 y, como es de esperarse, Estados Unidos lidera cómodamente este ranking, seguido de India, Gran Bretaña y Japón. Nuestro cine aparece en la posición 17, nada mal.
 
 ```{r, echo = FALSE, warning = FALSE, fig.align='center', fig.height=5, fig.cap ="\\label{fig:pais_barra}Cantidad de producciones por país para los 20 países con más producciones en el dataset de entrenamiento."}
 titles_train_by_country <- titles_train |>
@@ -369,7 +369,7 @@ titles_train_by_country |>
         panel.grid.major.y = element_blank())
 ```
 
-Una vez que tenemos este dataset vamos a ajustar dos modelos: 1- `fixed_countries`, un modelo de efectos fijos donde cada país tiene un asociado parámetro; y 2- `random_countries`, un modelo de efectos mixtos donde se ajusta un intercept y cada país tiene un intercept aleatorio.
+Una vez que tenemos este dataset vamos a ajustar dos modelos: 1- `fixed_countries`, un modelo de efectos fijos donde cada país tiene un parámetro asociado ($\mu_i$); y 2- `random_countries`, un modelo de efectos mixtos donde se ajusta un *intercept* global ($\mu$) y cada país tiene a la vez un *intercept* aleatorio ($\mu_j \sim \mathcal{N}(0, \sigma_{between}^2)$), de modo que cada predicción para un dado país será $\mu_i = \mu + \mu_j$).
 
 ```{r}
 fixed_countries <- lm(imdb_score ~ production_countries,
@@ -378,9 +378,9 @@ random_countries <- lmer(imdb_score ~ (1|production_countries),
                          data = titles_train_by_country)
 ```
 
-Una vez que tenemos estos modelos ajustados vamos a generar predicciones para los países incluidos en el dataset de entrenamiento y graficarlos. En la Figura \ref{fig:pais_modelos} podemos ver las predicciones de ambos modelos para cada país junto con el promedio de todos los scores del dataset como una línea punteada.
+Una vez que tenemos estos modelos ajustados vamos a generar predicciones para los países incluidos en el dataset de entrenamiento y graficarlas. En la Figura \ref{fig:pais_modelos} podemos ver las predicciones de ambos modelos para cada país junto con el promedio de todos los scores del dataset como una línea punteada.
 
-En la figura se ven varias cosas. La más notoria es que a medida que aumenta la cantidad de títulos por país (de arriba hacia abajo) hay más diferencia entre las predicciones de ambos modelos. Esto ocurre porque el modelo de efectos fijos predice a cada país como el promedio de los títulos del mismo mientras que el de efectos mixtos es una muestra de una distribución centrada en el promedio global (la línea punteada). Cuanto más grande es el número de títulos de un país más cerca estará su estimación del modelo de efectos aleatorios del promedio del mismo (que a su vez es la estimación de efectos fijos), mientras que si $n$ es más chico, la estimación de efectos aleateatorios estará más cercana al promedio global que al promedio de ese país.
+En la figura se ven varias cosas. La más notoria es que a medida que disminuye la cantidad de títulos por país (de arriba hacia abajo) hay más diferencia entre las predicciones de ambos modelos. Esto ocurre porque el modelo de efectos fijos predice a cada país como el promedio de los títulos del mismo mientras que el de efectos mixtos es una muestra de una distribución centrada en el promedio global (la línea punteada). Cuanto más grande es el número de títulos de un país más cerca estará su estimación del modelo de efectos aleatorios del promedio del mismo (que a su vez es la estimación de efectos fijos), mientras que si $n$ es más chico, la estimación de efectos aleateatorios estará más cercana al promedio global que al promedio de ese país.
 
 ```{r, fig.height=12, echo = FALSE, warning = FALSE, fig.align='center', fig.cap ="\\label{fig:pais_modelos}Predicciones de los modelos de efectos fijos y aleatorios para los títulos presentes en el dataset de entrenamiento. Los países esetán ordenados con cantidad de películas decreciente de arriba hacia abajo. La línea puntea vertical indica el promedio glbal de todas las calificaciones sin importar el país (promedio full pooleado)."}
 
