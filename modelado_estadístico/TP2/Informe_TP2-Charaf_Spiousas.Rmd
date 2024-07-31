@@ -398,9 +398,9 @@ titles_train_by_country |>
              color = Metodo)) +
   geom_hline(yintercept = mean(titles_train_by_country$imdb_score), linetype = "dashed") +
   geom_point(size = 3) +
-  annotate("segment", x = 70, y = 3.5, xend = 30, yend = 3.5, size = 1,
+  annotate("segment", x = 30, y = 3.5, xend = 70, yend = 3.5, size = 1,
          arrow = arrow(type = "closed", length = unit(0.02, "npc"))) +
-  annotate("text", x = 50, y = 3.5, size = 10, label = "n crece hacia abajo", angle = -90,
+  annotate("text", x = 50, y = 3.5, size = 10, label = "n crece hacia arriba", angle = 90,
            vjust = -0.5) +
   labs(y = "Predicción de ambos modelos",
        x = NULL,
@@ -409,8 +409,6 @@ titles_train_by_country |>
   scale_color_brewer(palette = "Dark2") +
   theme_bw() +
   theme(legend.position = "top")
-    
-  
 ```
 
 
