@@ -1,0 +1,541 @@
+---
+title: "TP 2 - Herramientas de Modelado Estadístico"
+author: "Jésica Charaf e Ignacio Spiousas"
+date: "4 de  agosto de 2024"
+output: pdf_document
+fontsize: 11pt
+linestretch: 1.25
+header-includes:
+  - \usepackage{graphicx}
+lang: es
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Leemos los paquetes
+pacman::p_load(tidyverse, ggdag, dagitty, here, modelsummary, patchwork, fastDummies, ggdist, lme4, mgcv)
+```
+
+# Modelos mixtos, Splines penalizados y Causalidad
+
+En el archivo `titles_train.csv` se presentan 4000 títulos de una plataforma de streaming. El archivo `credits_train.csv` contiene los actores y directores para estas películas y series. La idea de este trabajo es poder predecir la calificación de IMDB a partir de otras covariables para cada título. Siempre, a lo largo de este trabajo, se va a considerar la pérdida cuadrática como forma de evaluar modelos.
+
+```{r, load_data}
+credits_train <- read_csv(here("modelado_estadístico/TP2/data/credits_train.csv"), 
+                          show_col_types = FALSE, col_select = -1)
+
+titles_train <- read_csv(here("modelado_estadístico/TP2/data/titles_train.csv"), 
+                         show_col_types = FALSE, col_select = -1) |>
+  mutate(genres = str_replace_all(genres, "\\[|\\]", ""),
+         genres = str_replace_all(genres, "'", ""),
+         production_countries = str_replace_all(production_countries, "\\[|\\]", ""),
+         production_countries = str_replace_all(production_countries, "'", ""))
+```
+
+### 1. Hacer un análisis exploratorio de estos datos. 
+<!-- Algunas ideas: -->
+<!-- ### (a) ¿Hay algún género que parezca estar más asociado con el puntaje del título? -->
+<!-- ### (b) ¿Hay algún actor o director asociado con mayores o menores puntajes? -->
+<!-- ### (c) ¿Hay palabras de la descripción o del nombre del título que estén asociadas con un mayor/menor puntaje? -->
+
+Lo primero que vamos a hacer es explorar cómo se relaciona el género de una película con su calificación en IMDB. Para esto vamos a calcular el puntaje promedio por género y mostrarlo en una gráfica de barras. 
+
+El principal problema que tienen nuestros datos para llevar adelante este tipo de análisis es que las películas pueden estar asociadas a más de un género. De momento lo vamos a resolver duplicando los títulos de películas y contando las calificaciones para cada uno de los géneros. Por ejemplo, si una película es comedia y musical, su calificación será tenida en cuenta tanto al calcular el promedio de calificaciones del género comedia como el de musicales. 
+
+```{r}
+titles_train_by_genre <- titles_train |>
+  separate_rows(genres, sep = ", ") |>
+  filter(genres != "") |>
+  drop_na(imdb_score)
+
+head(titles_train_by_genre) |>
+  dplyr::select(c("title", "genres")) |>
+  knitr::kable()
+```
+
+Estos resultados los podemos ver en la Figura \ref{fig:por_genero} como una gráfica de barras de acuerdo al promedio del género y con la información de la cantidad de películas que son clasificadas como pertenecientes a ese género (como $n$). Puede verse que los tres géneros mejor calificados son Guerra, Historia y Documentales (en azul), mientras que géneros considerados menores, o menos prestigiosos, como Terror y Comedia, se encuentran muy por debajo (en verde). 
+
+Sin embargo, podemos ver que los géneros con más producciones son drama y, justamente, comedia. Entonces: ¿No es injusto que Western con $32$ producciones esté por arriba de comedia con $1575$? Esta idea la vamos a desarrollar más en detalle cuando veamos las calificaciones por director.
+
+```{r, by_genre, warning = FALSE, fig.align='center', echo = FALSE, fig.height=4, fig.cap ="\\label{fig:por_genero} Relación entre el género de las películas y la calificación promedio en IMDB. n indica la cantidad de títulos perteneciente a cada género."}
+titles_train_by_genre |> 
+  group_by(genres) |>
+  summarise(m_rating = mean(imdb_score, na.rm = T),
+            N = n()) |>
+  arrange(desc(m_rating)) |>
+  mutate(rank = row_number(),
+         top3 = ifelse(rank <= 3, "top3", "otras"),
+         top3 = if_else(genres %in% c("comedy", "horror"), "high", top3)) |>
+  ggplot(aes(x = reorder(genres, m_rating),
+             y = m_rating,
+             fill = top3)) +
+  geom_col() +
+  geom_text(aes(label = paste0("n = ", N), color = top3), 
+            hjust = 1.1, size = 3) +
+  scale_fill_manual(values = c("top3" = "steelblue", 
+                               "otras" = "gray",
+                               "high" = "darkgreen")) +
+  scale_color_manual(values = c("top3" = "white", 
+                               "otras" = "black",
+                               "high" = "white")) +
+  labs(x = NULL, y = "Rating promedio en IMDB") +
+  scale_y_continuous(limits = c(0,10), 
+                     breaks = seq(0, 10, 2.5), 
+                     labels = c("0", "2.5", "5", "7.5", "10")) +
+  coord_flip(expand = F) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Algo que podemos investigar rápidamente es qué pasa si en lugar de sumar de igual forma las palículas que pertecen a más de un género, lo hacemos de forma proporcional, es decir, si una película tiene dos géneros asociados, su calificación sumará dividida por dos al calculo del promedio. Esto lo podemos ver en la Figura \ref{fig:por_genero_normalizado}.a, donde el $n$ ahora puede ser fraccional. De momento esta propuesta no parecería haber cambiado demasiado el orden de los géneros.
+
+Un último paso es pesar la calificación de cada película por la cantidad de votos. Es decir, si una película $j$ perteneciente al género $gen$ tiene $n_{gen,j}$ calificaciones, su peso en el promedio pesado será $n_{gen,j}/n_{gen}$, donde $n_{gen} = \sum n_j$ es la cantidad de calificaciones totales para ese género. En este caso también pesaremos por la cantidad de géneros a los que pertenece la palícula. En este caso el $n$ sigue representando la cantidad de títulos^[Puede parecer extraño que los valores de $n$ difieran entre los paneles a y b de la Figura \ref{fig:por_genero_normalizado}, pero esto se debe a que hay 11 películas que si tienen calificación pero no tienen cantidad de votos.], mientras que el $n_{gen}$ es la cantidad de votos recibidos para ese género. Los resultados de esta nueva forma de calcular la calificación promedio se muestra en el panel b de la Figura \ref{fig:por_genero_normalizado}.
+
+```{r, by_genre_weighted, warning = FALSE, echo = FALSE, fig.align='center', fig.height=4, fig.cap ="\\label{fig:por_genero_normalizado} Relación entre el género de las películas y la calificación promedio en IMDB a) Teniendo en cuenta que hay títulos que son clasificados en más de un género y b) teniendo en cuenta que no todas las películas recibieron el mismo número de votos (promedio pesado por la cantidad de votos)."}
+p_genres_weighted_n <- titles_train_by_genre |> 
+  group_by(id) |>
+  mutate(weight = 1/n()) |>
+  group_by(genres) |>
+  summarise(m_rating = weighted.mean(imdb_score, w = weight, na.rm = T),
+            N = sum(weight)) |>
+  arrange(desc(m_rating)) |>
+  mutate(rank = row_number(),
+         high = ifelse(genres == "documentation", "doc", 
+                       if_else(genres == "drama", "drama", "otros"))) |>
+  ggplot(aes(x = reorder(genres, m_rating),
+             y = m_rating,
+             fill = high)) +
+  geom_col() +
+  geom_text(aes(label = paste0("n = ", round(N, 1)), color = high), 
+            hjust = 1.1, size = 3) +
+  scale_fill_manual(values = c("doc" = "darkorange", 
+                               "otros" = "gray",
+                               "drama" = "darkgreen")) +
+  scale_color_manual(values = c("doc" = "white", 
+                               "otros" = "black",
+                               "drama" = "white")) +
+  labs(x = NULL, y = "Rating con n's no enteras") +
+  scale_y_continuous(limits = c(0,10), 
+                     breaks = seq(0, 10, 2.5), 
+                     labels = c("0", "2.5", "5", "7.5", "10")) +
+  coord_flip(expand = F) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+p_genres_weighted_votes <- titles_train_by_genre |> 
+  drop_na(imdb_votes) |>
+  group_by(id) |>
+  mutate(weight = 1/n()) |>
+  group_by(genres) |>
+  mutate(weight_votes = weight*imdb_votes/sum(weight * imdb_votes, na.rm = T)) |>
+  summarise(m_rating = weighted.mean(imdb_score, w = weight_votes, na.rm = T),
+            N = sum(weight)) |>
+  arrange(desc(m_rating)) |>
+  mutate(rank = row_number(),
+         high = ifelse(genres == "documentation", "doc", 
+                       if_else(genres == "drama", "drama", "otros"))) |>
+  ggplot(aes(x = reorder(genres, m_rating),
+             y = m_rating,
+             fill = high)) +
+  geom_col() +
+  geom_text(aes(label = paste0("n = ", round(N, 1)), color = high), 
+            hjust = 1.1, size = 3) +
+  scale_fill_manual(values = c("doc" = "darkorange", 
+                               "otros" = "gray",
+                               "drama" = "darkgreen")) +
+  scale_color_manual(values = c("doc" = "white", 
+                               "otros" = "black",
+                               "drama" = "white")) +
+  labs(x = NULL, y = "Promedio pesado por los votos") +
+  scale_y_continuous(limits = c(0,10), 
+                     breaks = seq(0, 10, 2.5), 
+                     labels = c("0", "2.5", "5", "7.5", "10")) +
+  coord_flip(expand = F) +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+(p_genres_weighted_n | p_genres_weighted_votes) + plot_annotation(tag_levels = 'a')
+```
+
+Vemos que esta nueva propuesta de cálculo del promedio sí cambia algunas cosas. Los ejemplos más claros son los géneros Documentales y drama que pasan de las posiciones 3 a la 11 y de la 8 a la 5, respectivamente. Una posible explicación para esto sería que el género drama tiene películar con muchos votos y calificaciones altas lo que have que pesen más en el promedio pesado y mejoren la calificación promedio. Algo de esto puede verse en la Figura \ref{fig:votos_y_rating}, donde vemos que el género Drama tiene más títulos en la esquina superior derecha de la figura (muchos votos y calificaciones altas).
+
+
+```{r, echo = FALSE, warning = FALSE, fig.align='center', fig.height=3, fig.cap ="\\label{fig:votos_y_rating}Cantidad ed votos versus calificación de la película para los títulos pertenecientes a los géneros Documentales y Drama."}
+titles_train_by_genre |>
+  filter(genres %in% c("drama", "documentation")) |>
+  ggplot(aes(x = imdb_score,
+             y =imdb_votes)) +
+  geom_point(alpha = .3) +
+  facet_wrap(~genres) +
+  scale_y_continuous(transform = "log10") +
+  labs(x = "Score de la película", y = "Cantidad de votos de la película") +
+  theme_bw() +
+  theme(strip.background=element_rect(colour="white",
+                                      fill="white"))
+```
+De hecho, podemos ver que las 5 películas con más peso relativo en Drama tienen una calificación notablemente más alta que en Documentales.
+
+```{r, echo=FALSE}
+top_weight_drama <- titles_train_by_genre |>
+  filter(genres %in% c("drama")) |>
+  dplyr::select(c("title", "imdb_votes", "imdb_score", "genres")) |>
+  group_by(genres) |>
+  mutate(weight = imdb_votes/sum(imdb_votes, na.rm = T)) |>
+  ungroup() |>
+  arrange(desc(weight)) |>
+  dplyr::select(c("title", "weight", "genres", "imdb_score")) |>
+  slice_head(n = 5) 
+
+top_weight_docu <- titles_train_by_genre |>
+  filter(genres %in% c("documentation")) |>
+  dplyr::select(c("title", "imdb_votes", "imdb_score", "genres")) |>
+  group_by(genres) |>
+  mutate(weight = imdb_votes/sum(imdb_votes, na.rm = T)) |>
+  ungroup() |>
+  arrange(desc(weight)) |>
+  dplyr::select(c("title", "weight", "genres", "imdb_score")) |>
+  slice_head(n = 5) 
+
+top_weight_drama |> 
+  bind_rows(top_weight_docu) |>
+  knitr::kable()
+```
+
+Ahora vamos a explorar la asocición de Director con el ranking promedio de la película.
+
+```{r, by_director, warning = FALSE, echo = FALSE, warning = FALSE, fig.align='center', fig.height=5, fig.cap ="\\label{fig:director} ."}
+num_on_top <- 10
+
+rating_por_director <- titles_train |> 
+  left_join(credits_train, by = "id") |>
+  filter(role == "DIRECTOR") |>
+  select(imdb_score, name) |>
+  group_by(name) |>
+  summarise(m_rating = mean(imdb_score, na.rm = T),
+            N = n(),
+            .groups = "drop") |>
+  drop_na(m_rating) |>
+  ungroup() |>
+  arrange(desc(m_rating)) |>
+  mutate(rank = row_number(),
+         name = ifelse(rank <= num_on_top, name, if_else(rank >= n()-num_on_top, name, "Otros")),
+         top_bottom = ifelse(rank <= num_on_top, "top", if_else(rank >= n()-num_on_top, "bottom", "otros"))) |>
+  group_by(name, top_bottom) |>
+  summarise(m_rating = mean(m_rating, na.rm = T),
+            N = sum(N),
+            .groups = "drop")
+
+rating_por_director |>
+  ggplot(aes(x = reorder(name, m_rating),
+             y = m_rating,
+             fill = top_bottom)) +
+  geom_col() +
+  geom_text(aes(label = paste0("n=", N), color = top_bottom), 
+            hjust = 1.1, size = 3) +
+  scale_fill_manual(values = c("top" = "darkgreen", 
+                               "otros" = "gray",
+                               "bottom" = "darkorange")) +
+  scale_color_manual(values = c("top" = "white", 
+                               "otros" = "black",
+                               "bottom" = "white")) +
+  labs(x = NULL, y = "Rating promedio en IMDB") +
+  scale_y_continuous(limits = c(0, 10)) +
+  coord_flip(expand = F) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Pareciera que hay algo raro, ¿No?. Tanto los directores mejor o peor rankeados tiene una sola película en el dataset. Esto si pensamos en promedios tiene sentido pero, ¿Cuán confiable es el promedio de una sola película? Por ejemplo, lo tenemos al queridísimo Bruno Stagnaro que, aunque no necesitamos de un modelo estadítico para entender que es un capo total, justifica su posición en el quinto lugar sólo con la calificación de la obra maestra que es Okupas. Este es un problema que en nuestra vida cotidiana a menudo enfrentamos y tenemos en cuenta. Por ejemplo, estás de vacaciones buscando un restaurant para almorzar en Google Maps y aparecen dos opciones: Uno con 5 estrellas y dos calificaciones y uno con 4.6 y cinco mil calificaciones. ¿Cuál elegirías? Probablemente el segundo, ¿No?
+
+Ahora bien, ¿Cómo lidiamos con este problema? Vamos a explorar una alternativa que está íntimamente relacionada con la actualización bayesiana. Es decir, vamos a partir de una "creencia inicial" ($R$) con un deteminado peso ($W$) y a partir de eso actualizamos el rating de la siguiente forma:
+
+$$
+R^b_i = \frac{R \times W + \sum_i^{n_j} r_{ji}}{W + n_i} = \frac{R W + \overline{r_i}}{W + n_i}
+$$
+
+donde $R^b_i$ es la calificación modificada del director $i$, $r_{ji}$ es el calificación de la película $j$ del diractor $i$ y $n_i$ es la cantidad de películas que tiene calificadas el director $i$. Esta nueva magnitud $R^b_i$ podemos pensarla como si fuera el promedio pesado de $W$ calificaciones $R$ y las calificaciones de la película. De esta forma, va a "costar más" alejar el promedio de $R$ y vamos a necesitar un $n_i$ mayor para hacerlo.
+
+Si pensamos en el ejemplo del resturante, este modelo está muy relacionado con el tipo de razonamiento que hacemos intuitivamente. Elegimos un restaurante con una calificación promedio más baja pero a la que le tenemos más confianza, haciendo una estimación interna de la incerteza de ese promedio.
+
+```{r, echo = FALSE}
+R_bay <- function(R, W, x) {
+  (R*W + sum(x, na.rm = T)) / (W + length(x[!is.na(x)]))
+}
+```
+
+Ahora viene la siguiente pregunta: ¿Cómo eligimos a $R$ y $W$?. La elección de $R$ podríamos hacerla de 3 formas: 1- $R=5$, tomando el valor medio de nuestra escala de calificación como punto de partida; 2- $R=\overline{r_i}$, es decir, el promedio de los ratings individuales y; 3 - $R=Med(r_{ij})$, es decir, la mediana de los ratings individuales. Vamos a elegir este último valor ya que lo vamos a considerar como la "calificación más veces entregada". En cuanto a $W$, vamos a tomar un camino similar y calcularla como la mediana de los $n_i$.
+
+```{r, echo = FALSE}
+R_y_W <- titles_train |> 
+  left_join(credits_train, by = "id") |>
+  filter(role == "DIRECTOR") |>
+  select(imdb_score, name) |>
+  group_by(name) |>
+  summarise(m_rating = mean(imdb_score, na.rm = T),
+            N = n()) |>
+  ungroup() |>
+  summarise(R = median(m_rating, na.rm = T),
+            W = median(N))
+```
+
+De esta forma, $R$ es igual a `r R_y_W |> pull(R)` y $W$ es igual a `r R_y_W |> pull(W)`. El hecho de que $W$ sea igual a $1$ puede ser problemático, aunque teniendo en cuenta que hay sólo $124$ directores (de $2533$) que tienen más de $2$ calificaciones, no suena tan raro. Sin embargo, se trata del parámetro de este modelo más "difícil" de determinar ya que es el que nos dice cuál es el peso relativo de la evidencia de que la calificación de la película es $R$. Por eso, vamos a calcular el promedio para varios valores de $W$ y así ver 
+
+```{r, by_director_weighted, echo = FALSE, warning = FALSE, fig.align='center', fig.height=5, fig.cap ="\\label{fig:director_pesado} ."}
+rating_por_director <- titles_train |> 
+  left_join(credits_train, by = "id") |>
+  filter(role == "DIRECTOR") |>
+  select(imdb_score, imdb_votes, name) 
+
+fig_directors <- function(data, R, W, num_on_top) {
+  
+  rating_por_director <- data |>
+    group_by(name) |>
+    summarise(m_rating = R_bay(R, W, imdb_score),
+              N = n()) |>
+    drop_na(m_rating) |>
+    ungroup() |>
+    arrange(desc(m_rating)) |>
+    mutate(rank = row_number(),
+           name = ifelse(rank <= num_on_top, name, if_else(rank >= n()-num_on_top, name, "Otros")),
+           top_bottom = ifelse(rank <= num_on_top, "top", if_else(rank >= n()-num_on_top, "bottom", "otros"))) 
+  
+  rating_por_director |>
+    filter(top_bottom == "top") |>
+    ggplot(aes(x = reorder(name, m_rating),
+               y = m_rating)) +
+    geom_col(fill = "steelblue") +
+    geom_text(aes(label = paste0("n=", N)), 
+              color = "white", hjust = 1.1, size = 3) +
+    labs(x = NULL, 
+         y = "Rating promedio Rb") +
+    coord_flip(expand = F) +
+    scale_y_continuous(limits = c(0, 10), 
+                       breaks = c(0, 2, 8, 10, R),
+                       labels = c(0, 2, 8, 10, "R")) +
+    theme_minimal() +
+    theme(legend.position = "none")
+}
+
+p1 <- fig_directors(rating_por_director, R_y_W |> pull(R), R_y_W |> pull(W), 10) +
+  labs(subtitle = paste("R =", R_y_W |> pull(R), "- W = ", R_y_W |> pull(W)))
+
+p2 <- fig_directors(rating_por_director, R_y_W |> pull(R), 2, 10) +
+  labs(subtitle = paste("R =", R_y_W |> pull(R), "- W = ", 2))
+
+p3 <- fig_directors(rating_por_director, R_y_W |> pull(R), 5, 10) +
+  labs(subtitle = paste("R =", R_y_W |> pull(R), "- W = ", 5))
+
+p4 <- fig_directors(rating_por_director, R_y_W |> pull(R), 10, 10) +
+  labs(subtitle = paste("R =", R_y_W |> pull(R), "- W = ", 10))
+
+((p1 | p2) / (p3 | p4)) + plot_annotation(tag_levels = 'a')
+```
+
+En la Figura \ref{fig:director_pesado} podemos ver los directores mejor rankeados para $R=6.5$ y $W=1$, $2$, $5$ y $10$. Podemos ver que al incorporar este modelo con $W=1$ ya aprecen en el "top ten" directores con $n>1$, es decir, tener más películas mejor calificadas los aleja más de $R$. Como es de esperarse, al aumentar $W$ cada vez hay directores con $n$ más grande, pero también los $R^b_i$ se comprimen alrededor de $R$. Esto último es esperable ya que le estamos dando, por ejemplo, un peso relativo de $10$ películas a esa creencia inicial de $6.5$. El director favorito indiscutido es Kim Won-seok, de nacionalidad coreana y famosos por dirigir telenovelas muy populares.
+
+Se podría seguir explorando en la mejor forma de combinar toda esta información pero vamos a continuar con los modelos.
+
+### 2. (a) Plantear un modelo de efectos fijos para predecir el puntaje de IMDB únicamente en función del país de origen.
+### (b) Plantear un modelo de efectos aleatorios para predecir el puntaje de IMDB únicamente en función del país de origen.
+### (c)  Mostrar las estimaciones de los efectos de ambos modelos en un mismo gráfico e interpretar cómo se diferencian.
+
+Con los países de origen tenemos el mismo problema que con los géneros, hay películas que perteneces a más de un país, son una coproducción. De momento la solución propuesta va a ser duplicar las filas que tengan coproducción para ambos países. En este caso es menos influyente que en el caso de los géneros ya que pasamos de 4000 filas a 4470 filas.
+
+Lo primero que vamos a hacer es ver la cantidad de producciones por país. En la figura \ref{fig:pais_barra} podemos ver el top 20 y como es de esperarse Estados Unidos lidera cómodamente este ranking, seguido de India, Gran Bretaña y Japón. Nuestro cine aparece en la posición 17, nada mal.
+
+```{r, echo = FALSE, warning = FALSE, fig.align='center', fig.height=5, fig.cap ="\\label{fig:pais_barra}Cantidad de producciones por país para los 20 países con más producciones en el dataset de entrenamiento."}
+titles_train_by_country <- titles_train |>
+  separate_rows(production_countries, sep = ", ") |>
+  filter(production_countries != "")  |>
+  drop_na(imdb_score)
+
+num_on_top <- 20
+titles_train_by_country |>
+  group_by(production_countries) |>
+  summarise(N = n()) |>
+  arrange(desc(N)) |>
+  slice_head(n = num_on_top) |>
+  ggplot(aes(x = reorder(production_countries, N),
+             y = N)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = paste0(production_countries, " n=", N)), 
+            color = "black", hjust = -0.1, size = 3) +
+  labs(x = NULL, 
+       y = "Cantidad de producciones por país (top 20)") +
+  scale_y_continuous(limits = c(0, 1700)) +
+  coord_flip(expand = F) +
+  theme_minimal() +
+  theme(axis.text.y=element_blank(),
+        axis.ticks.x=element_blank(),
+        panel.grid.major.y = element_blank())
+```
+
+Una vez que tenemos este dataset vamos a ajustar dos modelos: 1- `fixed_countries`, un modelo de efectos fijos donde cada país tiene un asociado parámetro; y 2- `random_countries`, un modelo de efectos mixtos donde se ajusta un intercept y cada país tiene un intercept aleatorio.
+
+```{r}
+fixed_countries <- lm(imdb_score ~ production_countries,
+                      data = titles_train_by_country)
+random_countries <- lmer(imdb_score ~ (1|production_countries),
+                         data = titles_train_by_country)
+```
+
+Una vez que tenemos estos modelos ajustados vamos a generar predicciones para los países incluidos en el dataset de entrenamiento y graficarlos. En la Figura \ref{fig:pais_modelos} podemos ver las predicciones de ambos modelos para cada país junto con el promedio de todos los scores del dataset como una línea punteada.
+
+En la figura se ven varias cosas. La más notoria es que a medida que aumenta la cantidad de títulos por país (de arriba hacia abajo) hay más diferencia entre las predicciones de ambos modelos. Esto ocurre porque el modelo de efectos fijos predice a cada país como el promedio de los títulos del mismo mientras que el de efectos mixtos es una muestra de una distribución centrada en el promedio global (la línea punteada). Cuanto más grande es el número de títulos de un país más cerca estará su estimación del modelo de efectos aleatorios del promedio del mismo (que a su vez es la estimación de efectos fijos), mientras que si $n$ es más chico, la estimación de efectos aleateatorios estará más cercana al promedio global que al promedio de ese país.
+
+```{r, fig.height=12, echo = FALSE, warning = FALSE, fig.align='center', fig.cap ="\\label{fig:pais_modelos}Predicciones de los modelos de efectos fijos y aleatorios para los títulos presentes en el dataset de entrenamiento. Los países esetán ordenados con cantidad de películas decreciente de arriba hacia abajo. La línea puntea vertical indica el promedio glbal de todas las calificaciones sin importar el país (promedio full pooleado)."}
+
+new_data <- tibble(titles_train_by_country |> select(production_countries))
+
+titles_train_by_country |>
+  group_by(production_countries) |>
+  summarise(N = n()) |>
+  arrange(desc(N)) |> 
+  mutate(Fijo = predict(fixed_countries, newdata = tibble(production_countries = production_countries)),
+         Aleatorio = predict(random_countries, newdata = tibble(production_countries = production_countries))) |>
+  pivot_longer(cols = c("Fijo", "Aleatorio"), names_to = "Metodo", values_to = "Prediccion") |>
+  ggplot(aes(x = reorder(production_countries, N),
+             y = Prediccion,
+             color = Metodo)) +
+  geom_hline(yintercept = mean(titles_train_by_country$imdb_score), linetype = "dashed") +
+  geom_point(size = 3) +
+  annotate("segment", x = 70, y = 3.5, xend = 30, yend = 3.5, size = 1,
+         arrow = arrow(type = "closed", length = unit(0.02, "npc"))) +
+  annotate("text", x = 50, y = 3.5, size = 10, label = "n crece hacia abajo", angle = -90,
+           vjust = -0.5) +
+  labs(y = "Predicción de ambos modelos",
+       x = NULL,
+       color = "Modelo") +
+  coord_flip() +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  theme(legend.position = "top")
+    
+  
+```
+
+
+### 3. Usando únicamente la variable `release year`, predecir la popularidad de cada título (usando un tipo de modelo que crea adecuado) con un spline cúbico. Usar $\mathbf{k=1,2,3,5,10,20,50}$ nodos fijando el $\mathbf{\lambda}$ (penalización de rugosidad) en 0, y comparar todas las curvas estimadas en un mismo gráfico.**
+
+
+```{r, echo = FALSE, warning = FALSE, fig.height=4, fig.align='center', fig.cap ="\\label{fig:gams}."}
+train_data <- titles_train %>%
+  dplyr::select(c("imdb_score", "release_year"))
+
+# k=1 y 2 no deja ajustar, por algo de la dimension del espacio
+Ks <- c(3, 5, 10, 20, 50)
+
+pred_k <- tibble(release_year=min(train_data$release_year):max(train_data$release_year))
+
+# para cada K ajustamos el modelo y predecimos en una grilla
+for (K in Ks) {
+  fit <- gam(imdb_score ~ s(release_year, k = K , sp = 0, bs = 'cr'), data = train_data)
+  pred <- predict(fit, newdata = tibble(release_year = min(train_data$release_year):max(train_data$release_year)))
+  var <- paste0("pred_k", K)
+  pred_k <- pred_k %>%
+    bind_cols(tibble(var = pred))
+}
+
+
+pred_k <- pred_k %>%
+  set_names(c("release_year","3","5","10","20","50")) %>%
+  pivot_longer(cols = -release_year, values_to = "imdb_score", names_to = "k")
+
+# esto es porque me ponia desordenados los ks despues en el grafico
+num_k<- as.numeric(pred_k$k)
+pred_k <- pred_k %>% mutate(k= num_k)
+
+# grafico de curvas estimadas para los distintos k
+train_data %>% ggplot(aes(x=release_year,y=imdb_score)) +
+  geom_point(color = "black", alpha = .2) +
+  geom_line(data=pred_k, aes(x = release_year, y = imdb_score,color = as.factor(k)), linewidth = 1) +
+  scale_color_brewer(palette = "Dark2")+
+  labs(x = "Año", y = "Popularidad", color = "k")+
+  theme_bw()
+```
+
+
+### 4. Se tiene el siguiente DAG:
+
+```{=tex}
+\begin{center}
+   \includegraphics[width=10cm, height=7.5cm]{figs/DAG.png}
+\end{center}
+```
+
+**donde `Comedia` es una variable binaria que indica si el género del título incluye comedia y `(Score(0), Score(1))` son los puntajes potenciales del título si no fuera y si fuera de comedia, respectivamente. ¿A qué subconjunto de las variables `Año`, `Duración` y `País` de debe condicionar para estimar el efecto causal promedio de la variable `Comedia` sobre el `Score`? Dar todas las posibilidades.**
+
+**Es decir, hallar los conjuntos $Z$ tales que Comedia es independiente de `(Score(0), Score(1))` condicional a $Z$.**
+
+En este caso, tenemos una variable binaria $T$ que corresponde a la variable `Comedia` y nuestros *potencial outcomes* $(Y(0),Y(1))$ son los puntajes potenciales del título si no fuera y si fuera comedia, es decir, `(Score(0), Score(1))`. De esta manera, para estimar el efecto causal promedio de la variable `Comedia` sobre el `Score` nos interesa encontrar los conjuntos $Z$ tales que 
+$$T \mathrel{\perp\!\!\!\perp} (Y(0),Y(1)) |_{Z} \,.$$
+
+Para empezar, vamos a identificar todos los caminos que hay entre `Comedia` y \break `(Score(0), Score(1))`. En la siguiente imagen vemos los cuatro caminos resaltados en color rojo.
+
+```{=tex}
+\begin{center}
+   \includegraphics[width=17cm, height=15cm]{figs/caminos_dag.png}
+\end{center}
+```
+Luego, vamos a buscar los conjuntos de variables $Z$ que aseguren que `Comedia` y \break `(Score(0), Score(1))` estén *d-separados*, basándonos en el siguiente teorema:
+
+\textbf{Teorema}: *Si $X$ e $Y$ están d-separados por $Z$, entonces $X \mathrel{\perp\!\!\!\perp} Y |_Z$*.
+
+Recordemos que decimos que dos nodos $X$ e $Y$ de un DAG están *d-separados* por un conjunto de nodos $Z$ si todos los caminos entre $X$ e $Y$ están bloqueados por $Z$.
+
+De esta forma, analizaremos todos los subconjuntos de las variables `Año`, `Duración` y `País` para ver cuáles garantizan la d-separación entre `Comedia` y `(Score(0), Score(1))`.
+
+* $Z=\emptyset$: No sirve para asegurar d-separación. Por ejemplo, falla el camino 3 que no está bloqueado ya que no tiene ningún *collider* y en $Z$ no están ninguno de los nodos centrales de la *chain* (`País` $\rightarrow$ `Duración` $\rightarrow$ `(Score(0), Score(1))` ) ni del *cofounder* \break (`Comedia` $\leftarrow$ `País` $\rightarrow$ `Duración`). 
+
+* $Z=$ {`País`}: No sirve para asegurar d-separación. Falla el camino 2 dado que no tiene ningún *collider* y solo hay una *chain* (`Comedia`  $\rightarrow$ `Duración` $\rightarrow$ `(Score(0), Score(1))`) cuyo nodo central no pertenece a $Z$.
+
+* $Z=$ {`Duración`}: No sirve para asegurar d-separación. El camino 1, por ejemplo, queda desbloqueado cuando agregamos `Duración` que es el nodo central del único *collider* \break (`País`$\rightarrow$ `Duración` $\leftarrow$ `Año`) y en $Z$ no hay otros nodos que bloqueen el camino.
+
+* $Z=$ {`Año`}: No sirve para asegurar d-separación. Falla, por ejemplo, el camino 2 por los mismos motivos que mencionamos con $Z=$ {`País`}.
+
+* $Z=$ {`País`, `Duración`}: No sirve para asegurar d-separación. El camino 4 no está bloqueado porque agregamos `Duración` que es el nodo central del único *collider*  \break (`Comedia`$\rightarrow$ `Duración` $\leftarrow$ `(Score(0), Score(1))`) y en $Z$ no está el nodo central del *cofounder* (`Duración` $\leftarrow$ `Año` $\rightarrow$ `(Score(0), Score(1))`).
+
+* $Z=$ {`País`, `Año`}: No sirve para asegurar d-separación. Falla el camino 2 por los mismos motivos que mencionamos con $Z=$ {`País`}.
+
+* $Z=$ {`Duración`, `Año`}: Sí sirve para asegurar la d-separación:
+
+    + El camino 1 queda bloqueado ya que `Año` está en $Z$ y es el nodo central de un *cofounder* (`Duración` $\leftarrow$ `Año` $\rightarrow$ `(Score(0), Score(1))`).
+    + El camino 2 está bloqueado ya que `Duración` pertenece a $Z$ y es el nodo central de la *chain* (`Comedia`  $\rightarrow$ `Duración` $\rightarrow$ `(Score(0), Score(1))`).
+    + El camino 3 está bloqueado porque `Duración` pertenece a $Z$ y es el nodo central de la *chain* (`País` $\rightarrow$ `Duración` $\rightarrow$ `(Score(0), Score(1))`).
+    + El camino 4 queda bloqueado por el mismo motivo que el camino 1.
+
+* $Z=$ {`País`, `Duración`, `Año`}: Sí sirve para asegurar la d-separación, los motivos para argumentarlo son los mismos que en el conjunto anterior.
+
+En conclusión, los posibles conjuntos $Z$ a los cuales se debe condicionar de forma que `Comedia` y `(Score(0), Score(1))` resulten independientes son: $Z=$ {`Duración`, `Año`} y  \break $Z=$ {`País`, `Duración`, `Año`}.
+
+% COMENTARIO (BORRAR DESPUÉS): Dejo acá código para ver si el gráfico de caminos lo hacemos en R. No me salió colorear todos los caminos (el comando `ggdag_paths` solo te pone los que están abiertos) %
+
+```{r}
+dag<- dagitty::dagitty('dag {
+                      S0S1 [outcome,pos="0.4,-1.517"]
+                      D [pos="0,0.631"]
+                      A [pos="0.850,-0.411"]
+                      P [pos="-0.850,-0.411"]
+                      C [exposure,pos="-0.4,-1.517"]
+                      P -> C
+                      P -> D
+                      A -> D
+                      A -> S0S1
+                      D -> S0S1
+                      C -> D
+                       }')
+
+
+tidy_dag <- tidy_dagitty(dag)
+ggdag(tidy_dag) +
+  theme_dag()
+```
+
+
+
+**5. Dividir al conjunto de datos en entrenamiento y testeo (también puede usar otra técnica, como validación cruzada). Con todas las variables que tiene disponibles, probar al menos 3 modelos diferentes y elegir el que minimice el error cuadrático medio de predicción para el rating de IMDB.**
+
+...
+
+**6. En los archivos `titles_test.csv` y `credits test.csv` aparecen 1806 nuevos títulos, para los cuales no aparece el rating de IMDB (pero yo sí los tengo). A partir del modelo elegido en el item anterior, producir un archivo `predicciones.csv` que tenga una sola columna que contenga, en la fila $i$, la predicción del rating de IMDB para el título de la fila $i$ (tiene que tener 1806 filas).**
+
+**A partir de estas predicciones, yo voy a computar el error cuadrático medio de predicción. El equipo que tenga el menor error cuadrático medio gana un premio sorpresa.**
