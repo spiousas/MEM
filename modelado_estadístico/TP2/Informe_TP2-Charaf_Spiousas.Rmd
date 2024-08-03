@@ -31,6 +31,17 @@ titles_train <- read_csv(here("modelado_estadístico/TP2/data/titles_train.csv")
   mutate(genres = str_replace_all(genres, "\\[|\\]", ""),
          genres = str_replace_all(genres, "'", ""),
          production_countries = str_replace_all(production_countries, "\\[|\\]", ""),
+         production_countries = str_replace_all(production_countries, "'", "")) |>
+  drop_na(imdb_score)
+
+credits_test <- read_csv(here("modelado_estadístico/TP2/data/credits_test.csv"), 
+                          show_col_types = FALSE, col_select = -1) 
+
+titles_test <- read_csv(here("modelado_estadístico/TP2/data/titles_test.csv"), 
+                         show_col_types = FALSE, col_select = -1) |>
+  mutate(genres = str_replace_all(genres, "\\[|\\]", ""),
+         genres = str_replace_all(genres, "'", ""),
+         production_countries = str_replace_all(production_countries, "\\[|\\]", ""),
          production_countries = str_replace_all(production_countries, "'", ""))
 ```
 
@@ -578,31 +589,237 @@ En conclusión, los posibles conjuntos $Z$ a los cuales se debe condicionar de f
 
 
 
-**5. Dividir al conjunto de datos en entrenamiento y testeo (también puede usar otra técnica, como validación cruzada). Con todas las variables que tiene disponibles, probar al menos 3 modelos diferentes y elegir el que minimice el error cuadrático medio de predicción para el rating de IMDB.**
+### 5. Dividir al conjunto de datos en entrenamiento y testeo (también puede usar otra técnica, como validación cruzada). Con todas las variables que tiene disponibles, probar al menos 3 modelos diferentes y elegir el que minimice el error cuadrático medio de predicción para el rating de IMDB.
 
-```{r}
+La separación la haremos utilizando la función `initial_split` del paquete *{tidy_models}*. Separamos dos tercios de la muestra para entrenamiento y un tercio para el testeo. También deifimos la función de pérdida con la que vamos a evaluar los modelos (`loss`) que es el error cuadrático medio.
 
-train <- titles_train_by_country |> 
-  right_join(credits_train |> 
+```{r, warning=FALSE}
+# Separamos en train y test
+set.seed(12)
+titles_splits <- initial_split(titles_train, prop = 2/3)
+train_data <- training(titles_splits)
+test_data <- testing(titles_splits)
+
+# Función de pérdida (error cuadrático medio)
+loss <- function(y_hat, y) {
+  mean((y - y_hat)^2)
+}
+```
+
+#### Modelo 1: Modelo lineal de efectos mixtos con director como factor aleatorio.
+
+El primer modelo que vamos a probar es un modelo linear de efectos mixtos con el año de estreno (`release_year`) y la duración de la película (`runtime`) como factores fijos y el director (`director`) de la cinta como factor aleatorio. El ajuste lo haremos utilizando la función `lmer` del paquete *{lme4}*.
+
+```{r, echo=FALSE, warning=FALSE}
+# Data con generos duplicados
+train_data_with_director <- train_data |>
+  left_join(credits_train |> 
                filter(role == "DIRECTOR") |> 
                select(c("id", "name")) |>
-               rename(director = "name"), by = "id")
-splits <- initial_split(train, prop = 2/3, strata = type)
-validation_data <- training(splits)
-test_data <- testing(splits)
+               rename(director = "name"), by = "id") 
+
+# Ajuste
+train <- train_data_with_director %>%
+  dplyr::select(c("imdb_score", "release_year", "runtime", "director")) |>
+  mutate(director = as.factor(director))
 ```
 
-```{r}
-model1 <- lmer(data = validation_data,
-               imdb_score ~ release_year + type + runtime +
-                 (1|director) + (1|production_countries))
-
-#sum(test_data$imdb_score - predict(model1, newdata = test_data, allow.new.levels = TRUE))
+```{r, warning=FALSE}
+fit_m1 <- lmer(imdb_score ~ release_year + runtime + (1|director), 
+               data = train)
 ```
 
+```{r, echo=FALSE, warning=FALSE}
+# Data para testear
+test_data<- test_data
 
+test_data_with_director <- test_data |>
+  left_join(credits_train |> 
+               filter(role == "DIRECTOR") |> 
+               select(c("id", "name")) |>
+               rename(director = "name"), by = "id") 
+
+test <- test_data_with_director %>%
+  dplyr::select(c("id", "imdb_score", "release_year", "runtime", "director")) |>
+  mutate(director = as.factor(director))
+
+# Predecimos
+pred_director <- tibble(id=test$id)
+
+pred <- predict(fit_m1, newdata = test, allow.new.levels = TRUE)
+
+pred_director <-pred_director %>%
+  mutate(pred=pred)
+
+error1 <- loss(pred_director$pred, test$imdb_score)
+```
+
+#### Modelo 2: Modelo GAM con país de producción como factor aleatorio.
+
+El segundo modelo que vamos a probar es un modelo ajustando splines utilizando la función `gam` del paquete *{mgcv}*. En este caso al año de estreno (`release_year`), la duración de la película (`runtime`) y el país de producción (`production_countries`). Los dos primeros son factores fijos mientras que el país de producción es un factor aleatorio.  
+
+```{r, echo=FALSE, warning=FALSE}
+## MODELO 2 - spline con release_year, runtime y production_countries (random efects) ####
+# Data con paises duplicados
+train_data_by_country <- train_data |>
+  separate_rows(production_countries, sep = ", ") |>
+  filter(production_countries != "")  |>
+  drop_na(imdb_score)
+
+# Ajuste
+train <- train_data_by_country %>%
+  dplyr::select(c("imdb_score", "release_year", "runtime", "production_countries"))
+
+train$production_countries<- as.factor(train$production_countries)
+```
+
+```{r, warning=FALSE}
+fit_m2 <- gam(imdb_score ~ s(release_year, bs = 'cr') + s(runtime, bs = 'cr') + 
+                s(production_countries, bs='re'), 
+              data = train)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+# Data para testear
+test_data <- test_data
+
+test_data_by_country <- test_data |>
+  separate_rows(production_countries, sep = ", ") 
+  
+test <- test_data_by_country %>%
+  dplyr::select(c("imdb_score", "release_year", "runtime", "production_countries"))
+
+test$production_countries<- as.factor(test$production_countries)
+
+# Predecimos
+pred_country <- tibble(id=test_data_by_country$id)
+
+pred <- predict(fit_m2, newdata = test)
+
+pred_country <-pred_country %>%
+  mutate(pred=pred)
+
+predicciones <- pred_country %>%
+  group_by(id) %>%
+  summarise(pred_prom = mean(pred, na.rm = TRUE)) %>%
+  mutate(original_order=match(id,test_data$id)) %>%
+  arrange(original_order)
+
+error2 <- loss(predicciones$pred_prom,test_data$imdb_score)
+```
+
+#### Modelo 3: Modelo GAM con género como factor aleatorio.
+
+Este modelo es muy similar al modelo dos con la diferencia de que en lugar de utilizar al país de producción de la película como factor aleatorio (modelado con splines cúbicas) como predictor, utilizamos al género de la película (`genres`).
+
+```{r, echo=FALSE, warning=FALSE}
+# Data con generos duplicados
+train_data_by_genre <- train_data |>
+  separate_rows(genres, sep = ", ") |>
+  filter(genres != "") |>
+  drop_na(imdb_score)
+
+# Ajuste
+train <- train_data_by_genre %>%
+  dplyr::select(c("imdb_score", "release_year", "runtime", "genres"))
+
+train$genres<- as.factor(train$genres)
+```
+
+```{r, warning=FALSE}
+fit_m3 <- gam(imdb_score ~ s(release_year, bs = 'cr') + s(runtime, bs = 'cr') + 
+                s(genres, bs='re'), 
+              data = train)
+```
+
+```{r, echo=FALSE, warning=FALSE}
+# Data para testear
+test_data<- test_data |>
+  drop_na(imdb_score)
+
+test_data_by_genre<- test_data |>
+  separate_rows(genres, sep = ", ") 
+
+test<- test_data_by_genre %>%
+  dplyr::select(c("imdb_score", "release_year", "runtime", "genres"))
+
+test$genres<- as.factor(test$genres)
+
+# Predecimos
+pred_country<-tibble(id=test_data_by_genre$id)
+
+pred<- predict(fit_m3, newdata = test)
+
+pred_country <-pred_country %>%
+  mutate(pred=pred)
+
+predicciones <- pred_country %>%
+  group_by(id) %>%
+  summarise(pred_prom = mean(pred, na.rm = TRUE)) %>%
+  mutate(original_order=match(id,test_data$id)) %>%
+  arrange(original_order)
+
+error3 <- loss(predicciones$pred_prom,test_data$imdb_score)
+```
+
+#### Comparación entre modelos.
+
+Finalmente, comparamos el error cuadrático medio de los tres modelos AGREGAR REFERENCIA A TABLA Y NÚMERO. Podemos ver que el modelo con menor error es el Modelo 3 (splines cúbicas y género como factor aleatorio).  El error cuadrático medio es cercano a 1, lo que nos resulta razonable para la calificación de una película
+
+```{r, echo=FALSE, warning=FALSE}
+errores <- tibble(Modelo = c("Modelo lineal con director como FA",
+                             "GAM con país como FA",
+                             "GAM con género como FA"),
+                  RMS = round(c(error1, error2, error3), 3))
+
+errores |>
+  knitr::kable()
+```
 ...
 
-**6. En los archivos `titles_test.csv` y `credits test.csv` aparecen 1806 nuevos títulos, para los cuales no aparece el rating de IMDB (pero yo sí los tengo). A partir del modelo elegido en el item anterior, producir un archivo `predicciones.csv` que tenga una sola columna que contenga, en la fila $i$, la predicción del rating de IMDB para el título de la fila $i$ (tiene que tener 1806 filas).**
+### 6. En los archivos `titles_test.csv` y `credits test.csv` aparecen 1806 nuevos títulos, para los cuales no aparece el rating de IMDB (pero yo sí los tengo). A partir del modelo elegido en el item anterior, producir un archivo `predicciones.csv` que tenga una sola columna que contenga, en la fila $i$, la predicción del rating de IMDB para el título de la fila $i$ (tiene que tener 1806 filas).
 
-**A partir de estas predicciones, yo voy a computar el error cuadrático medio de predicción. El equipo que tenga el menor error cuadrático medio gana un premio sorpresa.**
+**A partir de estas predicciones, yo voy a computar el error cuadrático medio de predicción. El equipo que tenga el menor error cuadrático medio gana un premio sorpresa. **
+
+Como vimos en la sección anterior, el modelo 3 es el que tiene mejor desepeño con los datos de entrenamiento. Es por eso que lo utilizaremos para generar las predicciones del los datos de testeo.
+
+```{r, echo=FALSE, warning=FALSE}
+# Data con generos duplicados
+train_data_by_genre <- titles_train |>
+  separate_rows(genres, sep = ", ") |>
+  filter(genres != "") |>
+  drop_na(imdb_score)
+
+# Ajuste
+train_completo <- train_data_by_genre %>%
+  dplyr::select(c("imdb_score", "release_year", "runtime", "genres"))
+
+train_completo$genres<- as.factor(train_completo$genres)
+```
+
+```{r, warning=FALSE}
+fit_final <- gam(imdb_score ~ s(release_year, bs = 'cr') + s(runtime, bs = 'cr') + 
+                   s(genres, bs='re'), 
+                 data = train_completo)
+```
+
+Y ahora generamos una predicción y la guardamos en un archivo `predicciones.csv`.
+
+```{r, echo=FALSE, warning=FALSE}
+# Data para testear
+test_data <- titles_test
+
+test_data_by_genre <- test_data |>
+  separate_rows(genres, sep = ", ") 
+
+test_completo <- test_data_by_genre %>%
+  dplyr::select(c("release_year", "runtime", "genres"))
+
+test_completo$genres <- as.factor(test_completo$genres)
+```
+
+```{r, warning=FALSE}
+test_completo |>
+  mutate(y_hat = predict(fit_final, newdata = tibble(release_year, runtime, genres))) |> 
+  write.csv(here("modelado_estadístico/TP2/predicciones/predicciones.csv"))
+```
