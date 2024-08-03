@@ -7,12 +7,15 @@ fontsize: 11pt
 linestretch: 1.25
 header-includes:
   - \usepackage{graphicx}
+  - \usepackage{lscape}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
 lang: es
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # Leemos los paquetes
-pacman::p_load(tidyverse, ggdag, dagitty, here, modelsummary, patchwork, fastDummies, ggdist, lme4, mgcv)
+pacman::p_load(tidyverse, ggdag, dagitty, here, modelsummary, patchwork, fastDummies, ggdist, lme4, mgcv, tidymodels)
 ```
 
 # Modelos mixtos, Splines penalizados y Causalidad
@@ -52,15 +55,34 @@ head(titles_train_by_genre) |>
   knitr::kable()
 ```
 
+Como primer visualización vamos a proponer algo que no sólo nos deje ver el promedio sino también la distribución para cada género. Es por eso que en la figura \ref{fig:por_genero_ditrib} podemos ver un boxplot (en forma de línea) y una estimación no paramétrica de la densidad. Vemos que, en general, las distribuciones son unimodales y relativamente simétricas.
+
 Estos resultados los podemos ver en la Figura \ref{fig:por_genero} como una gráfica de barras de acuerdo al promedio del género y con la información de la cantidad de películas que son clasificadas como pertenecientes a ese género (como $n$). Puede verse que los tres géneros mejor calificados son Guerra, Historia y Documentales (en azul), mientras que géneros que socialmente suelen ser considerados "menores", o menos prestigiosos, como Terror y Comedia, se encuentran muy por debajo (en verde). 
 
 Sin embargo, podemos ver que los géneros con más producciones son Drama y, justamente, Comedia. Entonces: ¿No es injusto que Western con $32$ producciones esté por arriba de Comedia con $1575$? Esta idea la vamos a desarrollar más en detalle cuando veamos las calificaciones por director.
 
-```{r, by_genre, warning = FALSE, fig.align='center', echo = FALSE, fig.height=4, fig.cap ="\\label{fig:por_genero} Relación entre el género de las películas y la calificación promedio en IMDB. El $n$ indica la cantidad de títulos perteneciente a cada género."}
+```{r, warning = FALSE, fig.align='center', echo = FALSE, fig.height=6, fig.cap ="\\label{fig:por_genero_ditrib} Histograma y estimación no paramétrica de la densidad para cada género."}
+titles_train_by_genre |> 
+  group_by(genres) |>
+  ggplot(aes(x = genres,
+             y = imdb_score)) +
+  stat_slab(alpha  = .5, fill = "steelblue", scale = .7) +
+  stat_pointinterval(color = "darkgreen") +
+  labs(x = NULL, y = "Rating en IMDB") +
+  scale_y_continuous(limits = c(0,10),
+                     breaks = seq(0, 10, 2.5),
+                     labels = c("0", "2.5", "5", "7.5", "10")) +
+  coord_flip() +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+```{r, by_genre, warning = FALSE, fig.align='center', echo = FALSE, fig.height=4, fig.cap ="\\label{fig:por_genero} Relación entre el género de las películas y la calificación promedio en IMDB. El $n$ indica la cantidad de títulos perteneciente a cada género. Las líneas grises que se extienden hacia la derecha indican el desvío estándar muestral."}
 titles_train_by_genre |> 
   group_by(genres) |>
   summarise(m_rating = mean(imdb_score, na.rm = T),
-            N = n()) |>
+            N = n(),
+            sd_rating = sd(imdb_score, na.rm = T)) |>
   arrange(desc(m_rating)) |>
   mutate(rank = row_number(),
          top3 = ifelse(rank <= 3, "top3", "otras"),
@@ -69,6 +91,8 @@ titles_train_by_genre |>
              y = m_rating,
              fill = top3)) +
   geom_col() +
+  geom_errorbar(aes(ymin = m_rating, ymax = m_rating + sd_rating), 
+                width = .2, color = "gray30") +
   geom_text(aes(label = paste0("n = ", N), color = top3), 
             hjust = 1.1, size = 3) +
   scale_fill_manual(values = c("top3" = "steelblue", 
@@ -378,7 +402,7 @@ titles_train_by_country |>
 A partir de este dataset vamos a ajustar dos modelos: 1- `fixed_countries`, un modelo de efectos fijos donde cada país tiene un parámetro asociado ($\beta_j$); y 2- `random_countries`, un modelo de efectos mixtos donde se ajusta un *intercept* global ($\beta$) y cada país tiene a la vez un *intercept* aleatorio ($\mu_j \sim \mathcal{N}(0, \sigma_{between}^2)$), de modo que cada predicción para un país dado $j$ será: $\hat{\beta} + \hat{\mu}_j$.
 
 ```{r}
-fixed_countries <- lm(imdb_score ~ production_countries,
+fixed_countries <- lm(imdb_score ~ 0 + production_countries,
                       data = titles_train_by_country)
 random_countries <- lmer(imdb_score ~ (1|production_countries),
                          data = titles_train_by_country)
@@ -388,7 +412,10 @@ Una vez que tenemos estos modelos ajustados vamos a generar predicciones para lo
 
 En la figura se observan varias cosas. La más notoria es que a medida que disminuye la cantidad de títulos por país (de arriba hacia abajo) hay más diferencia entre las predicciones de ambos modelos. Esto ocurre porque el modelo de efectos fijos predice a cada país como el promedio de los títulos del mismo mientras que el de efectos mixtos considera una muestra de una distribución centrada en el promedio global (la línea punteada). De esta forma, cuanto más grande es el número de títulos de un país más cerca estará la estimación del modelo de efectos aleatorios al promedio del mismo (que a su vez es la estimación de efectos fijos), mientras que si $n$ es más chico, la estimación de efectos aleatorios estará más cercana al promedio global que al promedio de ese país.
 
-```{r, fig.height=12, echo = FALSE, warning = FALSE, fig.align='center', fig.cap ="\\label{fig:pais_modelos}Predicciones de los modelos de efectos fijos y aleatorios para los países presentes en el dataset de entrenamiento (ordenados según cantidad de películas decreciente de arriba hacia abajo). La línea punteada vertical indica el promedio global de todas las calificaciones sin importar el país (promedio full pooleado)."}
+\newpage
+\blandscape
+
+```{r, fig.height=8, fig.width=16, echo = FALSE, warning = FALSE, fig.align='center', fig.cap ="\\label{fig:pais_modelos}Predicciones de los modelos de efectos fijos y aleatorios para los países presentes en el dataset de entrenamiento (ordenados según cantidad de películas decreciente de arriba hacia abajo). La línea punteada vertical indica el promedio global de todas las calificaciones sin importar el país (promedio full pooleado)."}
 
 new_data <- tibble(titles_train_by_country |> select(production_countries))
 
@@ -403,20 +430,22 @@ titles_train_by_country |>
              y = Prediccion,
              color = Metodo)) +
   geom_hline(yintercept = mean(titles_train_by_country$imdb_score), linetype = "dashed") +
+  geom_line(aes(group = production_countries), color = "black") +
   geom_point(size = 3) +
   annotate("segment", x = 30, y = 3.5, xend = 70, yend = 3.5, size = 1,
          arrow = arrow(type = "closed", length = unit(0.02, "npc"))) +
-  annotate("text", x = 50, y = 3.5, size = 10, label = "n crece hacia arriba", angle = 90,
+  annotate("text", x = 50, y = 3.5, size = 10, label = "n crece hacia la derecha", angle = 0,
            vjust = -0.5) +
   labs(y = "Predicción de ambos modelos",
        x = NULL,
        color = "Modelo") +
-  coord_flip() +
+  #coord_flip() +
   scale_color_brewer(palette = "Dark2") +
   theme_bw() +
   theme(legend.position = "top")
 ```
 
+\elandscape
 
 ### 3. Usando únicamente la variable `release_year`, predecir la popularidad de cada título (usando un tipo de modelo que crea adecuado) con un spline cúbico. Usar $\mathbf{k=1,2,3,5,10,20,50}$ nodos fijando el $\mathbf{\lambda}$ (penalización de rugosidad) en 0, y comparar todas las curvas estimadas en un mismo gráfico.
 
@@ -550,6 +579,27 @@ En conclusión, los posibles conjuntos $Z$ a los cuales se debe condicionar de f
 
 
 **5. Dividir al conjunto de datos en entrenamiento y testeo (también puede usar otra técnica, como validación cruzada). Con todas las variables que tiene disponibles, probar al menos 3 modelos diferentes y elegir el que minimice el error cuadrático medio de predicción para el rating de IMDB.**
+
+```{r}
+
+train <- titles_train_by_country |> 
+  right_join(credits_train |> 
+               filter(role == "DIRECTOR") |> 
+               select(c("id", "name")) |>
+               rename(director = "name"), by = "id")
+splits <- initial_split(train, prop = 2/3, strata = type)
+validation_data <- training(splits)
+test_data <- testing(splits)
+```
+
+```{r}
+model1 <- lmer(data = validation_data,
+               imdb_score ~ release_year + type + runtime +
+                 (1|director) + (1|production_countries))
+
+#sum(test_data$imdb_score - predict(model1, newdata = test_data, allow.new.levels = TRUE))
+```
+
 
 ...
 
