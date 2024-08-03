@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.30)  31 JUL 2024 15:55
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.6.30)  2 AUG 2024 17:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -521,136 +521,129 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 <Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre-1.pdf, id=22, 469.755pt x 289.08pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre-1.pdf  used on input line 239.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre-1.pdf  used on input line 240.
 (pdftex.def)             Requested size: 469.75386pt x 289.07928pt.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <9> on input line 265.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 265.
 
 
-[2{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}]
+[2{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}]
 
 [3 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre-1.pdf>]
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <9> on input line 271.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 271.
 <Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf, id=47, 469.755pt x 289.08pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf  used on input line 272.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf  used on input line 279.
 (pdftex.def)             Requested size: 469.75386pt x 289.07928pt.
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf, id=49, 469.755pt x 216.81pt>
+
+
+[4{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc} <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf>]
+<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf, id=66, 469.755pt x 216.81pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf  used on input line 291.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf  used on input line 298.
 (pdftex.def)             Requested size: 469.75386pt x 216.80946pt.
-
-
-[4 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_genre_weighted-1.pdf>]
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf, id=65, 469.755pt x 361.35pt>
+<Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf, id=68, 469.755pt x 361.35pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf  used on input line 325.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf  used on input line 314.
 (pdftex.def)             Requested size: 469.75386pt x 361.34912pt.
 
-Overfull \vbox (251.90053pt too high) has occurred while \output is active []
 
+[5 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf>]
 
-
-[5 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-2-1.pdf> <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf>]
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf, id=86, 469.755pt x 361.35pt>
+[6 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director-1.pdf>]
+<Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf, id=93, 469.755pt x 361.35pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf  used on input line 390.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf  used on input line 382.
 (pdftex.def)             Requested size: 469.75386pt x 361.34912pt.
 
 
-[6{/Users/ignacio/Library/TinyTeX/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}]
+[7]
 
-[7 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf>]
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf, id=106, 469.755pt x 361.35pt>
+[8 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/by_director_weighted-1.pdf>]
+<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf, id=112, 469.755pt x 361.35pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf  used on input line 440.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf  used on input line 443.
 (pdftex.def)             Requested size: 469.75386pt x 361.34912pt.
 
 
-[8]
+[9]
 
-[9 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf>]
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf, id=129, 469.755pt x 867.24pt>
+[10 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-6-1.pdf>]
+<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf, id=135, 469.755pt x 867.24pt>
 File: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf Graphic file (type pdf)
 <use Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf  used on input line 482.
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf  used on input line 489.
 (pdftex.def)             Requested size: 352.32973pt x 650.45488pt.
 
-LaTeX Warning: Float too large for page by 67.16238pt on input line 487.
+LaTeX Warning: Float too large for page by 67.16238pt on input line 494.
 
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-9-1.pdf, id=130, 469.755pt x 289.08pt>
-File: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-9-1.pdf Graphic file (type pdf)
-<use Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-9-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-9-1.pdf  used on input line 509.
+
+
+[11]
+
+[12 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf>]
+<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf, id=155, 469.755pt x 289.08pt>
+File: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf Graphic file (type pdf)
+<use Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf>
+Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf  used on input line 555.
 (pdftex.def)             Requested size: 469.75386pt x 289.07928pt.
-<figs/DAG.png, id=131, 368.577pt x 216.81pt>
+
+
+[13 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf>]
+<figs/DAG.png, id=171, 368.577pt x 216.81pt>
 File: figs/DAG.png Graphic file (type png)
 <use figs/DAG.png>
-Package pdftex.def Info: figs/DAG.png  used on input line 521.
+Package pdftex.def Info: figs/DAG.png  used on input line 588.
 (pdftex.def)             Requested size: 284.53627pt x 167.37428pt.
 
-
-[10 <./figs/DAG.png>]
-
-[11 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-8-1.pdf>]
-Underfull \hbox (badness 6047) in paragraph at lines 543--546
+Underfull \hbox (badness 6047) in paragraph at lines 610--613
 []\T1/lmr/m/n/10.95 Para empezar, vamos a identificar todos los caminos que hay entre \T1/lmtt/m/n/10.95 Comedia \T1/lmr/m/n/10.95 y 
  []
 
 
-Underfull \hbox (badness 1803) in paragraph at lines 543--546
+Underfull \hbox (badness 1803) in paragraph at lines 610--613
 \T1/lmtt/m/n/10.95 (Score(0), Score(1))\T1/lmr/m/n/10.95 . En la siguiente imagen vemos los cuatro caminos resaltados en
  []
 
-<figs/caminos_dag.png, id=153, 723.9045pt x 443.85825pt>
+<figs/caminos_dag.png, id=173, 723.9045pt x 443.85825pt>
 File: figs/caminos_dag.png Graphic file (type png)
 <use figs/caminos_dag.png>
-Package pdftex.def Info: figs/caminos_dag.png  used on input line 548.
+Package pdftex.def Info: figs/caminos_dag.png  used on input line 615.
 (pdftex.def)             Requested size: 483.71008pt x 296.58429pt.
 
-Overfull \hbox (13.95506pt too wide) in paragraph at lines 548--549
+Overfull \hbox (13.95506pt too wide) in paragraph at lines 615--616
  [] 
  []
 
 
 
-[12 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-9-1.pdf>]
-Underfull \hbox (badness 3098) in paragraph at lines 551--554
+[14 <./figs/DAG.png>]
+Underfull \hbox (badness 3098) in paragraph at lines 618--621
 []\T1/lmr/m/n/10.95 Luego, vamos a buscar los conjuntos de variables $\OML/lmm/m/it/10.95 Z$ \T1/lmr/m/n/10.95 que aseguren que \T1/lmtt/m/n/10.95 Comedia \T1/lmr/m/n/10.95 y 
  []
 
-LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 569.
+LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 636.
 (/Users/ignacio/Library/TinyTeX/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 
-[13 <./figs/caminos_dag.png>]
-Underfull \hbox (badness 1629) in paragraph at lines 593--601
+[15 <./figs/caminos_dag.png>]
+Underfull \hbox (badness 1629) in paragraph at lines 660--668
 \T1/lmr/m/n/10.95 bloqueado porque agregamos \T1/lmtt/m/n/10.95 Duración \T1/lmr/m/n/10.95 que es el nodo central del único \T1/lmr/m/it/10.95 collider 
  []
 
 
-Underfull \hbox (badness 1286) in paragraph at lines 634--639
+Underfull \hbox (badness 1286) in paragraph at lines 701--706
 []\T1/lmr/m/n/10.95 En conclusión, los posibles conjuntos $\OML/lmm/m/it/10.95 Z$ \T1/lmr/m/n/10.95 a los cuales se debe condicionar de forma que
  []
 
 
-
-[14]
-<Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf, id=180, 469.755pt x 325.215pt>
-File: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf Graphic file (type pdf)
-<use Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf>
-Package pdftex.def Info: Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf  used on input line 667.
-(pdftex.def)             Requested size: 469.75386pt x 325.2142pt.
-
-
-[15 <./Informe_TP2-Charaf_Spiousas_files/figure-latex/unnamed-chunk-10-1.pdf>]
 
 [16] (./Informe_TP2-Charaf_Spiousas.aux)
  ***********
@@ -659,18 +652,18 @@ L3 programming layer <2024-05-27>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 13418 strings out of 475544
- 217747 string characters out of 5776679
+ 13411 strings out of 475544
+ 217218 string characters out of 5776679
  1938905 words of memory out of 5000000
- 35788 multiletter control sequences out of 15000+600000
- 624795 words of font info for 86 fonts, out of 8000000 for 9000
+ 35781 multiletter control sequences out of 15000+600000
+ 625114 words of font info for 87 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 83i,8n,93p,3649b,555s stack positions out of 10000i,1000n,20000p,200000b,200000s
-</Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi6.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr6.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr8.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb>
-Output written on Informe_TP2-Charaf_Spiousas.pdf (16 pages, 837555 bytes).
+ 83i,8n,93p,3629b,609s stack positions out of 10000i,1000n,20000p,200000b,200000s
+</Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmex10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi6.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmmi9.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr12.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr17.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr6.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr8.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmr9.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmri10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtk10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></Users/ignacio/Library/TinyTeX/texmf-dist/fonts/type1/public/lm/lmtti10.pfb>
+Output written on Informe_TP2-Charaf_Spiousas.pdf (16 pages, 860455 bytes).
 PDF statistics:
- 313 PDF objects out of 1000 (max. 8388607)
- 232 compressed objects within 3 object streams
- 42 named destinations out of 1000 (max. 500000)
- 112 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 316 PDF objects out of 1000 (max. 8388607)
+ 234 compressed objects within 3 object streams
+ 41 named destinations out of 1000 (max. 500000)
+ 107 words of extra memory for PDF output out of 10000 (max. 10000000)
 
