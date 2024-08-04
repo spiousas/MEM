@@ -117,7 +117,7 @@ titles_train_by_genre |>
   theme(legend.position = "none")
 ```
 
-Sin embargo, podemos ver que los géneros con más producciones son Drama y, justamente, Comedia. Entonces: ¿No es injusto que Western con $32$ producciones esté por arriba de Comedia con $1575$? Esta idea la vamos a desarrollar más en detalle cuando veamos las calificaciones por director.
+Sin embargo, podemos ver que los géneros con más producciones son Drama y, justamente, Comedia. Entonces: ¿No es injusto que Western con $31$ producciones esté por arriba de Comedia con $1495$? Esta idea la vamos a desarrollar más en detalle cuando veamos las calificaciones por director.
 
 Algo que podemos investigar rápidamente es qué pasa si en lugar de sumar de igual forma las películas que pertenecen a más de un género, lo hacemos de forma proporcional o pesada. Es decir, si una película tiene dos géneros asociados, su calificación sumará dividida por dos al cálculo del promedio (le damos un peso de $\frac{1}{2}$) y en el $n$ total, en lugar de tomarla como 1 película, la sumaremos como $\frac{1}{2}$ de película. Esto lo podemos ver en el panel a de la Figura \ref{fig:por_genero_normalizado}, donde el $n$ (que sería la suma de todos los pesos) ahora puede ser fraccional. En principio esta propuesta no parecería haber cambiado demasiado el orden de los géneros.
 
